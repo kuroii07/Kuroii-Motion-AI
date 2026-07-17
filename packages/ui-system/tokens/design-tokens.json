@@ -1,0 +1,45 @@
+{
+  "themeModes": [
+    "light",
+    "dark",
+    "system"
+  ],
+  "densityModes": [
+    "compact",
+    "comfortable",
+    "spacious"
+  ],
+  "breakpoints": {
+    "xs": "<280",
+    "sm": "280-360",
+    "md": "360-520",
+    "lg": "520-800",
+    "xl": ">800"
+  },
+  "componentStates": [
+    "default",
+    "hover",
+    "focus",
+    "active",
+    "selected",
+    "disabled",
+    "loading",
+    "success",
+    "warning",
+    "error",
+    "empty",
+    "read-only"
+  ],
+  "zIndex": [
+    "base",
+    "stickyHeader",
+    "sidebar",
+    "dropdown",
+    "popover",
+    "tooltip",
+    "toast",
+    "modal",
+    "criticalModal",
+    "systemOverlay"
+  ]
+}

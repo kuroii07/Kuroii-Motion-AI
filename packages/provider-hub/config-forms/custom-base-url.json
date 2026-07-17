@@ -1,0 +1,53 @@
+{
+  "providerId": "custom-base-url",
+  "displayName": "Custom Base URL",
+  "fields": [
+    {
+      "id": "baseUrl",
+      "labelKey": "provider.field.baseUrl",
+      "type": "url",
+      "required": true,
+      "placeholder": "http://localhost:1234/v1"
+    },
+    {
+      "id": "apiKey",
+      "labelKey": "provider.field.apiKey",
+      "type": "password",
+      "required": false,
+      "secret": true
+    },
+    {
+      "id": "compatibilityMode",
+      "labelKey": "provider.field.compatibilityMode",
+      "type": "select",
+      "required": true,
+      "options": [
+        "openai-compatible",
+        "local"
+      ]
+    }
+  ],
+  "modelDiscovery": {
+    "method": "POST",
+    "path": "/providers/custom-base-url/models",
+    "refreshButton": true
+  },
+  "testConnection": {
+    "method": "POST",
+    "path": "/providers/custom-base-url/test",
+    "stages": [
+      "config",
+      "network",
+      "auth",
+      "model"
+    ]
+  },
+  "ui": {
+    "categoryTabs": [
+      "Text",
+      "Vision",
+      "Local"
+    ],
+    "guideKey": "provider.guide.customBaseUrl"
+  }
+}

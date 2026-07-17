@@ -1,0 +1,117 @@
+{
+  "providerId": "openai-compatible",
+  "displayName": "OpenAI Compatible",
+  "fields": [
+    {
+      "id": "baseUrl",
+      "labelKey": "provider.field.baseUrl",
+      "type": "url",
+      "required": true,
+      "placeholder": "https://api.example.com/v1"
+    },
+    {
+      "id": "apiKey",
+      "labelKey": "provider.field.apiKey",
+      "type": "password",
+      "required": true,
+      "secret": true
+    },
+    {
+      "id": "headers",
+      "labelKey": "provider.field.headers",
+      "type": "keyValue",
+      "required": false
+    },
+    {
+      "id": "modelsPath",
+      "labelKey": "provider.field.modelsPath",
+      "type": "text",
+      "required": false,
+      "defaultValue": "/models",
+      "placeholder": "/models"
+    },
+    {
+      "id": "chatPath",
+      "labelKey": "provider.field.chatPath",
+      "type": "text",
+      "required": false,
+      "defaultValue": "/chat/completions",
+      "placeholder": "/chat/completions"
+    },
+    {
+      "id": "imagesPath",
+      "labelKey": "provider.field.imagesPath",
+      "type": "text",
+      "required": false,
+      "defaultValue": "/images/generations",
+      "placeholder": "/images/generations"
+    },
+    {
+      "id": "videoPath",
+      "labelKey": "provider.field.videoPath",
+      "type": "text",
+      "required": false,
+      "defaultValue": "/videos/generations",
+      "placeholder": "/videos/generations"
+    },
+    {
+      "id": "videoStatusPath",
+      "labelKey": "provider.field.videoStatusPath",
+      "type": "text",
+      "required": false,
+      "defaultValue": "/videos/generations/{taskId}",
+      "placeholder": "/videos/generations/{taskId}"
+    },
+    {
+      "id": "timeoutSeconds",
+      "labelKey": "provider.field.timeoutSeconds",
+      "type": "number",
+      "required": false,
+      "defaultValue": 120,
+      "min": 1,
+      "max": 180
+    },
+    {
+      "id": "defaultCapabilities",
+      "labelKey": "provider.field.defaultCapabilities",
+      "type": "multiSelect",
+      "required": false,
+      "defaultValue": [
+        "text"
+      ],
+      "options": [
+        "text",
+        "vision",
+        "image",
+        "video",
+        "voice",
+        "speech",
+        "music",
+        "sfx",
+        "local"
+      ]
+    }
+  ],
+  "modelDiscovery": {
+    "method": "POST",
+    "path": "/providers/openai-compatible/models",
+    "refreshButton": true
+  },
+  "testConnection": {
+    "method": "POST",
+    "path": "/providers/openai-compatible/test",
+    "stages": [
+      "config",
+      "network",
+      "auth",
+      "model"
+    ]
+  },
+  "ui": {
+    "categoryTabs": [
+      "Text",
+      "Vision"
+    ],
+    "guideKey": "provider.guide.openaiCompatible"
+  }
+}

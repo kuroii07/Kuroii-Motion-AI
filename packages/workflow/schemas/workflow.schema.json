@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Kuroii Workflow",
+  "type": "object",
+  "required": [
+    "workflowId",
+    "schemaVersion",
+    "nodes",
+    "edges",
+    "approvalPolicy"
+  ],
+  "properties": {
+    "workflowId": {
+      "type": "string"
+    },
+    "schemaVersion": {
+      "type": "string"
+    },
+    "nodes": {
+      "type": "array"
+    },
+    "edges": {
+      "type": "array"
+    },
+    "approvalPolicy": {
+      "enum": [
+        "manual",
+        "per-risk",
+        "none"
+      ]
+    }
+  }
+}

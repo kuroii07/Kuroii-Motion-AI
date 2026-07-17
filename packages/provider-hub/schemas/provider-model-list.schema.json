@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Kuroii Provider Model List",
+  "type": "object",
+  "required": [
+    "providerId",
+    "models",
+    "source",
+    "refreshedAt"
+  ],
+  "properties": {
+    "providerId": {
+      "type": "string"
+    },
+    "models": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "source": {
+      "enum": [
+        "mock",
+        "remote",
+        "cache"
+      ]
+    },
+    "refreshedAt": {
+      "type": "string"
+    }
+  }
+}

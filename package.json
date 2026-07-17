@@ -1,0 +1,70 @@
+{
+  "name": "kuroii-motion-ai-suite",
+  "version": "0.5.9-alpha.0",
+  "private": true,
+  "description": "Kuroii Motion AI Suite v3.0 monorepo with desktop visual preview, visual review matrix, manual visual sign-off, pre-host visual evidence export, and evidence review lock gates.",
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "extensions/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build:code-editor": "esbuild apps/desktop/prototype/editor/code-editor-entry.js --bundle --format=iife --platform=browser --target=es2020 --outfile=apps/desktop/prototype/code-editor.bundle.js",
+    "validate": "python tests/validate_v3_structure.py",
+    "validate:structure": "python tests/validate_v3_structure.py",
+    "service:dev": "python apps/local-service/src/server.py --port 17631",
+    "test:local-service": "python tests/smoke_local_service.py",
+    "test": "python tests/smoke_professional_studio_visual_system.py && python tests/smoke_professional_mode_workbench.py && python tests/smoke_local_service.py && python tests/smoke_provider_hub.py && python tests/smoke_provider_hub_v2.py && python tests/smoke_provider_api_key_save_button.py && python tests/smoke_openai_compatible_adapter.py && python tests/smoke_host_connection.py && python tests/smoke_action_execution.py && python tests/smoke_desktop_command_center.py && python tests/smoke_desktop_ui_prototype.py && python tests/smoke_desktop_runtime_wiring.py && python tests/smoke_desktop_runtime_service.py && python tests/smoke_desktop_detail_filter_state.py && python tests/smoke_desktop_prototype_detail_ui.py && python tests/smoke_desktop_interaction_polish.py && python tests/smoke_theme_contrast.py && python tests/smoke_feature_workspace_diversity.py && python tests/smoke_desktop_runtime_prototype_alignment.py && python tests/smoke_desktop_diagnostics_state.py && python tests/smoke_desktop_diagnostics_recovery_ux.py && python tests/smoke_desktop_host_readiness_gate.py && python tests/smoke_desktop_readiness_drilldown.py && python tests/smoke_desktop_host_smoke_handoff.py && python tests/smoke_desktop_mock_host_smoke_rehearsal.py && python tests/smoke_desktop_rehearsal_result_panel.py && python tests/smoke_desktop_manual_host_smoke_runbook.py && python tests/smoke_desktop_runbook_export_feedback_state.py && python tests/smoke_desktop_manual_host_smoke_evidence_pack.py && python tests/smoke_desktop_manual_host_smoke_review_checklist.py && python tests/smoke_desktop_manual_host_smoke_session_draft.py && python tests/smoke_desktop_ae_pr_visual_preview.py && python tests/smoke_desktop_visual_review_matrix.py && python tests/smoke_desktop_visual_signoff_state.py && python tests/smoke_desktop_visual_evidence_export.py && python tests/smoke_desktop_visual_evidence_review_lock.py && python tests/validate_v3_structure.py",
+    "test:professional-studio": "python tests/smoke_professional_studio_visual_system.py",
+    "test:professional-mode": "python tests/smoke_professional_mode_workbench.py",
+    "test:provider-hub": "python tests/smoke_provider_hub.py",
+    "test:provider-hub-v2": "python tests/smoke_provider_hub_v2.py",
+    "test:provider-api-key-save": "python tests/smoke_provider_api_key_save_button.py",
+    "test:openai-compatible": "python tests/smoke_openai_compatible_adapter.py",
+    "test:host-connection": "python tests/smoke_host_connection.py",
+    "test:action-execution": "python tests/smoke_action_execution.py",
+    "test:desktop-command-center": "python tests/smoke_desktop_command_center.py",
+    "test:desktop-ui-prototype": "python tests/smoke_desktop_ui_prototype.py",
+    "test:desktop-runtime-wiring": "python tests/smoke_desktop_runtime_wiring.py",
+    "test:desktop-runtime-service": "python tests/smoke_desktop_runtime_service.py",
+    "test:desktop-detail-filter-state": "python tests/smoke_desktop_detail_filter_state.py",
+    "test:desktop-prototype-detail-ui": "python tests/smoke_desktop_prototype_detail_ui.py",
+    "test:desktop-interaction-polish": "python tests/smoke_desktop_interaction_polish.py",
+    "test:theme-contrast": "python tests/smoke_theme_contrast.py",
+    "test:feature-workspaces": "python tests/smoke_feature_workspace_diversity.py",
+    "test:desktop-runtime-prototype-alignment": "python tests/smoke_desktop_runtime_prototype_alignment.py",
+    "test:desktop-diagnostics-state": "python tests/smoke_desktop_diagnostics_state.py",
+    "test:desktop-diagnostics-recovery-ux": "python tests/smoke_desktop_diagnostics_recovery_ux.py",
+    "test:desktop-host-readiness-gate": "python tests/smoke_desktop_host_readiness_gate.py",
+    "test:desktop-readiness-drilldown": "python tests/smoke_desktop_readiness_drilldown.py",
+    "test:desktop-host-smoke-handoff": "python tests/smoke_desktop_host_smoke_handoff.py",
+    "test:desktop-mock-host-smoke-rehearsal": "python tests/smoke_desktop_mock_host_smoke_rehearsal.py",
+    "test:desktop-rehearsal-result-panel": "python tests/smoke_desktop_rehearsal_result_panel.py",
+    "test:desktop-manual-host-smoke-runbook": "python tests/smoke_desktop_manual_host_smoke_runbook.py",
+    "test:desktop-runbook-export-feedback-state": "python tests/smoke_desktop_runbook_export_feedback_state.py",
+    "test:desktop-manual-host-smoke-evidence-pack": "python tests/smoke_desktop_manual_host_smoke_evidence_pack.py",
+    "test:desktop-manual-host-smoke-review-checklist": "python tests/smoke_desktop_manual_host_smoke_review_checklist.py",
+    "test:desktop-manual-host-smoke-session-draft": "python tests/smoke_desktop_manual_host_smoke_session_draft.py",
+    "test:desktop-ae-pr-visual-preview": "python tests/smoke_desktop_ae_pr_visual_preview.py",
+    "test:desktop-visual-review-matrix": "python tests/smoke_desktop_visual_review_matrix.py",
+    "test:desktop-visual-signoff-state": "python tests/smoke_desktop_visual_signoff_state.py",
+    "test:desktop-visual-evidence-export": "python tests/smoke_desktop_visual_evidence_export.py",
+    "test:desktop-visual-evidence-review-lock": "python tests/smoke_desktop_visual_evidence_review_lock.py"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@codemirror/commands": "^6.10.0",
+    "@codemirror/lang-javascript": "^6.2.4",
+    "@codemirror/language": "^6.11.3",
+    "@codemirror/state": "^6.5.2",
+    "@codemirror/view": "^6.38.6",
+    "@lezer/highlight": "^1.2.1",
+    "codemirror": "^6.0.2"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.8"
+  }
+}

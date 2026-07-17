@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Kuroii Host Target Lock",
+  "type": "object",
+  "properties": {
+    "activeHost": {
+      "enum": [
+        "after-effects",
+        "premiere-pro",
+        null
+      ]
+    },
+    "targetHost": {
+      "enum": [
+        "after-effects",
+        "premiere-pro",
+        null
+      ]
+    },
+    "pinnedHost": {
+      "enum": [
+        "after-effects",
+        "premiere-pro",
+        null
+      ]
+    },
+    "hostLock": {
+      "type": "boolean"
+    },
+    "project": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "compOrSequence": {
+      "type": [
+        "object",
+        "string",
+        "null"
+      ]
+    },
+    "selection": {
+      "type": "array"
+    }
+  }
+}

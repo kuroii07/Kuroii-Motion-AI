@@ -1,0 +1,238 @@
+@media (max-width: 1120px) {
+  .commandComposerSection {
+    grid-template-columns: minmax(0, 1fr) 180px;
+  }
+
+  .commandShortcutGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 840px) {
+  :root {
+    --topbar-height: 52px;
+  }
+
+  .appShell,
+  .appShell.sidebarCollapsed {
+    display: block;
+  }
+
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: min(280px, calc(100vw - 48px));
+    transform: translateX(-102%);
+    transition: transform var(--motion-slow) var(--ease-standard);
+    box-shadow: 16px 0 40px var(--color-shadow);
+  }
+
+  .sidebar .navLabel,
+  .sidebar .navGroupLabel {
+    display: block;
+  }
+
+  .sidebar .navItem {
+    grid-template-columns: 24px minmax(0, 1fr);
+    justify-items: initial;
+    padding: 0 var(--space-3);
+  }
+
+  .appShell.mobileNavOpen .sidebar {
+    transform: translateX(0);
+  }
+
+  .appShell.mobileNavOpen .sidebarScrim {
+    position: fixed;
+    inset: 0;
+    z-index: 25;
+    display: block;
+    border: 0;
+    background: rgba(0, 0, 0, 0.45);
+  }
+
+  .workspace {
+    height: 100dvh;
+  }
+
+  .topbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-2);
+    padding-inline: var(--space-3);
+  }
+
+  .topbarTitle {
+    min-width: 0;
+  }
+
+  .topbarTitle h1 {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobileNavToggle {
+    display: inline-grid;
+  }
+
+  .connectionPill {
+    display: none;
+  }
+
+  .topActions .statusPill,
+  .topActions #refreshButton {
+    display: none;
+  }
+
+  .suiteHome {
+    padding: var(--space-4) var(--space-3) var(--space-6);
+  }
+
+  .commandBottomBar,
+  .sidebarCollapsed .commandBottomBar {
+    position: static;
+    padding-inline: 0;
+  }
+
+  .commandComposerSection {
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+  }
+
+  .commandMascotStatus {
+    grid-row: 1;
+    grid-template-columns: 64px minmax(0, 1fr);
+    order: -1;
+    padding-bottom: 0;
+  }
+
+  .commandMascotStatus img {
+    max-height: 72px;
+  }
+
+  .commandHeading h2 {
+    font-size: var(--text-h2);
+  }
+
+  .commandMainGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .commandWorkspaceSurface .commandMainGrid {
+    padding-inline: var(--space-3);
+  }
+
+  .commandPanel {
+    padding: var(--space-4) 0;
+  }
+
+  .commandRightStack {
+    border-left: 0;
+    border-top: 1px solid var(--color-line-subtle);
+  }
+
+  .commandWorkflowPanel {
+    padding: var(--space-4) 0;
+  }
+
+  .commandShortcutSection {
+    padding-inline: 0;
+  }
+
+  .commandShortcutGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .commandSummaryBand {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .commandSummaryGroup,
+  .commandSummaryGroup:first-child,
+  .commandSummaryGroup:last-child {
+    padding: var(--space-3);
+    border-right: 0;
+    border-bottom: 1px solid var(--color-line-subtle);
+  }
+
+  .commandSummaryGroup:nth-child(odd) {
+    border-right: 1px solid var(--color-line-subtle);
+  }
+
+  .commandSummaryGroup:nth-last-child(-n + 2) {
+    border-bottom: 0;
+  }
+
+  .commandProPanel {
+    grid-column: 1 / -1;
+    border-top: 1px solid var(--color-line-subtle);
+  }
+
+  .commandBottomBar {
+    flex-wrap: wrap;
+  }
+
+  .commandBarActions {
+    width: 100%;
+    margin-left: 0;
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 520px) {
+  .activityBand,
+  .safetyBand {
+    font-size: var(--text-small);
+  }
+
+  .commandComposer {
+    min-height: 152px;
+  }
+
+  .commandComposerFooter {
+    justify-content: space-between;
+  }
+
+  .quickCommandRow {
+    flex-wrap: wrap;
+    overflow: visible;
+    padding-bottom: 0;
+  }
+
+  .quickCommandLabel,
+  .quickCommandButton {
+    flex: 0 0 auto;
+  }
+
+  .commandShortcutButton {
+    min-height: 64px;
+  }
+
+  .commandSummaryBand {
+    grid-template-columns: 1fr;
+  }
+
+  .commandSummaryGroup,
+  .commandSummaryGroup:nth-child(odd),
+  .commandSummaryGroup:nth-last-child(-n + 2) {
+    border-right: 0;
+    border-bottom: 1px solid var(--color-line-subtle);
+  }
+
+  .commandSummaryGroup:last-child {
+    border-bottom: 0;
+  }
+
+  .commandProPanel {
+    grid-column: auto;
+  }
+
+  .commandBottomBar {
+    gap: var(--space-2);
+  }
+
+  .commandBarHint {
+    display: none;
+  }
+}

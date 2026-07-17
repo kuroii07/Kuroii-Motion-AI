@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Kuroii Result Envelope",
+  "type": "object",
+  "required": [
+    "commandId",
+    "ok",
+    "code",
+    "message",
+    "data",
+    "warnings",
+    "durationMs",
+    "snapshotId"
+  ],
+  "properties": {
+    "commandId": {
+      "type": "string"
+    },
+    "ok": {
+      "type": "boolean"
+    },
+    "code": {
+      "type": "string"
+    },
+    "message": {
+      "type": "string"
+    },
+    "data": {},
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "durationMs": {
+      "type": "integer"
+    },
+    "snapshotId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  }
+}

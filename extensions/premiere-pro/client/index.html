@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kuroii Motion AI for Premiere Pro</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body data-theme="dark" data-sidebar="compact">
+  <main id="app" aria-label="Kuroii Motion AI for Premiere Pro">
+    <section class="shell" data-host="premiere-pro" data-visual-preview-panel>
+      <header class="topbar">
+        <div>
+          <div class="eyebrow" data-i18n="app.surface">PR Compact</div>
+          <h1 data-i18n="app.title">Kuroii Motion AI</h1>
+        </div>
+        <div class="topActions">
+          <button class="iconButton" id="refreshButton" type="button" aria-label="Refresh" data-tooltip="Refresh">R</button>
+          <button class="iconButton" id="languageButton" type="button" aria-label="Language" data-tooltip="Language">中</button>
+        </div>
+      </header>
+      <section class="statusStrip" id="statusStrip" aria-live="polite">
+        <span class="statusDot muted"></span>
+        <span data-i18n="status.preview">视觉预览模式</span>
+      </section>
+      <nav class="modeRail" id="modeRail" aria-label="PR feature areas"></nav>
+      <section class="content" id="content" tabindex="-1"></section>
+      <footer class="status" id="footerStatus" data-i18n="status.readOnly">只读预览，不会修改 PR 工程</footer>
+    </section>
+  </main>
+  <script type="module" src="./main.js"></script>
+</body>
+</html>

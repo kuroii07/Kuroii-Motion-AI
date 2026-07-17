@@ -1,0 +1,10 @@
+{
+  "name": "@kuroii/local-service",
+  "version": "0.3.4-alpha.0",
+  "private": true,
+  "type": "module",
+  "main": "src/server.py",
+  "scripts": {
+    "dev": "python src/server.py --port 17631"
+  }
+}

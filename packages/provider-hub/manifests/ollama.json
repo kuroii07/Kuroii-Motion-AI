@@ -1,0 +1,29 @@
+{
+  "categories": [
+    "Text",
+    "Vision"
+  ],
+  "auth": "apiKey",
+  "modelDiscovery": {
+    "mode": "adapter",
+    "refreshButton": true
+  },
+  "documentation": {
+    "guide": "Kuroii provider guide",
+    "officialDocs": "provider docs",
+    "apiKeyPage": "provider console"
+  },
+  "compatibility": {
+    "multimodalReady": true
+  },
+  "knownIssues": [],
+  "providerId": "ollama",
+  "displayName": "Ollama",
+  "protocol": "local-openai-compatible",
+  "endpoint": "http://localhost:11434/v1",
+  "capabilities": [
+    "chat.completions",
+    "embeddings.optional",
+    "vision.optional"
+  ]
+}

@@ -1,0 +1,357 @@
+{
+    "nav":  {
+                "home":  "首页",
+                "copilot":  "Copilot",
+                "projects":  "项目",
+                "jobs":  "任务",
+                "workflows":  "工作流",
+                "assets":  "素材",
+                "hostCenter":  "宿主中心",
+                "commandCenter":  "命令中心",
+                "providerHub":  "模型平台",
+                "development":  "开发",
+                "system":  "系统"
+            },
+    "status":  {
+                   "offline":  "等待连接 Local Service"
+               },
+    "commandCenter":  {
+                          "title":  "命令中心",
+                          "subtitle":  "查看宿主上下文，触发只读可信动作，并追踪执行结果。",
+                          "sections":  {
+                                           "hostContext":  "宿主上下文",
+                                           "trustedActions":  "只读可信动作",
+                                           "resultHistory":  "结果历史",
+                                           "hostReadiness":  "宿主预检",
+                                           "rehearsalResult":  "彩排结果",
+                                           "hostSmokeRunbook":  "宿主 Smoke Runbook",
+                                           "hostSmokeEvidencePack":  "宿主 Smoke 证据包",
+                                           "hostSmokeReviewChecklist":  "宿主 Smoke 复核清单",
+                                           "hostSmokeSessionDraft":  "宿主 Smoke Session 草案",
+                                           "visualPreview":  "三端视觉预览",
+                                           "visualReview":  "视觉评审矩阵",
+                                           "visualSignoff":  "视觉签核",
+                                           "visualEvidence":  "视觉证据导出",
+                                           "visualEvidenceReviewLock":  "视觉证据复核锁定"
+                                       },
+                          "empty":  {
+                                        "title":  "等待宿主连接",
+                                        "message":  "启动 Local Service，并打开 AE 或 PR 扩展后即可查看上下文。"
+                                    },
+                          "detail":  {
+                                         "emptyTitle":  "未选择命令",
+                                         "emptyMessage":  "从结果历史中选择一条命令查看详情。"
+                                     },
+                          "activity":  {
+                                           "ready":  "服务已连接",
+                                           "mockReady":  "本地 Mock 就绪",
+                                           "refreshing":  "正在刷新上下文",
+                                           "executing":  "正在执行只读动作",
+                                           "loadingDetail":  "正在读取命令详情",
+                                           "error":  "需要处理连接问题"
+                                       },
+                          "recovery":  {
+                                           "retryRefresh":  "重试刷新",
+                                           "clearError":  "清除错误",
+                                           "useMockMode":  "切换 Mock 模式",
+                                           "resetFilters":  "重置过滤",
+                                           "viewLatestError":  "查看最近错误"
+                                       },
+                          "readiness":  {
+                                            "summary":  {
+                                                            "ready":  "已满足真实宿主测试预检。",
+                                                            "warning":  "预检有提醒项，建议先处理。",
+                                                            "blocked":  "真实宿主测试仍被预检阻止。"
+                                                        },
+                                            "localService":  {
+                                                                 "ready":  "Local Service 已连接。",
+                                                                 "blocked":  "需要先连接 Local Service。"
+                                                             },
+                                            "hostTarget":  {
+                                                               "ready":  "当前宿主目标可用。",
+                                                               "blocked":  "需要选择一个在线宿主目标。"
+                                                           },
+                                            "hostHeartbeat":  {
+                                                                  "ready":  "宿主心跳在允许窗口内。",
+                                                                  "blocked":  "宿主心跳缺失或过期。"
+                                                              },
+                                            "trustedActions":  {
+                                                                   "ready":  "只读可信动作已可用。",
+                                                                   "blocked":  "需要至少一个风险 0 的只读动作。"
+                                                               },
+                                            "commandHistory":  {
+                                                                   "ready":  "命令历史可读取。",
+                                                                   "warning":  "命令历史为空，建议先执行一次只读动作。",
+                                                                   "blocked":  "需要 Local Service 命令历史端点。"
+                                                               },
+                                            "diagnosticRecovery":  {
+                                                                       "ready":  "诊断阻断项已有恢复动作。",
+                                                                       "blocked":  "诊断阻断项缺少恢复动作。"
+                                                                   },
+                                            "viewRelatedArea":  "查看对应区域"
+                                        },
+                          "filters":  {
+                                          "host":  "宿主",
+                                          "action":  "动作",
+                                          "status":  "状态",
+                                          "query":  "搜索",
+                                          "limit":  "数量",
+                                          "all":  "全部",
+                                          "selected":  "当前宿主",
+                                          "success":  "成功",
+                                          "failed":  "失败"
+                                      },
+                          "safety":  {
+                                         "mutationDisabled":  "当前切片只允许风险 0 的只读动作；修改工程的动作需要后续确认与 Dry Run。"
+                                     },
+                          "rehearsal":  {
+                                            "status":  {
+                                                           "ready":  "彩排通过，可以进入手动宿主 smoke 准备。",
+                                                           "blocked":  "彩排被阻止，请先处理下方检查项。"
+                                                       },
+                                            "canProceed":  "可进入手动宿主 smoke",
+                                            "cannotProceed":  "暂不可进入手动宿主 smoke",
+                                            "checks":  "检查项",
+                                            "history":  "模拟结果历史",
+                                            "pass":  "通过",
+                                            "blocked":  "阻止",
+                                            "allowed":  "允许动作",
+                                            "forbidden":  "禁用动作",
+                                            "simulated":  "模拟记录",
+                                            "failureReason":  "失败原因",
+                                            "noFailure":  "未触发失败中断",
+                                            "readOnlyRecord":  "只读记录，未修改宿主工程",
+                                            "noHistory":  "暂无模拟结果历史。",
+                                            "toggle":  "折叠彩排结果",
+                                            "check":  {
+                                                          "checklist-loaded":  "交接清单已加载",
+                                                          "target-lock-valid":  "宿主目标锁定有效",
+                                                          "selected-host-connected":  "当前宿主已连接",
+                                                          "required-readiness-ready":  "必需预检已就绪",
+                                                          "allowed-actions-present":  "存在允许的只读动作",
+                                                          "forbidden-actions-absent":  "无禁用动作混入",
+                                                          "result-history-captures-read-only-records":  "结果历史捕获只读记录",
+                                                          "failure-interrupts-run":  "失败会中断运行"
+                                                      }
+                                        },
+                          "runbook":  {
+                                          "copy":  "复制",
+                                          "exportMarkdown":  "导出 MD",
+                                          "exportJson":  "导出 JSON",
+                                          "status":  {
+                                                         "ready":  "Runbook 已就绪，可按人工步骤继续。",
+                                                         "blocked":  "Runbook 已生成，但仍存在阻断项。"
+                                                     },
+                                          "canProceed":  "可继续",
+                                          "cannotProceed":  "暂不可继续",
+                                          "copyOk":  "Runbook 已复制",
+                                          "copyFailed":  "复制不可用，请手动选择文本",
+                                          "feedback":  {
+                                                           "generated":  "Runbook 已在本地生成。",
+                                                           "copySuccess":  "Markdown 已复制到剪贴板。",
+                                                           "copyFailed":  "复制失败，请手动选择预览文本。",
+                                                           "exportMarkdownSuccess":  "Markdown 草案已开始本地导出。",
+                                                           "exportJsonSuccess":  "JSON 草案已开始本地导出。",
+                                                           "exportFailed":  "导出失败，请复制预览文本作为备用。",
+                                                           "lastAction":  "最近动作",
+                                                           "persisted":  "已保存轻量状态"
+                                                       }
+                                        },
+                          "evidencePack":  {
+                                               "copy":  "复制",
+                                               "exportMarkdown":  "导出 MD",
+                                               "exportJson":  "导出 JSON",
+                                               "status":  {
+                                                              "ready":  "证据包草案已就绪，可供人工复核。",
+                                                              "blocked":  "证据包草案已生成，但仍有阻断项。"
+                                                          },
+                                               "canProceed":  "可进入人工复核",
+                                               "cannotProceed":  "暂不可进入人工复核",
+                                               "notesLabel":  "人工检查备注",
+                                               "notesPlaceholder":  "记录人工检查结论、项目副本状态或需要复查的阻断项。不要填写 API Key、Token 或私人项目内容。",
+                                               "notesSaved":  "备注已保存本地草案",
+                                               "copyOk":  "证据包 Markdown 已复制",
+                                               "copyFailed":  "复制失败，请手动选择预览文本",
+                                               "exportMarkdownSuccess":  "证据包 Markdown 草案已开始本地导出。",
+                                               "exportJsonSuccess":  "证据包 JSON 草案已开始本地导出。",
+                                               "exportFailed":  "证据包导出失败，请复制预览文本作为备用。"
+                                        },
+                          "reviewChecklist":  {
+                                                  "reset":  "重置",
+                                                  "status":  {
+                                                                 "ready":  "复核清单已完成，可进入人工宿主 smoke 前最后确认。",
+                                                                 "needsReview":  "复核条件已满足，请逐项人工确认。",
+                                                                 "blocked":  "复核清单仍被阻断，请先处理条件项。"
+                                                             },
+                                                  "ready":  "已确认",
+                                                  "needsReview":  "待确认",
+                                                  "blocked":  "阻断",
+                                                  "summary":  "复核进度",
+                                                  "item":  {
+                                                               "evidencePackGenerated":  "证据包已生成并可追溯",
+                                                               "projectCopyConfirmed":  "已确认使用可丢弃或已备份项目副本",
+                                                               "targetLockReviewed":  "已复核 target lock 与当前宿主一致",
+                                                               "readinessBlockersReviewed":  "已复核 readiness 无阻断项",
+                                                               "runbookExportReviewed":  "已复核 Runbook 导出反馈状态",
+                                                               "allowedActionsReviewed":  "已复核只读动作白名单",
+                                                               "manualNotesReviewed":  "已复核人工检查备注",
+                                                               "sensitiveDataReviewed":  "已确认备注不含 API Key、Token 或私人项目内容",
+                                                               "manualLaunchOnlyConfirmed":  "已确认 AE/PR 只由用户手动打开"
+                                                           }
+                                        },
+                          "sessionDraft":  {
+                                               "save":  "生成",
+                                               "copy":  "复制",
+                                               "exportMarkdown":  "导出 MD",
+                                               "exportJson":  "导出 JSON",
+                                               "reset":  "重置",
+                                               "status":  {
+                                                              "ready":  "Session 草案已就绪，可等待用户手动打开宿主。",
+                                                              "blocked":  "Session 草案仍被复核条件阻断。"
+                                                          },
+                                               "canStart":  "可开始记录",
+                                               "cannotStart":  "暂不可开始",
+                                               "saved":  "Session 草案已保存本地",
+                                               "copyOk":  "Session 草案 Markdown 已复制",
+                                               "copyFailed":  "复制失败，请手动选择预览文本",
+                                               "exportMarkdownSuccess":  "Session 草案 Markdown 已开始本地导出。",
+                                               "exportJsonSuccess":  "Session 草案 JSON 已开始本地导出。",
+                                               "exportFailed":  "Session 草案导出失败，请复制预览文本作为备用。",
+                                               "startConditions":  "开始条件",
+                                               "allowedActions":  "允许动作",
+                                               "stopConditions":  "停止条件",
+                                               "placeholders":  "结果占位"
+                                           },
+                          "visualPreview":  {
+                                                "overviewToggle":  "功能总览",
+                                                "overviewClose":  "收起总览",
+                                                "summary":  "视觉预览层已就绪：Desktop 完整工作区，AE/PR 紧凑扩展面板；仅用于评审，不启动宿主。",
+                                                "profile":  "界面规格",
+                                                "density":  "密度",
+                                                "brandLevel":  "品牌层级",
+                                                "widthChecks":  "宽度检查",
+                                                "actions":  "只读动作",
+                                                "previewOnly":  "仅视觉预览",
+                                                "surface":  {
+                                                                "desktop":  "Desktop 中控",
+                                                                "afterEffects":  "After Effects 面板",
+                                                                "premierePro":  "Premiere Pro 面板"
+                                                            },
+                                                "notes":  {
+                                                              "desktop":  "保留完整侧栏、顶部状态和命令中心层级，专业区以 L0/L1 为主。",
+                                                              "afterEffects":  "240/320/420px 紧凑宽度可用，强调合成上下文和只读动作。",
+                                                              "premierePro":  "保持剪辑工作区密度，强调序列上下文、状态灯和只读记录。"
+                                                          },
+                                                "drawerTitle":  "功能区总览",
+                                                "drawerDesktop":  "Desktop：命令中心、宿主预检、Runbook、证据包与 Session 草案。",
+                                                "drawerAe":  "AE：项目 / 合成 / 选中图层上下文，只读动作和本地心跳状态。",
+                                                "drawerPr":  "PR：项目 / 序列上下文，只读动作、字幕 / Marker 后续入口和事件日志。",
+                                                "drawerSafety":  "安全：本阶段不自动启动 AE/PR，不执行真实宿主动作，不修改工程。"
+                                           },
+                          "visualReview":  {
+                                               "summary":  "截图评审矩阵已建立：先完成人工视觉签核，再进入真实宿主 smoke。",
+                                               "pending":  "待评审",
+                                               "fileName":  "截图文件",
+                                               "scorecard":  "评分卡",
+                                               "blockers":  "阻断项",
+                                               "minimumScore":  "最低分",
+                                               "notes":  {
+                                                             "desktopExpanded":  "检查完整侧栏、顶部状态、命令区层级和专业区品牌克制。",
+                                                             "desktopCollapsed":  "检查收起侧栏识别、英文短文案和 Tooltip。",
+                                                             "lightTheme":  "检查浅色主题下 Dropdown、Tooltip、Panel 对比度。",
+                                                             "englishDensity":  "检查英文长文本不溢出、不撑破按钮和卡片。",
+                                                             "aeNarrow":  "AE 240px 窄面板不得横向溢出。",
+                                                             "aeEnglish":  "AE 英文紧凑面板按钮和日志可读。",
+                                                             "aeLight":  "AE 浅色紧凑面板状态灯和边界可读。",
+                                                             "prNarrow":  "PR 240px 窄面板保持剪辑工作区密度。",
+                                                             "prEnglish":  "PR 英文紧凑面板序列上下文不溢出。",
+                                                             "prLight":  "PR 浅色紧凑面板状态、日志和只读徽标可读。"
+                                                         },
+                                               "blocker":  {
+                                                               "unreadable-text":  "文字不可读",
+                                                               "horizontal-overflow":  "窄屏横向溢出",
+                                                               "missing-tooltip":  "图标缺少 Tooltip",
+                                                               "placeholder-question-marks":  "出现问号占位或乱码",
+                                                               "auto-host-launch":  "出现自动启动宿主入口",
+                                                               "host-mutation-control":  "出现真实工程修改控件"
+                                                           }
+                                           },
+                          "visualSignoff":  {
+                                                "summary":  "视觉签核状态会保存在本地：所有截图通过且无未解决问题后，才能进入下一道人工门禁。",
+                                                "ready":  "视觉签核已完成",
+                                                "needsReview":  "仍需评审",
+                                                "blocked":  "存在阻断",
+                                                "pending":  "待评审",
+                                                "accepted":  "通过",
+                                                "needsRecheck":  "需复查",
+                                                "markAccepted":  "标记通过",
+                                                "markBlocked":  "标记阻断",
+                                                "markRecheck":  "标记复查",
+                                                "findings":  "问题回收",
+                                                "findingItem":  "截图项",
+                                                "findingType":  "问题类型",
+                                                "findingSeverity":  "级别",
+                                                "findingNote":  "备注",
+                                                "findingPlaceholder":  "记录问题位置、表现和复查要求。",
+                                                "addFinding":  "新增问题",
+                                                "resolveFinding":  "已解决",
+                                                "noFindings":  "暂无未解决问题。",
+                                                "reset":  "重置签核",
+                                                "saved":  "本地签核状态已保存",
+                                                "openFindings":  "未解决问题",
+                                                "type":  {
+                                                             "unreadable-text":  "文字不可读",
+                                                             "horizontal-overflow":  "横向溢出",
+                                                             "missing-tooltip":  "缺少 Tooltip",
+                                                             "placeholder-question-marks":  "问号占位或乱码",
+                                                             "contrast":  "对比度",
+                                                             "layout":  "布局",
+                                                             "copy":  "文案",
+                                                             "brand-consistency":  "品牌一致性"
+                                                         }
+                                           },
+                          "visualEvidence":  {
+                                                "summary":  "视觉证据包会汇总截图矩阵、签核摘要和问题回收列表，供真实宿主 smoke 前人工复核。",
+                                                "ready":  "视觉证据已就绪",
+                                                "needsReview":  "仍需人工复核",
+                                                "copy":  "复制",
+                                                "exportMarkdown":  "导出 MD",
+                                                "exportJson":  "导出 JSON",
+                                                "copyOk":  "视觉证据 Markdown 已复制",
+                                                "copyFailed":  "复制失败，请手动选择预览文本",
+                                                "exportMarkdownSuccess":  "视觉证据 Markdown 草案已开始本地导出。",
+                                                "exportJsonSuccess":  "视觉证据 JSON 草案已开始本地导出。",
+                                                "exportFailed":  "视觉证据导出失败，请复制预览文本作为备用。"
+                                           },
+                          "visualEvidenceReviewLock":  {
+                                                "reviewer":  "复核人",
+                                                "note":  "复核备注",
+                                                "lock":  "锁定证据",
+                                                "unlock":  "解除锁定",
+                                                "locked":  "证据已锁定",
+                                                "blocked":  "存在待处理阻断项",
+                                                "pending-review":  "等待复核人确认",
+                                                "openBlockers":  "阻断项"
+                                           }
+                      },
+    "providerAdvice":  {
+                           "checkKey":  "检查 API Key",
+                           "switchModel":  "切换模型",
+                           "waitRateLimit":  "等待限流恢复",
+                           "checkBaseUrl":  "检查 Base URL",
+                           "openConsole":  "打开官方控制台",
+                           "refreshModels":  "刷新模型",
+                           "checkProxy":  "检查网络代理",
+                           "retry":  "重试",
+                           "completeConfig":  "补全配置"
+                       },
+    "provider":  {
+                     "field":  {
+                                   "apiKey":  "API Key",
+                                   "baseUrl":  "Base URL",
+                                   "organization":  "组织 ID",
+                                   "headers":  "自定义请求头",
+                                   "compatibilityMode":  "兼容模式"
+                               }
+                 }
+}

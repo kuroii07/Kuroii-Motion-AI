@@ -1,0 +1,966 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Kuroii Motion AI Desktop</title>
+    <link rel="icon" type="image/png" href="./assets/brand/kuroii-app-icon-128.png">
+    <link rel="stylesheet" href="./styles.css?v=0.5.9-alpha.0-studio8">
+    <link rel="stylesheet" href="./styles/tokens.css?v=0.5.9-alpha.0-studio2">
+    <link rel="stylesheet" href="./styles/base.css?v=0.5.9-alpha.0-studio2">
+    <link rel="stylesheet" href="./styles/components.css?v=0.5.9-alpha.0-studio2">
+    <link rel="stylesheet" href="./styles/shell.css?v=0.5.9-alpha.0-studio3">
+    <link rel="stylesheet" href="./styles/home.css?v=0.5.9-alpha.0-studio6">
+    <link rel="stylesheet" href="./styles/provider-hub.css?v=0.5.9-alpha.0-studio3">
+    <link rel="stylesheet" href="./styles/image-workspace.css?v=0.5.9-alpha.0-studio8">
+    <link rel="stylesheet" href="./styles/settings-center.css?v=0.5.9-alpha.0-studio2">
+    <link rel="stylesheet" href="./styles/responsive.css?v=0.5.9-alpha.0-studio2">
+  </head>
+  <body class="theme-dark">
+    <a class="skipLink" href="#commandWorkspace" data-i18n="commandCenter.actions.skipToWorkspace">跳到命令区域</a>
+    <div class="appShell theme-dark" id="appShell">
+      <aside class="sidebar" aria-label="Desktop navigation">
+        <div class="brandBlock">
+          <img class="brandLogo" src="./assets/brand/kuroii-app-icon-128.png" alt="" aria-hidden="true">
+          <div>
+            <div class="brandName">Kuroii Motion AI</div>
+            <div class="brandSub">AE / PR Tools</div>
+          </div>
+        </div>
+        <nav class="navList" id="navList"></nav>
+        <div class="sidebarFooter">
+          <button class="iconButton" id="themeToggle" type="button" aria-label="Theme" data-tooltip="Theme" data-theme-mode="system">
+            <svg class="buttonSvg" viewBox="0 0 24 24" aria-hidden="true" data-icon-slot="theme">
+              <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+            </svg>
+          </button>
+          <button class="iconButton" id="sidebarToggle" type="button" aria-label="Sidebar" data-tooltip="Sidebar">
+            <svg class="buttonSvg" viewBox="0 0 24 24" aria-hidden="true" data-icon-slot="sidebar">
+              <rect width="18" height="18" x="3" y="3" rx="2"></rect>
+              <path d="M9 3v18"></path>
+              <path d="m16 15-3-3 3-3"></path>
+            </svg>
+          </button>
+        </div>
+      </aside>
+      <button class="sidebarScrim" id="sidebarScrim" type="button" aria-label="Close navigation" tabindex="-1"></button>
+
+      <main class="workspace" id="commandWorkspace" tabindex="-1">
+        <header class="topbar">
+          <div class="topbarTitle">
+            <button class="iconButton mobileNavToggle" id="mobileNavToggle" type="button" aria-label="Open navigation" data-tooltip="Navigation">
+              <svg class="buttonSvg" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M5 7h14"></path>
+                <path d="M5 12h14"></path>
+                <path d="M5 17h14"></path>
+              </svg>
+            </button>
+            <div class="eyebrow" data-i18n="commandCenter.eyebrow">Command Center</div>
+            <h1 data-i18n="commandCenter.title">命令中心</h1>
+          </div>
+          <div class="connectionPill" id="serviceStatus" aria-label="Host connection status">
+            <span class="statusDot success"></span>
+            <span class="connectionStateText">连接正常</span>
+            <span class="connectionStateSub">Connected</span>
+            <span class="hostVersionTag">AE</span>
+            <span class="hostVersionText">24.2.1</span>
+            <span class="hostVersionTag pr">PR</span>
+            <span class="hostVersionText">24.2.0</span>
+          </div>
+          <div class="topActions">
+            <span class="statusPill" id="modeStatus">
+              <span class="statusDot muted"></span>
+              <span data-i18n="status.localMock">本地 Mock</span>
+            </span>
+            <button class="iconButton" id="refreshButton" type="button" aria-label="Refresh" data-tooltip="Refresh">
+              <svg class="buttonSvg" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M20 7v5h-5"></path>
+                <path d="M4 17v-5h5"></path>
+                <path d="M18.2 9A7 7 0 0 0 6.6 6.6L4 9"></path>
+                <path d="M5.8 15A7 7 0 0 0 17.4 17.4L20 15"></path>
+              </svg>
+            </button>
+            <button class="iconButton topThemeToggle" id="topThemeToggle" type="button" aria-label="Theme" data-tooltip="Theme" data-theme-mode="system">
+              <svg class="buttonSvg" viewBox="0 0 24 24" aria-hidden="true" data-icon-slot="theme">
+                <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+              </svg>
+            </button>
+            <button class="iconButton" id="languageToggle" type="button" aria-label="Language" data-tooltip="Language">中</button>
+          </div>
+        </header>
+
+        <section class="activityBand" id="activityBand" aria-live="polite" tabindex="-1">
+          <span class="statusDot muted" id="activityDot"></span>
+          <span id="activityText" data-i18n="commandCenter.activity.mockReady">本地 Mock 就绪</span>
+        </section>
+
+        <section class="recoveryPanel" id="recoveryPanel" tabindex="-1" hidden>
+          <div>
+            <strong id="recoveryTitle">LOCAL_SERVICE_UNAVAILABLE</strong>
+            <p id="recoveryMessage">Local Service is unavailable.</p>
+            <ul class="recoveryAdvice" id="recoveryAdvice"></ul>
+          </div>
+          <div class="recoveryActions">
+            <button class="textButton" id="retryRefreshButton" type="button" data-recovery-action="retry-refresh" data-i18n="commandCenter.recovery.retryRefresh">重试刷新</button>
+            <button class="textButton" id="useMockModeButton" type="button" data-recovery-action="use-mock-mode" data-i18n="commandCenter.recovery.useMockMode">切换 Mock 模式</button>
+            <button class="iconButton" id="clearErrorButton" type="button" aria-label="Clear error" data-tooltip="Clear" data-recovery-action="clear-error">×</button>
+          </div>
+        </section>
+
+        <section class="safetyBand" aria-live="polite">
+          <span class="statusDot success"></span>
+          <span data-i18n="commandCenter.safety.readOnly">只读模式：仅允许风险 0 的 Trusted Actions。</span>
+        </section>
+
+        <section class="suiteHome" aria-label="Kuroii Motion AI home">
+          <div class="commandHome">
+            <section class="commandComposerSection" aria-labelledby="motionCommandTitle">
+              <div class="commandComposerMain">
+                <div class="commandHeading">
+                  <h2 id="motionCommandTitle">Motion Command</h2>
+                  <p>自然语言驱动创作，描述你的想法，小黑将结合 AE / PR 上下文生成脚本、分镜、表达式和动效方案。</p>
+                </div>
+                <div class="commandComposer">
+                  <label class="visuallyHidden" for="motionCommandInput">告诉小黑，你想让画面怎么动</label>
+                  <textarea id="motionCommandInput" maxlength="1500" placeholder="告诉小黑，你想让画面怎么动"></textarea>
+                  <div class="commandComposerFooter">
+                    <span class="commandCharacterCount" id="motionCommandCount">0 / 1500</span>
+                    <button class="commandPrimaryButton" id="motionCommandSubmit" type="button"><span class="commandGenerateIcon" data-command-icon="play" aria-hidden="true"></span><span>生成</span></button>
+                  </div>
+                </div>
+                <div class="quickCommandRow" aria-label="Quick commands">
+                  <span class="quickCommandLabel">快捷指令</span>
+                  <button class="quickCommandButton" type="button" data-command-prompt="为当前项目生成一份 15 秒广告片结构，包含开头钩子、核心卖点和结尾 CTA。">生成广告片结构</button>
+                  <button class="quickCommandButton" type="button" data-command-prompt="根据当前剪辑节奏和情绪自动匹配 BGM 方向，并给出可搜索的风格关键词。">自动匹配 BGM</button>
+                  <button class="quickCommandButton" type="button" data-command-prompt="分析当前镜头节奏，并给出适合短视频传播的剪辑调整建议。">镜头节奏建议</button>
+                  <button class="quickCommandButton" type="button" data-command-prompt="为当前标题设计一套清晰、克制、可调参数的入场动效方案。">文字动效方案</button>
+                  <button class="quickCommandButton" type="button" data-command-prompt="分析当前画面并给出统一、专业的调色方向和执行步骤。">一键调色建议</button>
+                  <button class="quickCommandButton" type="button" data-command-prompt="识别当前选中素材的主体并生成智能抠像与边缘修复步骤。">智能抠像</button>
+                </div>
+              </div>
+              <aside class="commandMascotStatus" aria-label="Kuroii assistant status">
+                <img src="./assets/brand/kuroii-cat-screen.png" alt="Kuroii Cat">
+                <div>
+                  <strong>准备就绪</strong>
+                  <span>输入你的创意指令，小黑马上帮你实现。</span>
+                </div>
+              </aside>
+            </section>
+
+            <section class="commandWorkspaceSurface" aria-label="Command workspace overview">
+            <div class="commandMainGrid">
+              <section class="commandPanel" aria-labelledby="recentActivityTitle">
+                <header class="commandPanelHeader">
+                  <h3 id="recentActivityTitle">最近使用</h3>
+                  <small>Recent Activity</small>
+                  <button type="button" data-command-nav="history">全部记录</button>
+                </header>
+                <div class="commandActivityGrid">
+                  <button class="commandActivityRow" type="button" data-command-nav="copy"><span class="commandRowIcon" data-command-icon="message" aria-hidden="true"></span><span class="commandActivityText">生成游戏广告标题</span><time>14:32</time></button>
+                  <button class="commandActivityRow" type="button" data-command-nav="motion"><span class="commandRowIcon" data-command-icon="scan" aria-hidden="true"></span><span class="commandActivityText">优化字幕：全断点、缓动来袭</span><time>14:28</time></button>
+                  <button class="commandActivityRow" type="button" data-command-nav="translate"><span class="commandRowIcon" data-command-icon="translate" aria-hidden="true"></span><span class="commandActivityText">多语言翻译</span><time>14:15</time></button>
+                  <button class="commandActivityRow" type="button" data-command-nav="storyboard"><span class="commandRowIcon" data-command-icon="play" aria-hidden="true"></span><span class="commandActivityText">生成分镜脚本</span><time>昨天</time></button>
+                </div>
+              </section>
+
+              <div class="commandRightStack">
+                <section class="commandPanel commandWorkflowPanel" aria-labelledby="workflowTitle">
+                  <header class="commandPanelHeader">
+                    <h3 id="workflowTitle">推荐工作流</h3>
+                    <small>Workflows</small>
+                    <button type="button" data-command-nav="automate">更多工作流</button>
+                  </header>
+                  <div class="commandWorkflowList">
+                    <button class="commandWorkflowRow" type="button" data-command-nav="storyboard"><span class="commandWorkflowIcon" data-command-icon="spark" aria-hidden="true"></span><span class="commandWorkflowCopy"><strong>广告片快速制作流程</strong><small>脚本 · 生成 · 分镜 · 动效 · 导出</small></span><span class="commandRowChevron" aria-hidden="true">›</span></button>
+                    <button class="commandWorkflowRow" type="button" data-command-nav="motion"><span class="commandWorkflowIcon" data-command-icon="spark" aria-hidden="true"></span><span class="commandWorkflowCopy"><strong>产品宣传片流程</strong><small>脚本 · 设计 · 动画 · 调色</small></span><span class="commandRowChevron" aria-hidden="true">›</span></button>
+                    <button class="commandWorkflowRow" type="button" data-command-nav="automate"><span class="commandWorkflowIcon" data-command-icon="layout" aria-hidden="true"></span><span class="commandWorkflowCopy"><strong>社交媒体短视频流程</strong><small>脚本 · 模板 · 动效 · 发布</small></span><span class="commandRowChevron" aria-hidden="true">›</span></button>
+                  </div>
+                </section>
+
+                <section class="commandShortcutSection" aria-labelledby="shortcutTitle">
+                  <header class="commandPanelHeader">
+                    <h3 id="shortcutTitle">快捷工作台</h3>
+                    <small>Shortcuts</small>
+                    <button type="button">编辑</button>
+                  </header>
+                  <div class="commandShortcutGrid">
+                    <button class="commandShortcutButton" type="button" data-command-nav="create"><span class="commandShortcutIcon commandHostShortcut" aria-hidden="true"><img src="./assets/brand/adobe-aep-file-icon.png" alt=""><img src="./assets/brand/adobe-prproj-file-icon.png" alt=""></span><span>新建合成/序列</span><small>AE / PR</small></button>
+                    <button class="commandShortcutButton" type="button" data-command-nav="script"><span class="commandShortcutIcon" data-command-icon="code" aria-hidden="true"></span><span>AI 脚本生成</span><small>Script</small></button>
+                    <button class="commandShortcutButton" type="button" data-command-nav="storyboard"><span class="commandShortcutIcon" data-command-icon="layout" aria-hidden="true"></span><span>分镜脚本生成</span><small>Storyboard</small></button>
+                    <button class="commandShortcutButton" type="button" data-command-nav="translate"><span class="commandShortcutIcon" data-command-icon="message" aria-hidden="true"></span><span>智能翻译</span><small>Translate</small></button>
+                    <button class="commandShortcutButton" type="button" data-command-nav="assets"><span class="commandShortcutIcon" data-command-icon="box" aria-hidden="true"></span><span>批量重命名</span><small>Batch Rename</small></button>
+                    <button class="commandShortcutButton" type="button" data-command-nav="expression"><span class="commandShortcutIcon" data-command-icon="wave" aria-hidden="true"></span><span>表达式生成</span><small>Expression</small></button>
+                  </div>
+                </section>
+              </div>
+            </div>
+
+            <section class="commandSummaryBand" aria-label="Workspace summary">
+              <div class="commandSummaryGroup">
+                <h3>宿主环境</h3>
+                <div class="summaryHostLine"><img src="./assets/brand/adobe-aep-file-icon.png" alt="After Effects"><span><strong>Comp 01_Main</strong><small>1920 × 1080 · 29.97 fps</small></span><em>12 layers</em></div>
+                <div class="summaryHostLine"><img src="./assets/brand/adobe-prproj-file-icon.png" alt="Premiere Pro"><span><strong>Sequence 01</strong><small>1920 × 1080 · 30.00 fps</small></span><em>8 clips</em></div>
+              </div>
+              <div class="commandSummaryGroup">
+                <h3>选中内容</h3>
+                <div class="summaryLine"><strong>3 layers</strong><span class="mono">00:00:12:04</span></div>
+                <button class="summaryOpenButton" type="button" data-command-nav="command-center">打开面板</button>
+              </div>
+              <div class="commandSummaryGroup">
+                <h3>模型与服务</h3>
+                <div class="summaryLine"><span>Provider</span><strong id="homeProviderName">OpenAI</strong></div>
+                <div class="summaryLine"><span>Model</span><strong id="homeModelName">GPT-4.1</strong></div>
+                <div class="summaryLine"><span>状态</span><strong class="summaryStatus"><span id="homeProviderStatus">正常</span> · <span id="homeModelStatus">在线</span></strong></div>
+              </div>
+              <div class="commandSummaryGroup commandHealthGroup">
+                <h3>项目健康</h3>
+                <div class="commandHealthBody"><div class="commandHealthGauge"><strong>92</strong></div><div><strong class="summaryStatus">非常健康</strong><small>Excellent</small></div><ul><li>性能</li><li>文件</li><li>表达式</li><li>素材</li></ul></div>
+              </div>
+              <div class="commandSummaryGroup commandProPanel">
+                <h3>AI 能力</h3>
+                <p>解锁更多 AI 能力，提升效率。</p>
+                <button type="button"><span data-command-icon="spark" aria-hidden="true"></span><span>升级到 Pro</span></button>
+              </div>
+            </section>
+            </section>
+
+            <footer class="commandBottomBar" aria-label="Command bar">
+              <div class="commandBarTitle"><strong>命令栏</strong><small>Command Bar</small></div>
+              <div class="commandBarHint"><span class="commandBarKey">Ctrl + J</span><span>快捷指令</span></div>
+              <div class="commandBarHint"><span class="commandBarKey">Ctrl + K</span><span>搜索命令</span></div>
+              <div class="commandBarHint"><span class="commandBarKey">Ctrl + /</span><span>打开帮助</span></div>
+              <div class="commandBarActions"><button type="button">浏览全部功能 <span aria-hidden="true">›</span></button><button type="button" data-command-nav="system">打开设置 <span aria-hidden="true">›</span></button></div>
+            </footer>
+          </div>
+
+          <div class="homeLegacySurface" hidden>
+            <section class="creativeStage" aria-label="AI motion creation stage">
+              <div class="stageContent">
+                <div class="stageIntro">
+                  <span class="stageLabel">Kuroii Motion Assistant</span>
+                  <h2>告诉小黑，你想让画面怎么动</h2>
+                  <p>自然语言驱动创作：读取 AE 合成和 PR 序列上下文，把动效想法转成分镜、脚本、表达式和可执行步骤。</p>
+                </div>
+                <div class="promptComposer">
+                  <label id="motionPromptLabel">Motion Brief</label>
+                  <div class="promptSurface" id="motionPrompt" role="textbox" aria-labelledby="motionPromptLabel" tabindex="0">
+                    <span>例如：给当前标题层做一个赛博科技感入场，0.8 秒快速推进，结尾轻微回弹，并生成可调表达式。</span>
+                    <button class="sendButton" type="button" aria-label="Send motion brief" data-tooltip="Generate">
+                      <svg class="sendSvg" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M6 5l12 7-12 7V5z"></path>
+                      </svg>
+                    </button>
+                  </div>
+                  <div class="quickPromptRow" aria-label="Quick commands">
+                    <span class="quickCommandTitle">快捷指令 <small>Quick Commands</small></span>
+                    <button type="button">生成广告片结构</button>
+                    <button type="button">自动匹配 BGM</button>
+                    <button type="button">镜头节奏建议</button>
+                    <button type="button">文字动效方案</button>
+                    <button type="button">一键调色建议</button>
+                    <button type="button">智能抠像</button>
+                  </div>
+                </div>
+              </div>
+              <figure class="mascotStage" aria-label="Kuroii Cat brand preview">
+                <img class="mascotImage" src="./assets/brand/kuroii-cat-screen.png" alt="Kuroii Cat">
+              </figure>
+            </section>
+
+            <aside class="homeLegacyDock" aria-label="Host and provider state">
+              <div class="homeDockGroup hostProviderGroup">
+                <section class="dockPanel hostDock">
+                  <div class="dockTitle">
+                    <span>宿主环境</span>
+                    <small>Host Context</small>
+                  </div>
+                  <div class="hostMiniList">
+                    <div class="hostMiniItem">
+                      <img class="hostFileIcon" src="./assets/brand/adobe-aep-file-icon.png" alt="After Effects project">
+                      <div class="hostMiniText">
+                        <strong>Comp 01_Main</strong>
+                        <span>1920 x 1080 · 29.97 fps</span>
+                      </div>
+                      <span class="hostCountBadge">12 layers</span>
+                    </div>
+                    <div class="hostMiniItem">
+                      <img class="hostFileIcon" src="./assets/brand/adobe-prproj-file-icon.png" alt="Premiere Pro project">
+                      <div class="hostMiniText">
+                        <strong>Sequence 01</strong>
+                        <span>1920 x 1080 · 30.00 fps</span>
+                      </div>
+                      <span class="hostCountBadge">8 clips</span>
+                    </div>
+                    <div class="hostSelectedRow">
+                      <div>
+                        <span>选中内容&nbsp;&nbsp;Selected</span>
+                        <strong>3 layers · 00:00:12:04</strong>
+                      </div>
+                      <button type="button">打开面板</button>
+                    </div>
+                  </div>
+                </section>
+
+                <section class="dockPanel providerDock">
+                  <div class="dockTitle">
+                    <span>模型与服务</span>
+                    <small>Model & Provider</small>
+                  </div>
+                  <dl class="providerMini">
+                    <div><dt>Provider</dt><dd><span id="legacyHomeProviderName">OpenAI</span> <span class="providerStatus"><span class="liveDot"></span> <span id="legacyHomeProviderStatus">正常</span></span></dd></div>
+                    <div><dt>Model</dt><dd><span id="legacyHomeModelName">GPT-4.1</span> <span class="providerStatus"><span class="liveDot"></span> <span id="legacyHomeModelStatus">在线</span></span></dd></div>
+                    <div><dt>服务状态</dt><dd><button class="providerDetailButton" type="button">查看详情</button></dd></div>
+                  </dl>
+                </section>
+              </div>
+
+              <div class="homeDockGroup healthProGroup">
+                <section class="dockPanel healthDock">
+                  <div class="dockTitle">
+                    <span>项目健康</span>
+                    <small>Project Health</small>
+                  </div>
+                  <div class="healthBody">
+                    <div class="healthScore" aria-label="Project health score">92</div>
+                    <div class="healthSummary">
+                      <strong>非常健康</strong>
+                      <span>Excellent</span>
+                    </div>
+                    <ul class="healthChecks" aria-label="Health checks">
+                      <li><span class="statusDot success"></span>性能</li>
+                      <li><span class="statusDot success"></span>文件</li>
+                      <li><span class="statusDot success"></span>表达式</li>
+                      <li><span class="statusDot success"></span>素材</li>
+                      <li><span class="statusDot success"></span>插件</li>
+                    </ul>
+                  </div>
+                </section>
+
+                <section class="dockPanel proDock">
+                  <div class="proDockIcon" aria-hidden="true">
+                    <svg class="utilitySvg" viewBox="0 0 24 24">
+                      <path d="M12 3l7 4v5c0 4-2.8 7.2-7 9-4.2-1.8-7-5-7-9V7l7-4z"></path>
+                      <path d="M9 12l2 2 4-5"></path>
+                    </svg>
+                  </div>
+                  <div class="proDockText">
+                    <strong>解锁更多 AI 能力</strong>
+                    <span>升级至 Pro，体验批量生成、云渲染和团队协作。</span>
+                  </div>
+                  <button type="button">升级到 Pro</button>
+                </section>
+              </div>
+
+              <section class="dockPanel homeLegacySystemDock">
+                <div class="dockTitle">
+                  <span>System Layer</span>
+                  <small>系统层</small>
+                </div>
+                <div class="systemLayerList">
+                  <button type="button">
+                    <span class="utilityIcon">
+                      <svg class="utilitySvg" viewBox="0 0 24 24" aria-hidden="true">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19 12a7.3 7.3 0 0 0-.1-1l2-1.5-2-3.4-2.4 1a7 7 0 0 0-1.8-1L14.4 3h-4.8l-.4 3a7 7 0 0 0-1.8 1l-2.4-1-2 3.4 2 1.5a7.3 7.3 0 0 0 0 2L3 14.5l2 3.4 2.4-1a7 7 0 0 0 1.8 1l.4 3h4.8l.4-3a7 7 0 0 0 1.8-1l2.4 1 2-3.4-2-1.5c.1-.3.1-.7.1-1z"></path>
+                      </svg>
+                    </span>
+                    <span>Settings <small>设置</small></span>
+                  </button>
+                  <button type="button">
+                    <span class="utilityIcon">
+                      <svg class="utilitySvg" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M5 7h14v10H5z"></path>
+                        <path d="M8 7V5h8v2M9 12h6"></path>
+                      </svg>
+                    </span>
+                    <span>Providers <small>模型服务</small></span>
+                  </button>
+                  <button type="button">
+                    <span class="utilityIcon">
+                      <svg class="utilitySvg" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M6 7h12M6 12h12M6 17h12"></path>
+                        <circle cx="9" cy="7" r="1.5"></circle>
+                        <circle cx="15" cy="12" r="1.5"></circle>
+                        <circle cx="11" cy="17" r="1.5"></circle>
+                      </svg>
+                    </span>
+                    <span>Preferences <small>偏好设置</small></span>
+                  </button>
+                </div>
+              </section>
+            </aside>
+          </div>
+
+          <section class="homeLegacyUtility" aria-label="Kuroii quick workflow panels" hidden>
+            <section class="utilityPanel recentUsePanel" aria-label="Recent activity">
+              <div class="utilityTitle">
+                <span>最近使用</span>
+                <small>Recent Activity</small>
+                <button class="panelLink" type="button">全部记录</button>
+              </div>
+              <div class="recentUseList">
+                <button class="recentUseRow" type="button">
+                  <span class="utilityIcon">
+                    <svg class="utilitySvg" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M6 7h12a3 3 0 0 1 3 3v4a3 3 0 0 1-3 3H9l-4 3v-3a3 3 0 0 1-3-3v-4a3 3 0 0 1 4-3z"></path>
+                      <path d="M8 11h8M8 14h5"></path>
+                    </svg>
+                  </span>
+                  <span>生成游戏广告标题</span>
+                  <time>14:32</time>
+                </button>
+                <button class="recentUseRow" type="button">
+                  <span class="utilityIcon">
+                    <svg class="utilitySvg" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M4 8h16M7 5v14M17 5v14M4 16h16"></path>
+                      <path d="M10 11h4"></path>
+                    </svg>
+                  </span>
+                  <span>优化字幕：全断点、缓动来袭</span>
+                  <time>14:28</time>
+                </button>
+                <button class="recentUseRow" type="button">
+                  <span class="utilityIcon">
+                    <svg class="utilitySvg" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M4 5h16v6H4zM4 15h7v4H4zM15 15h5v4h-5z"></path>
+                    </svg>
+                  </span>
+                  <span>多语言翻译</span>
+                  <time>14:15</time>
+                </button>
+                <button class="recentUseRow" type="button">
+                  <span class="utilityIcon">
+                    <svg class="utilitySvg" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M5 19V5l14 7-14 7z"></path>
+                      <path d="M8 8.5v7"></path>
+                    </svg>
+                  </span>
+                  <span>生成分镜脚本</span>
+                  <time>昨天</time>
+                </button>
+              </div>
+            </section>
+
+            <section class="utilityPanel quickStartPanel" aria-label="Quick start">
+              <div class="utilityTitle">
+                <span>快速开始</span>
+                <small>Quick Start</small>
+              </div>
+              <div class="quickStartGrid">
+                <button class="quickStartTile" type="button">
+                  <span class="utilityIcon">
+                    <svg class="utilitySvg" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M12 5v14M5 12h14"></path>
+                      <path d="M7 7h10v10H7z"></path>
+                    </svg>
+                  </span>
+                  <span>新建合成/序列</span>
+                  <small>New Comp / Sequence</small>
+                </button>
+                <button class="quickStartTile" type="button">
+                  <span class="utilityIcon">
+                    <svg class="utilitySvg" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M9 7l-5 5 5 5M15 7l5 5-5 5"></path>
+                      <path d="M13 5l-2 14"></path>
+                    </svg>
+                  </span>
+                  <span>AI 脚本生成</span>
+                  <small>Generate Script</small>
+                </button>
+                <button class="quickStartTile" type="button">
+                  <span class="utilityIcon">
+                    <svg class="utilitySvg" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M5 5h5v5H5zM14 5h5v5h-5zM5 14h5v5H5zM14 14h5v5h-5z"></path>
+                    </svg>
+                  </span>
+                  <span>分镜脚本生成</span>
+                  <small>Storyboard</small>
+                </button>
+                <button class="quickStartTile" type="button">
+                  <span class="utilityIcon">
+                    <svg class="utilitySvg" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M4 6h9M8 4v2c0 5-2 8-4 10"></path>
+                      <path d="M6 10c1 2 3 4 6 6M15 20l4-10 4 10M17 16h4"></path>
+                    </svg>
+                  </span>
+                  <span>智能翻译</span>
+                  <small>Translate</small>
+                </button>
+                <button class="quickStartTile" type="button">
+                  <span class="utilityIcon">
+                    <svg class="utilitySvg" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M5 18l5-12 5 12M7 14h6"></path>
+                      <path d="M17 7h3M18.5 7v10M16 17h5"></path>
+                    </svg>
+                  </span>
+                  <span>批量重命名</span>
+                  <small>Batch Rename</small>
+                </button>
+                <button class="quickStartTile" type="button">
+                  <span class="utilityIcon">
+                    <svg class="utilitySvg" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M4 17c4 0 4-10 8-10s4 10 8 10"></path>
+                      <path d="M15 9l5 8M20 9l-5 8"></path>
+                    </svg>
+                  </span>
+                  <span>表达式生成</span>
+                  <small>Expression</small>
+                </button>
+              </div>
+            </section>
+
+            <section class="utilityPanel workflowPanel" aria-label="Recommended workflows">
+              <div class="utilityTitle">
+                <span>推荐工作流</span>
+                <small>Workflows</small>
+                <button class="panelLink" type="button">更多工作流</button>
+              </div>
+              <div class="workflowList">
+                <button class="workflowRow" type="button">
+                  <span class="utilityIcon workflowIcon">
+                    <svg class="utilitySvg" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3z"></path>
+                    </svg>
+                  </span>
+                  <span>
+                    <strong>广告片快速制作流程</strong>
+                    <small>脚本 · 生成 · 分镜 · 动效 · 导出</small>
+                  </span>
+                </button>
+                <button class="workflowRow" type="button">
+                  <span class="utilityIcon workflowIcon">
+                    <svg class="utilitySvg" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M12 4l2.4 5.1 5.6.8-4 3.9.9 5.5L12 16.7 7.1 19.3l.9-5.5-4-3.9 5.6-.8L12 4z"></path>
+                    </svg>
+                  </span>
+                  <span>
+                    <strong>产品宣传片流程</strong>
+                    <small>脚本 · 设计 · 动画 · 调色</small>
+                  </span>
+                </button>
+                <button class="workflowRow" type="button">
+                  <span class="utilityIcon workflowIcon">
+                    <svg class="utilitySvg" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M6 6h9l3 3v9H6z"></path>
+                      <path d="M10 10l5 3-5 3v-6z"></path>
+                    </svg>
+                  </span>
+                  <span>
+                    <strong>社交媒体短视频流程</strong>
+                    <small>脚本 · 模板 · 动效 · 发布</small>
+                  </span>
+                </button>
+              </div>
+              <button class="browseWorkflowButton" type="button">浏览全部工作流</button>
+            </section>
+          </section>
+
+          <section class="homeLegacyLayers" aria-label="Kuroii capability layers" hidden>
+            <section class="layerColumn aiLayer">
+              <h3>AI Layer <span>智能层</span></h3>
+              <button type="button"><span class="utilityIcon"><svg class="utilitySvg" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6.5h14v9H9l-4 4v-13z"></path><path d="M8.5 10h7"></path><path d="M8.5 13h4"></path></svg></span><strong>Assistant</strong><small>智能对话</small></button>
+              <button type="button"><span class="utilityIcon"><svg class="utilitySvg" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V5h3"></path><path d="M17 5h3v3"></path><path d="M20 16v3h-3"></path><path d="M7 19H4v-3"></path><path d="M8 12h8"></path><path d="M12 8v8"></path></svg></span><strong>Analyze</strong><small>智能分析</small></button>
+              <button type="button"><span class="utilityIcon"><svg class="utilitySvg" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h9"></path><path d="M8.5 3v2"></path><path d="M5.5 9c1.2 2.7 3.4 4.8 6.5 6"></path><path d="M12 9c-.8 2.2-2.7 4.5-6 6"></path><path d="M14 21l4-10 4 10"></path><path d="M15.5 17h5"></path></svg></span><strong>Translate</strong><small>智能翻译</small></button>
+            </section>
+            <section class="layerColumn createLayer">
+              <h3>Create Layer <span>创作层</span></h3>
+              <button type="button"><span class="utilityIcon"><svg class="utilitySvg" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16"></path><path d="M8 6v14"></path><path d="M16 6v14"></path><path d="M6.5 20h3"></path><path d="M14.5 20h3"></path></svg></span><strong>Copy</strong><small>文案创作</small></button>
+              <button type="button"><span class="utilityIcon"><svg class="utilitySvg" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8 4 12l4 4"></path><path d="m16 8 4 4-4 4"></path><path d="m13 5-2 14"></path></svg></span><strong>Script</strong><small>脚本工具</small></button>
+              <button type="button"><span class="utilityIcon"><svg class="utilitySvg" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8.5 12 4l8 4.5v7L12 20l-8-4.5v-7z"></path><path d="m4.5 9 7.5 4 7.5-4"></path><path d="M12 13v7"></path></svg></span><strong>Assets</strong><small>素材管理</small></button>
+            </section>
+            <section class="layerColumn motionLayer">
+              <h3>Motion Layer <span>动效层</span></h3>
+              <button type="button"><span class="utilityIcon"><svg class="utilitySvg" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12c2.5-6 5.5 6 8 0s5.5 6 10 0"></path></svg></span><strong>Motion</strong><small>动效设计</small></button>
+              <button type="button"><span class="utilityIcon"><svg class="utilitySvg" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 20c2-6 2-10 4-16"></path><path d="M5 9h9"></path><path d="M14 14l5 5"></path><path d="M19 14l-5 5"></path></svg></span><strong>Expression</strong><small>表达式</small></button>
+              <button type="button"><span class="utilityIcon"><svg class="utilitySvg" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5.5A3 3 0 0 1 8 3h11v16H8a3 3 0 0 0-3 3V5.5z"></path><path d="M5 19a3 3 0 0 1 3-3h11"></path></svg></span><strong>Library</strong><small>资源库</small></button>
+            </section>
+            <section class="layerColumn workflowLayer">
+              <h3>Workflow Layer <span>工作流层</span></h3>
+              <button type="button"><span class="utilityIcon"><svg class="utilitySvg" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5"></path><path d="M4 17v-5h5"></path><path d="M18.2 9A7 7 0 0 0 6.6 6.6L4 9"></path><path d="M5.8 15A7 7 0 0 0 17.4 17.4L20 15"></path></svg></span><strong>Automate</strong><small>自动化流程</small></button>
+              <button type="button"><span class="utilityIcon"><svg class="utilitySvg" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2"></rect><path d="M4 10h16"></path><path d="M10 10v9"></path></svg></span><strong>Storyboard</strong><small>分镜脚本</small></button>
+              <button type="button"><span class="utilityIcon"><svg class="utilitySvg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M12 7.5V12l3 2"></path></svg></span><strong>History</strong><small>历史记录</small></button>
+            </section>
+          </section>
+        </section>
+
+        <section class="featureWorkspace" id="featureWorkspace" aria-live="polite" tabindex="-1"></section>
+
+        <section class="professionalWorkbench" id="professionalWorkbench" aria-label="Professional Mode workbench">
+          <header class="professionalModeBar">
+            <div class="professionalModeTabs" role="tablist" aria-label="Professional tools">
+              <button class="active" type="button" role="tab" aria-selected="true" data-professional-mode="actions">可信动作</button>
+              <button type="button" role="tab" aria-selected="false" data-professional-mode="workflows">工作流</button>
+              <button type="button" role="tab" aria-selected="false" data-professional-mode="script">脚本</button>
+              <button type="button" role="tab" aria-selected="false" data-professional-mode="expression">表达式</button>
+            </div>
+            <div class="professionalModeActions">
+              <span class="professionalSafetyState"><span class="statusDot success"></span><span id="professionalSafetyLabel">只读 · Risk 0</span></span>
+              <button class="textButton professionalResourceToggle" id="professionalResourceToggle" type="button" aria-pressed="false">资源</button>
+              <button class="textButton" id="professionalInspectorToggle" type="button" aria-pressed="false">上下文</button>
+              <button class="textButton" id="professionalDiagnosticsToggle" type="button" aria-expanded="false">诊断与安全</button>
+            </div>
+          </header>
+
+          <div class="professionalHostBar" id="professionalHostBar"></div>
+
+          <div class="professionalWorkbenchBody">
+            <aside class="professionalResourcePane" id="professionalResourcePane" aria-label="Professional resources">
+              <header>
+                <div>
+                  <strong id="professionalResourceTitle">可信动作</strong>
+                  <span id="professionalResourceMeta">0 items</span>
+                </div>
+                <button class="iconButton" id="professionalResourceAdd" type="button" aria-label="Add resource" data-tooltip="Add">+</button>
+              </header>
+              <label class="professionalResourceSearch">
+                <span class="visuallyHidden">搜索资源</span>
+                <input id="professionalResourceQuery" type="search" placeholder="搜索" autocomplete="off">
+              </label>
+              <div class="professionalResourceList" id="professionalResourceList"></div>
+            </aside>
+
+            <main class="professionalStage" id="professionalStage" tabindex="-1"></main>
+
+            <aside class="professionalInspector" id="professionalInspector" aria-label="Context and parameters">
+              <header>
+                <strong id="professionalInspectorTitle">上下文与参数</strong>
+                <span id="professionalInspectorMeta">after-effects</span>
+              </header>
+              <div id="professionalInspectorBody"></div>
+            </aside>
+          </div>
+
+          <section class="professionalConsole" id="professionalConsole" aria-label="Execution console">
+            <header>
+              <div class="professionalConsoleTabs" role="tablist" aria-label="Console views">
+                <button class="active" type="button" role="tab" aria-selected="true" data-professional-console="output">输出</button>
+                <button type="button" role="tab" aria-selected="false" data-professional-console="problems">问题 <span id="professionalProblemCount">0</span></button>
+                <button type="button" role="tab" aria-selected="false" data-professional-console="history">历史</button>
+              </div>
+              <div class="professionalExecutionActions">
+                <button class="textButton" id="professionalDryRun" type="button">Dry Run</button>
+                <button class="primaryButton" id="professionalRun" type="button">运行</button>
+              </div>
+            </header>
+            <div class="professionalConsoleBody" id="professionalConsoleBody" aria-live="polite"></div>
+          </section>
+        </section>
+
+        <aside class="professionalDiagnosticsDrawer" id="professionalDiagnosticsDrawer" aria-label="Diagnostics and safety" hidden>
+          <header class="professionalDiagnosticsHeader">
+            <div>
+              <strong>诊断与安全</strong>
+              <span>宿主预检、恢复、Smoke 与证据工具</span>
+            </div>
+            <div class="professionalDiagnosticsTabs" role="tablist" aria-label="Diagnostics views">
+              <button class="active" type="button" role="tab" aria-selected="true" data-diagnostics-view="status">状态诊断</button>
+              <button type="button" role="tab" aria-selected="false" data-diagnostics-view="validation">验证档案</button>
+            </div>
+            <button class="iconButton" id="professionalDiagnosticsClose" type="button" aria-label="Close diagnostics" data-tooltip="Close">×</button>
+          </header>
+          <div class="professionalDiagnosticsBody">
+        <section class="panel visualPreviewPanel" id="visualPreviewPanel" aria-live="polite" tabindex="-1" data-visual-preview-pass>
+          <div class="panelHeader">
+            <div>
+              <h2 data-i18n="commandCenter.sections.visualPreview">三端视觉预览</h2>
+              <div class="panelMeta" id="visualPreviewMeta">desktop-ae-pr-visual-preview-pass</div>
+            </div>
+            <button class="textButton" id="visualOverviewToggle" type="button" aria-expanded="false" data-visual-overview-toggle data-i18n="commandCenter.visualPreview.overviewToggle">功能总览</button>
+          </div>
+          <div class="visualPreviewBody">
+            <div class="visualPreviewSummary" id="visualPreviewSummary" data-visual-preview-summary></div>
+            <div class="visualPreviewGrid" id="visualPreviewGrid"></div>
+            <div class="visualOverviewDrawer" id="visualOverviewDrawer" hidden data-visual-preview-drawer></div>
+          </div>
+        </section>
+
+        <section class="panel visualReviewPanel" id="visualReviewMatrixPanel" aria-live="polite" tabindex="-1" data-visual-review-matrix>
+          <div class="panelHeader">
+            <div>
+              <h2 data-i18n="commandCenter.sections.visualReview">视觉评审矩阵</h2>
+              <div class="panelMeta" id="visualReviewMeta">visual-review-matrix-and-screenshot-checklist</div>
+            </div>
+            <span class="panelMeta" id="visualReviewScoreMeta">min 85</span>
+          </div>
+          <div class="visualReviewBody">
+            <div class="visualReviewSummary" id="visualReviewSummary" data-visual-review-summary></div>
+            <div class="visualReviewGrid" id="visualReviewGrid"></div>
+            <div class="visualScorecard" id="visualScorecard" data-visual-scorecard></div>
+            <div class="visualBlockers" id="visualBlockers"></div>
+          </div>
+        </section>
+
+        <section class="panel visualSignoffPanel" id="visualSignoffPanel" aria-live="polite" tabindex="-1" data-visual-signoff-state>
+          <div class="panelHeader">
+            <div>
+              <h2 data-i18n="commandCenter.sections.visualSignoff">视觉签核</h2>
+              <div class="panelMeta" id="visualSignoffMeta">manual-visual-signoff-state-and-findings-backlog</div>
+            </div>
+            <button class="textButton" id="resetVisualSignoffButton" type="button" data-i18n="commandCenter.visualSignoff.reset">重置签核</button>
+          </div>
+          <div class="visualSignoffBody">
+            <div class="visualSignoffSummary" id="visualSignoffSummary" data-visual-signoff-summary></div>
+            <div class="visualSignoffGrid" id="visualSignoffGrid"></div>
+            <div class="visualFindingComposer" id="visualFindingComposer">
+              <label>
+                <span data-i18n="commandCenter.visualSignoff.findingItem">截图项</span>
+                <select id="visualFindingItem"></select>
+              </label>
+              <label>
+                <span data-i18n="commandCenter.visualSignoff.findingType">问题类型</span>
+                <select id="visualFindingType"></select>
+              </label>
+              <label>
+                <span data-i18n="commandCenter.visualSignoff.findingSeverity">级别</span>
+                <select id="visualFindingSeverity">
+                  <option value="medium">medium</option>
+                  <option value="low">low</option>
+                  <option value="high">high</option>
+                  <option value="blocker">blocker</option>
+                </select>
+              </label>
+              <label class="visualFindingNoteField">
+                <span data-i18n="commandCenter.visualSignoff.findingNote">备注</span>
+                <textarea id="visualFindingNote" rows="2"></textarea>
+              </label>
+              <button class="primaryButton" id="addVisualFindingButton" type="button" data-visual-finding-add data-i18n="commandCenter.visualSignoff.addFinding">新增问题</button>
+            </div>
+            <div class="visualFindingsBacklog" id="visualFindingsBacklog" data-visual-findings-backlog></div>
+          </div>
+        </section>
+
+        <section class="panel visualEvidencePanel" id="visualEvidenceExportPanel" aria-live="polite" tabindex="-1" data-visual-evidence-export>
+          <div class="panelHeader">
+            <div>
+              <h2 data-i18n="commandCenter.sections.visualEvidence">视觉证据导出</h2>
+              <div class="panelMeta" id="visualEvidenceMeta">pre-host-visual-evidence-export</div>
+            </div>
+            <div class="runbookActions">
+              <button class="textButton" id="copyVisualEvidenceButton" type="button" data-visual-evidence-copy data-i18n="commandCenter.visualEvidence.copy">复制</button>
+              <button class="textButton" id="exportVisualEvidenceMarkdownButton" type="button" data-visual-evidence-export="markdown" data-i18n="commandCenter.visualEvidence.exportMarkdown">导出 MD</button>
+              <button class="textButton" id="exportVisualEvidenceJsonButton" type="button" data-visual-evidence-export="json" data-i18n="commandCenter.visualEvidence.exportJson">导出 JSON</button>
+            </div>
+          </div>
+          <div class="visualEvidenceBody">
+            <div class="visualEvidenceSummary" id="visualEvidenceSummary" data-visual-evidence-summary></div>
+            <pre class="visualEvidencePreview" id="visualEvidencePreview" tabindex="0" data-visual-evidence-preview></pre>
+          </div>
+        </section>
+
+        <section class="panel visualEvidenceReviewLockPanel" id="visualEvidenceReviewLockPanel" aria-live="polite" tabindex="-1" data-visual-evidence-review-lock>
+          <div class="panelHeader">
+            <div>
+              <h2 data-i18n="commandCenter.sections.visualEvidenceReviewLock">视觉证据复核锁定</h2>
+              <div class="panelMeta">pre-host-visual-evidence-review-lock</div>
+            </div>
+          </div>
+          <div class="visualEvidenceReviewLockBody">
+            <div class="visualEvidenceReviewLockSummary" id="visualEvidenceReviewLockSummary" data-visual-evidence-review-lock-summary></div>
+            <div class="visualEvidenceReviewLockFields">
+              <label><span data-i18n="commandCenter.visualEvidenceReviewLock.reviewer">复核人</span><input id="visualEvidenceReviewer" type="text" autocomplete="name"></label>
+              <label><span data-i18n="commandCenter.visualEvidenceReviewLock.note">复核备注</span><textarea id="visualEvidenceReviewNote" rows="2"></textarea></label>
+            </div>
+            <div class="runbookActions">
+              <button class="textButton" id="lockVisualEvidenceButton" type="button" data-i18n="commandCenter.visualEvidenceReviewLock.lock">锁定证据</button>
+              <button class="textButton" id="unlockVisualEvidenceButton" type="button" data-i18n="commandCenter.visualEvidenceReviewLock.unlock">解除锁定</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel diagnosticsPanel" id="diagnosticsPanel" aria-live="polite" tabindex="-1">
+          <div class="panelHeader">
+            <h2 data-i18n="commandCenter.sections.diagnostics">诊断</h2>
+            <span class="panelMeta" id="diagnosticsSummary">0 / 4</span>
+          </div>
+          <div class="diagnosticsList" id="diagnosticsList"></div>
+        </section>
+
+        <section class="panel readinessPanel" id="hostReadinessPanel" aria-live="polite" tabindex="-1">
+          <div class="panelHeader">
+            <h2 data-i18n="commandCenter.sections.hostReadiness">宿主预检</h2>
+            <span class="panelMeta" id="readinessSummary" data-readiness-status="blocked">BLOCKED</span>
+          </div>
+          <div class="readinessList" id="readinessList"></div>
+        </section>
+
+        <section class="panel rehearsalPanel" id="rehearsalResultPanel" aria-live="polite" tabindex="-1" data-rehearsal-result-panel>
+          <div class="panelHeader">
+            <div>
+              <h2 data-i18n="commandCenter.sections.rehearsalResult">彩排结果</h2>
+              <div class="panelMeta" id="rehearsalMode">mock-only-rehearsal</div>
+            </div>
+            <button class="iconButton" id="rehearsalToggle" type="button" aria-expanded="true" aria-label="Toggle rehearsal result" data-tooltip="Toggle" data-rehearsal-toggle>▾</button>
+          </div>
+          <div class="rehearsalBody" id="rehearsalBody">
+            <div class="rehearsalSummary" id="rehearsalSummary" data-rehearsal-status="blocked"></div>
+            <div class="rehearsalStats" id="rehearsalStats"></div>
+            <div class="rehearsalGrid">
+              <div>
+                <div class="rehearsalColumnTitle" data-i18n="commandCenter.rehearsal.checks">检查项</div>
+                <div class="rehearsalChecks" id="rehearsalChecks"></div>
+              </div>
+              <div>
+                <div class="rehearsalColumnTitle" data-i18n="commandCenter.rehearsal.history">模拟结果历史</div>
+                <div class="rehearsalHistory" id="rehearsalHistory"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel runbookPanel" id="manualHostSmokeRunbookPanel" aria-live="polite" tabindex="-1" data-host-smoke-runbook>
+          <div class="panelHeader">
+            <div>
+              <h2 data-i18n="commandCenter.sections.hostSmokeRunbook">宿主 Smoke Runbook</h2>
+              <div class="panelMeta" id="runbookMeta">copy-export-read-only-runbook</div>
+            </div>
+            <div class="runbookActions">
+              <button class="textButton" id="copyRunbookButton" type="button" data-runbook-copy data-i18n="commandCenter.runbook.copy">复制</button>
+              <button class="textButton" id="exportRunbookMarkdownButton" type="button" data-runbook-export="markdown" data-i18n="commandCenter.runbook.exportMarkdown">导出 MD</button>
+              <button class="textButton" id="exportRunbookJsonButton" type="button" data-runbook-export="json" data-i18n="commandCenter.runbook.exportJson">导出 JSON</button>
+            </div>
+          </div>
+          <div class="runbookBody">
+            <div class="runbookSummary" id="runbookSummary" data-runbook-status="blocked"></div>
+            <div class="runbookFeedback" id="runbookFeedback" data-runbook-feedback data-runbook-persisted-state></div>
+            <pre class="runbookPreview" id="runbookPreview" tabindex="-1" data-runbook-preview></pre>
+          </div>
+        </section>
+
+        <section class="panel evidencePackPanel" id="manualHostSmokeEvidencePackPanel" aria-live="polite" tabindex="-1" data-host-smoke-evidence-pack>
+          <div class="panelHeader">
+            <div>
+              <h2 data-i18n="commandCenter.sections.hostSmokeEvidencePack">宿主 Smoke 证据包</h2>
+              <div class="panelMeta" id="evidencePackMeta">local-read-only-evidence-pack</div>
+            </div>
+            <div class="evidencePackActions">
+              <button class="textButton" id="copyEvidencePackButton" type="button" data-evidence-pack-copy data-i18n="commandCenter.evidencePack.copy">复制</button>
+              <button class="textButton" id="exportEvidencePackMarkdownButton" type="button" data-evidence-pack-export="markdown" data-i18n="commandCenter.evidencePack.exportMarkdown">导出 MD</button>
+              <button class="textButton" id="exportEvidencePackJsonButton" type="button" data-evidence-pack-export="json" data-i18n="commandCenter.evidencePack.exportJson">导出 JSON</button>
+            </div>
+          </div>
+          <div class="evidencePackBody">
+            <div class="evidencePackSummary" id="evidencePackSummary" data-evidence-pack-status="blocked"></div>
+            <label class="evidenceNotes" for="evidenceNotesInput">
+              <span data-i18n="commandCenter.evidencePack.notesLabel">人工检查备注</span>
+              <textarea id="evidenceNotesInput" rows="4" data-evidence-notes></textarea>
+            </label>
+            <pre class="evidencePackPreview" id="evidencePackPreview" tabindex="-1" data-evidence-pack-preview></pre>
+          </div>
+        </section>
+
+        <section class="panel reviewChecklistPanel" id="manualHostSmokeReviewChecklistPanel" aria-live="polite" tabindex="-1" data-host-smoke-review-checklist>
+          <div class="panelHeader">
+            <div>
+              <h2 data-i18n="commandCenter.sections.hostSmokeReviewChecklist">宿主 Smoke 复核清单</h2>
+              <div class="panelMeta" id="reviewChecklistMeta">manual-host-smoke-review-checklist</div>
+            </div>
+            <button class="textButton" id="resetReviewChecklistButton" type="button" data-review-checklist-reset data-i18n="commandCenter.reviewChecklist.reset">重置</button>
+          </div>
+          <div class="reviewChecklistBody">
+            <div class="reviewChecklistSummary" id="reviewChecklistSummary" data-review-checklist-summary data-review-checklist-status="blocked"></div>
+            <div class="reviewChecklistList" id="reviewChecklistList"></div>
+          </div>
+        </section>
+
+        <section class="panel sessionDraftPanel" id="manualHostSmokeSessionDraftPanel" aria-live="polite" tabindex="-1" data-host-smoke-session-draft>
+          <div class="panelHeader">
+            <div>
+              <h2 data-i18n="commandCenter.sections.hostSmokeSessionDraft">宿主 Smoke Session 草案</h2>
+              <div class="panelMeta" id="sessionDraftMeta">manual-host-smoke-session-draft</div>
+            </div>
+            <div class="sessionDraftActions">
+              <button class="textButton" id="saveSessionDraftButton" type="button" data-session-draft-save data-i18n="commandCenter.sessionDraft.save">生成</button>
+              <button class="textButton" id="copySessionDraftButton" type="button" data-session-draft-copy data-i18n="commandCenter.sessionDraft.copy">复制</button>
+              <button class="textButton" id="exportSessionDraftMarkdownButton" type="button" data-session-draft-export="markdown" data-i18n="commandCenter.sessionDraft.exportMarkdown">导出 MD</button>
+              <button class="textButton" id="exportSessionDraftJsonButton" type="button" data-session-draft-export="json" data-i18n="commandCenter.sessionDraft.exportJson">导出 JSON</button>
+              <button class="textButton" id="resetSessionDraftButton" type="button" data-session-draft-reset data-i18n="commandCenter.sessionDraft.reset">重置</button>
+            </div>
+          </div>
+          <div class="sessionDraftBody">
+            <div class="sessionDraftSummary" id="sessionDraftSummary" data-session-draft-summary data-session-draft-status="blocked"></div>
+            <div class="sessionDraftGrid" id="sessionDraftGrid"></div>
+            <pre class="sessionDraftPreview" id="sessionDraftPreview" tabindex="-1" data-session-draft-preview></pre>
+          </div>
+        </section>
+
+        <section class="hostStrip" id="hostStrip" aria-label="Hosts" tabindex="-1"></section>
+
+        <section class="commandGrid">
+          <div class="panel contextPanel">
+            <div class="panelHeader">
+              <h2 data-i18n="commandCenter.sections.hostContext">宿主上下文</h2>
+              <span class="panelMeta" id="selectedHostMeta">AE</span>
+            </div>
+            <dl class="contextList" id="contextList"></dl>
+          </div>
+
+          <div class="panel actionsPanel">
+            <div class="panelHeader">
+              <h2 data-i18n="commandCenter.sections.trustedActions">只读可信动作</h2>
+              <span class="panelMeta">risk 0</span>
+            </div>
+            <div class="actionList" id="actionList" aria-live="polite" tabindex="-1"></div>
+          </div>
+
+          <div class="panel historyPanel">
+            <div class="panelHeader">
+              <div>
+                <h2 data-i18n="commandCenter.sections.resultHistory">结果历史</h2>
+                <div class="panelMeta" id="resultSummary">0 / 0</div>
+              </div>
+              <button class="textButton" id="clearHistoryButton" type="button" data-i18n="commandCenter.actions.clear">清空</button>
+            </div>
+            <div class="filterBar" id="historyFilters" aria-label="Result history filters">
+              <label>
+                <span data-i18n="commandCenter.filters.host">宿主</span>
+                <select id="hostFilter"></select>
+              </label>
+              <label>
+                <span data-i18n="commandCenter.filters.action">动作</span>
+                <select id="actionFilter"></select>
+              </label>
+              <label>
+                <span data-i18n="commandCenter.filters.status">状态</span>
+                <select id="statusFilter"></select>
+              </label>
+              <label>
+                <span data-i18n="commandCenter.filters.query">搜索</span>
+                <input id="queryFilter" type="search" autocomplete="off">
+              </label>
+              <label>
+                <span data-i18n="commandCenter.filters.limit">数量</span>
+                <select id="limitFilter">
+                  <option value="10">10</option>
+                  <option value="20">20</option>
+                  <option value="50">50</option>
+                </select>
+              </label>
+              <button class="textButton" id="resetFiltersButton" type="button" data-i18n="commandCenter.actions.resetFilters">重置</button>
+            </div>
+            <div class="historyTable" id="historyTable" aria-live="polite" tabindex="-1"></div>
+          </div>
+
+          <div class="panel detailPanel" id="detailPanel" tabindex="-1">
+            <div class="panelHeader">
+              <div>
+                <h2 data-i18n="commandCenter.sections.commandDetail">命令详情</h2>
+                <span class="panelMeta" id="detailCode">idle</span>
+              </div>
+              <button class="iconButton" id="closeDetailButton" type="button" aria-label="Close detail" data-tooltip="Close">×</button>
+            </div>
+            <dl class="detailSummary" id="detailSummary"></dl>
+            <details class="rawDetail" open>
+              <summary data-i18n="commandCenter.detail.rawPayload">原始载荷</summary>
+              <pre class="detailPre" id="detailPre"></pre>
+            </details>
+          </div>
+        </section>
+          </div>
+        </aside>
+      </main>
+    </div>
+    <div class="appTooltip" id="appTooltip" role="tooltip" aria-hidden="true" hidden></div>
+    <script src="./code-editor.bundle.js?v=0.5.9-alpha.0"></script>
+    <script src="./prototype.js?v=0.5.9-alpha.0-studio15"></script>
+  </body>
+</html>

@@ -1,0 +1,90 @@
+{
+  "host": "premiere-pro",
+  "extensionId": "com.kuroii.motionai.pr",
+  "capabilities": [
+    {
+      "id": "pr.context.getProject",
+      "riskLevel": 0,
+      "supportsUndo": false,
+      "testStatus": "stub"
+    },
+    {
+      "id": "pr.context.getActiveSequence",
+      "riskLevel": 0,
+      "supportsUndo": false,
+      "testStatus": "stub"
+    },
+    {
+      "id": "pr.context.getSelection",
+      "riskLevel": 0,
+      "supportsUndo": false,
+      "testStatus": "stub"
+    },
+    {
+      "id": "pr.marker.read",
+      "riskLevel": 0,
+      "supportsUndo": false,
+      "testStatus": "stub"
+    },
+    {
+      "id": "pr.marker.create",
+      "riskLevel": 1,
+      "supportsUndo": false,
+      "testStatus": "stub"
+    },
+    {
+      "id": "pr.subtitle.importSrt",
+      "riskLevel": 1,
+      "supportsUndo": false,
+      "testStatus": "stub"
+    },
+    {
+      "id": "pr.subtitle.exportSrt",
+      "riskLevel": 0,
+      "supportsUndo": false,
+      "testStatus": "stub"
+    },
+    {
+      "id": "pr.subtitle.planRewrite",
+      "riskLevel": 1,
+      "supportsUndo": false,
+      "testStatus": "stub"
+    },
+    {
+      "id": "pr.edit.createPlan",
+      "riskLevel": 1,
+      "supportsUndo": false,
+      "testStatus": "stub"
+    },
+    {
+      "id": "pr.script.validate",
+      "riskLevel": 1,
+      "supportsUndo": false,
+      "testStatus": "stub"
+    },
+    {
+      "id": "pr.audio.createBeatMarkers",
+      "riskLevel": 1,
+      "supportsUndo": false,
+      "testStatus": "stub"
+    },
+    {
+      "id": "pr.project.createBins",
+      "riskLevel": 1,
+      "supportsUndo": false,
+      "testStatus": "stub"
+    },
+    {
+      "id": "pr.project.organizeItems",
+      "riskLevel": 1,
+      "supportsUndo": false,
+      "testStatus": "stub"
+    },
+    {
+      "id": "pr.project.scanMissingMedia",
+      "riskLevel": 1,
+      "supportsUndo": false,
+      "testStatus": "stub"
+    }
+  ]
+}

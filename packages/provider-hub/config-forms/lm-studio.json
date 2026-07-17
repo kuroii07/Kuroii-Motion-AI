@@ -1,0 +1,34 @@
+{
+  "providerId": "lm-studio",
+  "displayName": "LM Studio",
+  "fields": [
+    {
+      "id": "baseUrl",
+      "labelKey": "provider.field.baseUrl",
+      "type": "url",
+      "required": true,
+      "defaultValue": "http://localhost:1234/v1"
+    }
+  ],
+  "modelDiscovery": {
+    "method": "POST",
+    "path": "/providers/lm-studio/models",
+    "refreshButton": true
+  },
+  "testConnection": {
+    "method": "POST",
+    "path": "/providers/lm-studio/test",
+    "stages": [
+      "config",
+      "network",
+      "model"
+    ]
+  },
+  "ui": {
+    "categoryTabs": [
+      "Local"
+    ],
+    "guideKey": "provider.guide.lmStudio",
+    "reserved": true
+  }
+}

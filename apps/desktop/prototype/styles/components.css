@@ -1,0 +1,147 @@
+.primaryButton,
+.featurePrimaryButton,
+.commandPrimaryButton {
+  min-height: var(--control-md);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-sm);
+  color: var(--color-on-accent);
+  background: var(--color-accent);
+  font-weight: 650;
+  cursor: pointer;
+  transition: background var(--motion-fast) var(--ease-standard), border-color var(--motion-fast) var(--ease-standard);
+}
+
+.primaryButton:hover,
+.featurePrimaryButton:hover,
+.commandPrimaryButton:hover {
+  border-color: var(--color-accent-hover);
+  background: var(--color-accent-hover);
+}
+
+.primaryButton:active,
+.featurePrimaryButton:active,
+.commandPrimaryButton:active {
+  border-color: var(--color-accent-active);
+  background: var(--color-accent-active);
+}
+
+.textButton,
+.featureSecondaryButton,
+.secondaryButton,
+.commandSecondaryButton {
+  min-height: var(--control-sm);
+  border: 1px solid var(--color-line-control);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
+  background: var(--color-surface-2);
+  cursor: pointer;
+  transition: background var(--motion-fast) var(--ease-standard), border-color var(--motion-fast) var(--ease-standard);
+}
+
+.textButton:hover,
+.featureSecondaryButton:hover,
+.secondaryButton:hover,
+.commandSecondaryButton:hover {
+  border-color: var(--color-line-strong);
+  background: var(--color-surface-hover);
+}
+
+.iconButton {
+  width: var(--control-sm);
+  height: var(--control-sm);
+  min-width: var(--control-sm);
+  min-height: var(--control-sm);
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  background: transparent;
+  cursor: pointer;
+  transition: color var(--motion-fast) var(--ease-standard), background var(--motion-fast) var(--ease-standard), border-color var(--motion-fast) var(--ease-standard);
+}
+
+.iconButton:hover {
+  color: var(--color-text-primary);
+  border-color: var(--color-line-subtle);
+  background: var(--color-surface-hover);
+}
+
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled {
+  color: var(--color-text-disabled);
+  border-color: var(--color-line-subtle);
+  background: var(--color-surface-2);
+  box-shadow: none;
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+input,
+select,
+textarea {
+  min-height: var(--control-sm);
+  border: 1px solid var(--color-line-control);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
+  background: var(--color-surface-1);
+  transition: border-color var(--motion-fast) var(--ease-standard), background var(--motion-fast) var(--ease-standard);
+}
+
+input:hover,
+select:hover,
+textarea:hover {
+  border-color: var(--color-line-strong);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-text-muted);
+  opacity: 1;
+}
+
+[data-tooltip]::after {
+  display: none !important;
+  content: none !important;
+}
+
+.appTooltip {
+  position: fixed;
+  z-index: 5000;
+  max-width: min(240px, calc(100vw - 16px));
+  padding: 6px 8px;
+  border: 1px solid var(--color-line-control);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
+  background: var(--color-surface-3);
+  box-shadow: 0 8px 24px var(--color-shadow);
+  font-size: var(--text-caption);
+  line-height: 1.35;
+  text-align: left;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.appTooltip[hidden] {
+  display: none;
+}
+
+.statusDot {
+  flex: 0 0 auto;
+}
+
+.statusDot.success,
+.liveDot {
+  background: var(--color-success);
+}
+
+.statusDot.warning {
+  background: var(--color-warning);
+}
+
+.statusDot.error {
+  background: var(--color-error);
+}

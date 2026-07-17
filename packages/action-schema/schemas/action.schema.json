@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Kuroii Action Schema",
+  "type": "object",
+  "required": [
+    "actionId",
+    "schemaVersion",
+    "host",
+    "targets",
+    "params",
+    "riskLevel",
+    "requiresConfirmation",
+    "supportsUndo",
+    "supportsDryRun"
+  ],
+  "properties": {
+    "actionId": {
+      "type": "string"
+    },
+    "schemaVersion": {
+      "type": "string"
+    },
+    "host": {
+      "enum": [
+        "after-effects",
+        "premiere-pro",
+        "desktop",
+        "cross-host"
+      ]
+    },
+    "targets": {
+      "type": "array"
+    },
+    "params": {
+      "type": "object"
+    },
+    "riskLevel": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 5
+    },
+    "requiresConfirmation": {
+      "type": "boolean"
+    },
+    "supportsUndo": {
+      "type": "boolean"
+    },
+    "supportsDryRun": {
+      "type": "boolean"
+    }
+  }
+}

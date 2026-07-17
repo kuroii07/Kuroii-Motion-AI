@@ -1,0 +1,300 @@
+.providerHubGrid,
+.providerHubV2 {
+  border-color: var(--color-line-subtle);
+  background: var(--color-bg-app);
+}
+
+.providerHubShell {
+  grid-template-columns: 252px minmax(0, 1fr);
+  border-color: var(--color-line-subtle);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-1);
+}
+
+.providerProfilePane {
+  border-color: var(--color-line-subtle);
+  background: var(--color-surface-2);
+}
+
+.providerPaneHeader,
+.providerDetailHeader,
+.providerDetailTabs {
+  border-color: var(--color-line-subtle);
+}
+
+.providerDetailPane,
+.providerDetailBody {
+  background: var(--color-surface-1);
+}
+
+.providerDetailIdentity {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.providerDetailIdentity > div {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.providerBackButton {
+  display: none;
+  min-height: var(--control-sm);
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-line-control);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  background: var(--color-surface-2);
+  cursor: pointer;
+}
+
+.providerBackButton .navSvg {
+  width: 16px;
+  height: 16px;
+}
+
+.providerDetailTabs button.active {
+  color: var(--color-text-primary);
+  border-bottom-color: var(--color-accent);
+}
+
+.providerProfileItem.selected,
+.providerModelRow.selected {
+  border-color: transparent;
+  background: var(--color-accent-soft);
+  box-shadow: inset 2px 0 0 var(--color-accent);
+}
+
+.featureDangerButton {
+  border-color: color-mix(in srgb, var(--color-error) 46%, var(--color-line-control));
+  color: var(--color-error);
+  background: color-mix(in srgb, var(--color-error) 8%, var(--color-surface-2));
+}
+
+.featureDangerButton:hover:not(:disabled),
+.featureDangerButton:focus-visible {
+  border-color: var(--color-error);
+  color: var(--color-error);
+  background: color-mix(in srgb, var(--color-error) 13%, var(--color-surface-2));
+}
+
+.providerStickyActions {
+  background: var(--color-surface-1);
+}
+
+.providerProfileRail,
+.providerHubSidebar,
+.providerHubDetail,
+.providerConfigWorkspace {
+  background: var(--color-surface-1);
+}
+
+.providerPlatformCard,
+.providerModelRow,
+.providerProfileItem {
+  border-radius: var(--radius-sm);
+}
+
+.providerPlatformCard.selected,
+.providerModelRow.selected,
+.providerProfileItem.selected {
+  border-color: transparent;
+  background: var(--color-accent-soft);
+  box-shadow: inset 2px 0 0 var(--color-accent);
+}
+
+@media (max-width: 840px) {
+  .workspace.view-provider-hub .featureWorkspace {
+    height: calc(100dvh - var(--topbar-height));
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: var(--space-3);
+  }
+
+  .providerHubHeader {
+    flex: 0 0 auto;
+    min-height: 64px;
+    align-items: center;
+    flex-direction: row;
+    padding: 0 0 var(--space-3);
+  }
+
+  .providerHubHeader h2 {
+    margin: 0;
+    font-size: var(--text-h2);
+  }
+
+  .providerHubHeader p,
+  .providerHubHeader .featureEyebrow {
+    display: none;
+  }
+
+  .providerHubShell {
+    height: auto;
+    min-height: 0;
+    flex: 1 1 auto;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .providerHubShell[data-provider-mobile-view="list"] .providerDetailPane {
+    display: none;
+  }
+
+  .providerHubShell[data-provider-mobile-view="detail"] .providerProfilePane {
+    display: none;
+  }
+
+  .providerProfilePane,
+  .providerDetailPane {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    max-height: none;
+    border: 0;
+  }
+
+  .providerProfilePane {
+    grid-template-rows: 52px minmax(0, 1fr);
+  }
+
+  .providerProfileList {
+    gap: var(--space-1);
+    padding: var(--space-2);
+  }
+
+  .providerProfileItem {
+    min-height: 72px;
+    padding: var(--space-3);
+    border-bottom: 1px solid var(--color-line-subtle);
+    border-radius: var(--radius-sm);
+  }
+
+  .providerProfileItem strong {
+    font-size: var(--text-body);
+  }
+
+  .providerProfileItem > span:not(.providerProfileItemTop),
+  .providerProfileItem small {
+    font-size: var(--text-small);
+  }
+
+  .providerDetailPane {
+    grid-template-rows: auto auto minmax(0, 1fr);
+  }
+
+  .providerDetailHeader {
+    min-height: 0;
+    align-items: stretch;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .providerDetailIdentity {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .providerBackButton {
+    display: inline-flex;
+  }
+
+  .providerDetailHeader .providerDetailActions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+    gap: var(--space-1);
+    overflow: visible;
+  }
+
+  .providerDetailActions button {
+    min-width: 0;
+    padding-inline: var(--space-2);
+  }
+
+  .providerDetailActions .providerStateBadge {
+    align-self: center;
+    justify-self: end;
+  }
+
+  .providerDetailTabs {
+    min-height: 40px;
+    padding: 3px var(--space-3) 0;
+  }
+
+  .providerDetailTabs button {
+    min-height: 36px;
+  }
+
+  .providerDetailBody {
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  .providerConnectionForm,
+  .providerCapabilitiesWorkspace {
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-3) 0;
+  }
+
+  .providerFormGrid,
+  .providerAdvancedGrid,
+  .providerCapabilityOptions > div {
+    grid-template-columns: 1fr;
+  }
+
+  .providerWideField,
+  .providerHeadersField,
+  .providerCapabilityOptions {
+    grid-column: auto;
+  }
+
+  .providerStickyActions {
+    position: sticky;
+    bottom: 0;
+    z-index: 4;
+    margin: 0 calc(var(--space-3) * -1);
+    padding: var(--space-2) var(--space-3);
+    border-top: 1px solid var(--color-line-subtle);
+    box-shadow: 0 -12px 24px color-mix(in srgb, var(--color-shadow) 42%, transparent);
+  }
+}
+
+@media (max-width: 520px) {
+  .providerHubHeaderStatus {
+    min-height: var(--control-xs);
+    padding-inline: var(--space-2);
+  }
+
+  .providerDetailHeader .providerDetailActions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .providerDetailActions .providerStateBadge {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+
+  .providerApiKeyRow,
+  .modelSelectRow,
+  .providerStickyActions {
+    align-items: stretch;
+    flex-direction: row;
+  }
+
+  .providerApiKeyRow input,
+  .modelSelectRow select {
+    min-width: 0;
+  }
+
+  .providerStickyActions > button {
+    flex: 1 1 0;
+  }
+}

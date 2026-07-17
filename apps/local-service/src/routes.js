@@ -1,0 +1,21 @@
+export const localServiceRoutes = [
+  { method: "GET", path: "/health", response: "service health" },
+  { method: "GET", path: "/providers", response: "provider manifests" },
+  { method: "GET", path: "/provider-errors", response: "provider recovery guidance" },
+  { method: "GET", path: "/providers/{providerId}/config", response: "provider config form" },
+  { method: "POST", path: "/providers/{providerId}/models", response: "provider model list" },
+  { method: "POST", path: "/providers/{providerId}/test", response: "provider test result" },
+  { method: "GET", path: "/hosts", response: "host states" },
+  { method: "GET", path: "/hosts/{host}", response: "host detail" },
+  { method: "POST", path: "/hosts/{host}/register", response: "host registration" },
+  { method: "POST", path: "/hosts/{host}/heartbeat", response: "host heartbeat" },
+  { method: "POST", path: "/hosts/{host}/status", response: "host status update" },
+  { method: "GET", path: "/hosts/{host}/capabilities", response: "host capabilities" },
+  { method: "GET", path: "/hosts/{host}/context", response: "host context snapshot" },
+  { method: "GET", path: "/host-target", response: "host target lock" },
+  { method: "POST", path: "/host-target", response: "host target lock update" },
+  { method: "GET", path: "/actions/trusted", response: "read-only trusted action catalog" },
+  { method: "POST", path: "/commands", response: "command result envelope" },
+  { method: "GET", path: "/commands", response: "command result history" },
+  { method: "GET", path: "/commands/{commandId}", response: "command log detail" }
+];

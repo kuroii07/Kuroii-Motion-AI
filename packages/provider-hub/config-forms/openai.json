@@ -1,0 +1,49 @@
+{
+  "providerId": "openai",
+  "displayName": "OpenAI",
+  "fields": [
+    {
+      "id": "apiKey",
+      "labelKey": "provider.field.apiKey",
+      "type": "password",
+      "required": true,
+      "secret": true
+    },
+    {
+      "id": "baseUrl",
+      "labelKey": "provider.field.baseUrl",
+      "type": "url",
+      "required": false,
+      "defaultValue": "https://api.openai.com/v1"
+    },
+    {
+      "id": "organization",
+      "labelKey": "provider.field.organization",
+      "type": "text",
+      "required": false
+    }
+  ],
+  "modelDiscovery": {
+    "method": "POST",
+    "path": "/providers/openai/models",
+    "refreshButton": true
+  },
+  "testConnection": {
+    "method": "POST",
+    "path": "/providers/openai/test",
+    "stages": [
+      "config",
+      "network",
+      "auth",
+      "model"
+    ]
+  },
+  "ui": {
+    "categoryTabs": [
+      "Text",
+      "Vision",
+      "Image"
+    ],
+    "guideKey": "provider.guide.openai"
+  }
+}

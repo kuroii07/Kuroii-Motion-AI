@@ -1,0 +1,259 @@
+.appShell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+  color: var(--color-text-primary);
+  background: var(--color-bg-app);
+}
+
+.appShell.sidebarCollapsed {
+  grid-template-columns: var(--sidebar-rail) minmax(0, 1fr);
+}
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  height: 100vh;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-right: 1px solid var(--color-line-subtle);
+  background: var(--color-bg-sidebar);
+}
+
+.brandBlock {
+  min-height: 64px;
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-line-subtle);
+}
+
+.brandLogo {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-md);
+}
+
+.brandName {
+  color: var(--color-text-primary);
+  font-size: var(--text-title);
+  font-weight: 650;
+  line-height: 1.3;
+}
+
+.brandSub {
+  margin-top: 2px;
+  color: var(--color-text-muted);
+  font-size: var(--text-small);
+}
+
+.navList {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-2) var(--space-4);
+  overflow: auto;
+}
+
+.navGroup {
+  display: grid;
+  gap: 2px;
+}
+
+.navGroup + .navGroup {
+  margin-top: var(--space-3);
+}
+
+.navGroupLabel {
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-3);
+  color: var(--color-text-muted);
+  font-size: var(--text-caption);
+  font-weight: 600;
+}
+
+.navItem {
+  position: relative;
+  width: 100%;
+  min-height: var(--control-md);
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.navItem::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 7px;
+  bottom: 7px;
+  width: 2px;
+  border-radius: var(--radius-pill);
+  background: transparent;
+}
+
+.navItem:hover {
+  color: var(--color-text-primary);
+  background: var(--color-surface-hover);
+}
+
+.navItem.active {
+  color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+
+.navItem.active::before {
+  background: var(--color-accent);
+}
+
+.navIcon {
+  width: 24px;
+  height: 24px;
+  display: inline-grid;
+  place-items: center;
+  color: currentColor;
+}
+
+.navLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--text-body);
+}
+
+.sidebarFooter {
+  display: flex;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-top: 1px solid var(--color-line-subtle);
+}
+
+.sidebarCollapsed .brandBlock {
+  grid-template-columns: 1fr;
+  justify-items: center;
+  padding-inline: 0;
+}
+
+.sidebarCollapsed .brandBlock > div,
+.sidebarCollapsed .navGroupLabel,
+.sidebarCollapsed .navLabel {
+  display: none;
+}
+
+.sidebarCollapsed .navList {
+  padding-inline: 7px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.sidebarCollapsed .navList::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.sidebarCollapsed .navGroup {
+  gap: var(--space-1);
+}
+
+.sidebarCollapsed .navItem {
+  grid-template-columns: 1fr;
+  justify-items: center;
+  padding: 0;
+}
+
+.sidebarCollapsed .sidebarFooter {
+  flex-direction: column;
+  align-items: center;
+}
+
+.workspace {
+  position: relative;
+  min-width: 0;
+  height: 100vh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background: var(--color-bg-app);
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  min-height: var(--topbar-height);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--color-line-subtle);
+  background: color-mix(in srgb, var(--color-bg-app) 96%, transparent);
+  backdrop-filter: blur(12px);
+}
+
+.topbarTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: auto;
+  overflow: visible;
+}
+
+.topbarTitle h1 {
+  color: var(--color-text-primary);
+  font-size: var(--text-title);
+  font-weight: 650;
+}
+
+.topbarTitle .eyebrow {
+  display: none;
+}
+
+.mobileNavToggle {
+  display: none;
+}
+
+.connectionPill,
+.statusPill {
+  min-height: var(--control-sm);
+  border: 1px solid var(--color-line-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  background: var(--color-surface-1);
+}
+
+.topActions {
+  justify-self: end;
+}
+
+.topThemeToggle {
+  display: inline-grid;
+}
+
+.activityBand,
+.safetyBand {
+  border-radius: 0;
+  border-inline: 0;
+}
+
+.sidebarScrim {
+  display: none;
+}

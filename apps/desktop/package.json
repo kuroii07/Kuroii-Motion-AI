@@ -1,0 +1,14 @@
+{
+  "name": "@kuroii/desktop",
+  "version": "0.5.9-alpha.0",
+  "private": true,
+  "type": "module",
+  "main": "src/app-shell.js",
+  "exports": {
+    ".": "./src/app-shell.js",
+    "./command-center": "./src/command-center.js",
+    "./local-service-client": "./src/local-service-client.js",
+    "./command-center-runtime": "./src/command-center-runtime.js",
+    "./command-center-fixtures": "./src/command-center-fixtures.js"
+  }
+}

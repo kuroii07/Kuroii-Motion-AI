@@ -1,0 +1,679 @@
+.professionalWorkbench,
+.professionalDiagnosticsDrawer {
+  display: none;
+}
+
+.workspace.view-command-center {
+  overflow-x: hidden;
+}
+
+.workspace.view-command-center .professionalWorkbench {
+  min-width: 0;
+  height: calc(100dvh - var(--topbar-height));
+  display: grid;
+  grid-template-rows: var(--control-lg) var(--control-lg) minmax(0, 1fr) minmax(132px, 22vh);
+  overflow: hidden;
+  color: var(--color-text-primary);
+  background: var(--color-bg-app);
+}
+
+.workspace:not(.view-command-center) .professionalWorkbench,
+.workspace:not(.view-command-center) .professionalDiagnosticsDrawer {
+  display: none !important;
+}
+
+.professionalModeBar,
+.professionalHostBar,
+.professionalConsole > header,
+.professionalResourcePane > header,
+.professionalInspector > header,
+.professionalDiagnosticsHeader {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+
+.professionalDiagnosticsTabs {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.professionalDiagnosticsHeader > .professionalDiagnosticsTabs {
+  display: flex;
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.professionalDiagnosticsHeader > div:first-child {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.professionalDiagnosticsTabs button {
+  height: var(--control-sm);
+  padding: 0 var(--space-3);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  color: var(--color-text-secondary);
+  background: transparent;
+}
+
+.professionalDiagnosticsTabs button.active {
+  color: var(--color-text-primary);
+  border-bottom-color: var(--color-accent);
+}
+
+.professionalModeBar {
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: 0 var(--space-4);
+  border-bottom: 1px solid var(--color-line-subtle);
+  background: var(--color-surface-1);
+}
+
+.professionalModeTabs,
+.professionalModeActions,
+.professionalConsoleTabs,
+.professionalExecutionActions {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.professionalModeTabs button,
+.professionalConsoleTabs button {
+  height: var(--control-md);
+  padding: 0 var(--space-3);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  color: var(--color-text-secondary);
+  background: transparent;
+}
+
+.professionalModeTabs button:hover,
+.professionalConsoleTabs button:hover {
+  color: var(--color-text-primary);
+  background: var(--color-surface-hover);
+}
+
+.professionalModeTabs button.active,
+.professionalConsoleTabs button.active {
+  color: var(--color-text-primary);
+  border-bottom-color: var(--color-accent);
+  background: transparent;
+}
+
+.professionalSafetyState {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text-secondary);
+  font-size: var(--text-caption);
+  white-space: nowrap;
+}
+
+.professionalResourceToggle {
+  display: none;
+}
+
+.professionalHostBar {
+  gap: var(--space-2);
+  padding: 0 var(--space-4);
+  overflow-x: auto;
+  border-bottom: 1px solid var(--color-line-subtle);
+  background: var(--color-surface-2);
+  scrollbar-width: none;
+}
+
+.professionalHostBar::-webkit-scrollbar {
+  display: none;
+}
+
+.professionalHostChoice {
+  height: var(--control-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  border: 1px solid transparent;
+  color: var(--color-text-secondary);
+  background: transparent;
+  white-space: nowrap;
+}
+
+.professionalHostChoice:hover {
+  color: var(--color-text-primary);
+  background: var(--color-surface-hover);
+}
+
+.professionalHostChoice.active {
+  color: var(--color-text-primary);
+  border-color: var(--color-line-control);
+  background: var(--color-surface-1);
+}
+
+.professionalHostContextSummary {
+  margin-left: auto;
+  color: var(--color-text-muted);
+  font-size: var(--text-caption);
+  white-space: nowrap;
+}
+
+.professionalWorkbenchBody {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 224px minmax(360px, 1fr) 264px;
+  overflow: hidden;
+}
+
+.professionalResourcePane,
+.professionalStage,
+.professionalInspector {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--color-surface-1);
+}
+
+.professionalResourcePane {
+  display: grid;
+  grid-template-rows: var(--control-lg) auto minmax(0, 1fr);
+  border-right: 1px solid var(--color-line-subtle);
+}
+
+.professionalResourcePane > header,
+.professionalInspector > header {
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  border-bottom: 1px solid var(--color-line-subtle);
+}
+
+.professionalResourcePane > header > div,
+.professionalDiagnosticsHeader > div {
+  min-width: 0;
+  display: grid;
+}
+
+.professionalResourcePane header span,
+.professionalInspector header span,
+.professionalDiagnosticsHeader span {
+  color: var(--color-text-muted);
+  font-size: var(--text-caption);
+}
+
+.professionalResourceSearch {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-line-subtle);
+}
+
+.professionalResourceSearch input {
+  width: 100%;
+  height: var(--control-sm);
+}
+
+.professionalResourceList {
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-1) 0;
+}
+
+.professionalResourceItem {
+  width: 100%;
+  min-height: 44px;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  border-left: 2px solid transparent;
+  border-radius: 0;
+  color: var(--color-text-secondary);
+  background: transparent;
+  text-align: left;
+}
+
+.professionalResourceItem:hover {
+  color: var(--color-text-primary);
+  background: var(--color-surface-hover);
+}
+
+.professionalResourceItem.active {
+  color: var(--color-text-primary);
+  border-left-color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+
+.professionalResourceItem > span:first-child {
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  text-align: center;
+}
+
+.professionalResourceItemText {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.professionalResourceItemText strong,
+.professionalResourceItemText small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.professionalResourceItemText small,
+.professionalResourceItemMeta {
+  color: var(--color-text-muted);
+  font-size: var(--text-caption);
+}
+
+.professionalStage {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  background: var(--work-surface, var(--color-bg-app));
+}
+
+.professionalStageHeader {
+  min-width: 0;
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-line-subtle);
+}
+
+.professionalStageTitle {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.professionalStageTitle strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.professionalStageTitle span {
+  color: var(--color-text-muted);
+  font-size: var(--text-caption);
+}
+
+.professionalStageContent {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  padding: var(--space-4);
+}
+
+.professionalActionForm,
+.professionalWorkflowCanvas {
+  min-height: 100%;
+  display: grid;
+  align-content: start;
+  gap: var(--space-4);
+}
+
+.professionalActionSummary,
+.professionalParameterGroup,
+.professionalWorkflowLane {
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-line-subtle);
+}
+
+.professionalActionSummary h2,
+.professionalWorkflowCanvas h2 {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-title);
+}
+
+.professionalActionSummary p,
+.professionalWorkflowCanvas p {
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+.professionalParameterGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.professionalParameterGrid label {
+  display: grid;
+  gap: var(--space-2);
+  color: var(--color-text-secondary);
+  font-size: var(--text-caption);
+}
+
+.professionalWorkflowLane {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.professionalWorkflowLane > span:first-child {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--color-line-control);
+  border-radius: var(--radius-md);
+  color: var(--color-accent);
+  font-family: var(--font-mono);
+}
+
+.professionalCodeStage {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.professionalStage > .professionalCodeStage {
+  grid-row: 1 / -1;
+}
+
+.professionalCodeStage .professionalStageHeader {
+  background: var(--color-surface-2);
+}
+
+.professionalCodeEditorHost {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.kuroiiCodeEditor {
+  width: 100%;
+  height: 100%;
+  min-height: 240px;
+  overflow: hidden;
+  background: var(--work-surface, var(--color-bg-app));
+}
+
+.tok-keyword { color: #72D7FF; }
+.tok-string { color: #A8D991; }
+.tok-comment { color: #718093; font-style: italic; }
+.tok-number { color: #C9A7FF; }
+.tok-function { color: #F3C66D; }
+
+.theme-light .tok-keyword { color: #006F92; }
+.theme-light .tok-string { color: #39752D; }
+.theme-light .tok-comment { color: #718093; }
+.theme-light .tok-number { color: #7752A8; }
+.theme-light .tok-function { color: #875A00; }
+
+.professionalInspector {
+  display: grid;
+  grid-template-rows: var(--control-lg) minmax(0, 1fr);
+  border-left: 1px solid var(--color-line-subtle);
+}
+
+.professionalInspector > div {
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.professionalInspectorSection {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--color-line-subtle);
+}
+
+.professionalInspectorSection > strong {
+  font-size: var(--text-caption);
+  text-transform: uppercase;
+}
+
+.professionalInspectorRow {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(72px, auto) minmax(0, 1fr);
+  gap: var(--space-2);
+  color: var(--color-text-secondary);
+  font-size: var(--text-caption);
+}
+
+.professionalInspectorRow span:last-child {
+  overflow: hidden;
+  color: var(--color-text-primary);
+  font-family: var(--font-mono);
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.professionalConsole {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: var(--control-lg) minmax(0, 1fr);
+  overflow: hidden;
+  border-top: 1px solid var(--color-line-control);
+  background: var(--color-surface-1);
+}
+
+.professionalConsole > header {
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 0 var(--space-3);
+  border-bottom: 1px solid var(--color-line-subtle);
+}
+
+.professionalConsoleBody {
+  min-height: 0;
+  overflow: auto;
+  padding: var(--space-3) var(--space-4);
+  color: var(--color-text-secondary);
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  white-space: pre-wrap;
+}
+
+.professionalConsoleLog {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  gap: var(--space-3);
+  padding: var(--space-1) 0;
+}
+
+.professionalConsoleLog time,
+.professionalConsoleLog span:first-of-type {
+  color: var(--color-text-muted);
+}
+
+.professionalDiagnosticsDrawer {
+  position: fixed;
+  top: var(--topbar-height);
+  right: 0;
+  bottom: 0;
+  z-index: 3200;
+  width: min(720px, calc(100vw - var(--sidebar-rail)));
+  grid-template-rows: 56px minmax(0, 1fr);
+  border-left: 1px solid var(--color-line-control);
+  background: var(--color-bg-app);
+  box-shadow: -18px 0 42px rgba(0, 0, 0, 0.18);
+}
+
+.workspace.view-command-center .professionalDiagnosticsDrawer:not([hidden]) {
+  display: grid;
+}
+
+.professionalDiagnosticsHeader {
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 0 var(--space-4);
+  border-bottom: 1px solid var(--color-line-subtle);
+  background: var(--color-surface-1);
+}
+
+.professionalDiagnosticsBody {
+  min-height: 0;
+  display: grid;
+  align-content: start;
+  gap: var(--space-3);
+  overflow-y: auto;
+  padding: var(--space-3);
+}
+
+.workspace.view-command-center .professionalDiagnosticsDrawer[data-view="status"] .diagnosticsPanel,
+.workspace.view-command-center .professionalDiagnosticsDrawer[data-view="status"] .readinessPanel,
+.workspace.view-command-center .professionalDiagnosticsDrawer[data-view="status"] .hostStrip,
+.workspace.view-command-center .professionalDiagnosticsDrawer[data-view="status"] .commandGrid,
+.workspace.view-command-center .professionalDiagnosticsDrawer[data-view="validation"] .visualPreviewPanel,
+.workspace.view-command-center .professionalDiagnosticsDrawer[data-view="validation"] .visualReviewPanel,
+.workspace.view-command-center .professionalDiagnosticsDrawer[data-view="validation"] .visualSignoffPanel,
+.workspace.view-command-center .professionalDiagnosticsDrawer[data-view="validation"] .visualEvidencePanel,
+.workspace.view-command-center .professionalDiagnosticsDrawer[data-view="validation"] .visualEvidenceReviewLockPanel,
+.workspace.view-command-center .professionalDiagnosticsDrawer[data-view="validation"] .rehearsalPanel,
+.workspace.view-command-center .professionalDiagnosticsDrawer[data-view="validation"] .runbookPanel,
+.workspace.view-command-center .professionalDiagnosticsDrawer[data-view="validation"] .evidencePackPanel,
+.workspace.view-command-center .professionalDiagnosticsDrawer[data-view="validation"] .reviewChecklistPanel,
+.workspace.view-command-center .professionalDiagnosticsDrawer[data-view="validation"] .sessionDraftPanel {
+  display: grid !important;
+}
+
+.workspace.view-command-center .professionalDiagnosticsDrawer[data-view="status"] .diagnosticsPanel { order: 1; }
+.workspace.view-command-center .professionalDiagnosticsDrawer[data-view="status"] .readinessPanel { order: 2; }
+.workspace.view-command-center .professionalDiagnosticsDrawer[data-view="status"] .hostStrip { order: 3; }
+.workspace.view-command-center .professionalDiagnosticsDrawer[data-view="status"] .commandGrid { order: 4; }
+
+.workspace.view-command-center .professionalDiagnosticsDrawer .commandGrid {
+  grid-template-columns: 1fr;
+}
+
+.workspace.view-command-center .professionalDiagnosticsDrawer .visualPreviewGrid,
+.workspace.view-command-center .professionalDiagnosticsDrawer .visualReviewGrid,
+.workspace.view-command-center .professionalDiagnosticsDrawer .visualSignoffGrid {
+  grid-template-columns: 1fr;
+}
+
+.workspace.view-command-center .professionalDiagnosticsDrawer .diagnosticsList {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.workspace.view-command-center .professionalDiagnosticsDrawer .hostStrip {
+  position: static;
+}
+
+@media (max-width: 1100px) {
+  .professionalWorkbenchBody {
+    grid-template-columns: 210px minmax(0, 1fr);
+  }
+
+  .professionalInspector {
+    position: fixed;
+    top: calc(var(--topbar-height) + var(--control-lg) * 2);
+    right: 0;
+    bottom: max(132px, 22vh);
+    z-index: 2600;
+    width: min(320px, 88vw);
+    border-left-color: var(--color-line-control);
+    box-shadow: -12px 0 32px rgba(0, 0, 0, 0.16);
+    transform: translateX(100%);
+    transition: transform var(--motion-normal) ease;
+  }
+
+  .professionalWorkbench.inspectorOpen .professionalInspector {
+    transform: translateX(0);
+  }
+}
+
+@media (max-width: 840px) {
+  .workspace.view-command-center .professionalWorkbench {
+    height: calc(100dvh - var(--topbar-height));
+    grid-template-rows: auto auto minmax(0, 1fr) minmax(144px, 24vh);
+  }
+
+  .professionalModeBar {
+    min-height: 80px;
+    align-items: stretch;
+    flex-direction: column;
+    justify-content: center;
+    gap: var(--space-2);
+    padding-block: var(--space-2);
+  }
+
+  .professionalModeTabs {
+    overflow-x: auto;
+  }
+
+  .professionalModeActions {
+    justify-content: space-between;
+  }
+
+  .professionalResourceToggle {
+    display: inline-flex;
+  }
+
+  .professionalHostBar {
+    min-height: var(--control-lg);
+  }
+
+  .professionalHostContextSummary,
+  .professionalSafetyState {
+    display: none;
+  }
+
+  .professionalWorkbenchBody {
+    position: relative;
+    display: block;
+  }
+
+  .professionalResourcePane {
+    position: absolute;
+    inset: 0 auto 0 0;
+    z-index: 2400;
+    width: min(280px, 86vw);
+    transform: translateX(-100%);
+    transition: transform var(--motion-normal) ease;
+  }
+
+  .professionalWorkbench.resourceOpen .professionalResourcePane {
+    transform: translateX(0);
+  }
+
+  .professionalStage {
+    width: 100%;
+    height: 100%;
+  }
+
+  .professionalParameterGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .professionalDiagnosticsDrawer {
+    top: var(--topbar-height);
+    width: 100vw;
+  }
+
+  .professionalDiagnosticsHeader > div:first-child span {
+    display: none;
+  }
+
+  .professionalDiagnosticsTabs button {
+    padding-inline: var(--space-2);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .professionalInspector,
+  .professionalResourcePane {
+    transition: none;
+  }
+}

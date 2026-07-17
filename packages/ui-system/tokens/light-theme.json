@@ -1,0 +1,14 @@
+{
+  "theme": "light",
+  "tokens": {
+    "bg.app": "#F7F8FA",
+    "bg.panel": "#FFFFFF",
+    "text.primary": "#171A1F",
+    "text.secondary": "#4A5565",
+    "border.default": "#D8DEE8",
+    "accent.primary": "#2F6FDB",
+    "state.error": "#D64545",
+    "state.warning": "#B7791F",
+    "state.success": "#1F8A5B"
+  }
+}

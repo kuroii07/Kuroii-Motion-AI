@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Kuroii Provider Test Result",
+  "type": "object",
+  "required": [
+    "providerId",
+    "ok",
+    "stage",
+    "code",
+    "message",
+    "advice"
+  ],
+  "properties": {
+    "providerId": {
+      "type": "string"
+    },
+    "ok": {
+      "type": "boolean"
+    },
+    "stage": {
+      "enum": [
+        "config",
+        "network",
+        "auth",
+        "model",
+        "completed"
+      ]
+    },
+    "code": {
+      "type": "string"
+    },
+    "message": {
+      "type": "string"
+    },
+    "advice": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    }
+  }
+}

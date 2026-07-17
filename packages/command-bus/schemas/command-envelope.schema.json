@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Kuroii Command Envelope",
+  "type": "object",
+  "required": [
+    "commandId",
+    "sessionId",
+    "host",
+    "projectId",
+    "action",
+    "target",
+    "params",
+    "riskLevel",
+    "requiresConfirmation",
+    "createdAt",
+    "timeoutMs"
+  ],
+  "properties": {
+    "commandId": {
+      "type": "string"
+    },
+    "sessionId": {
+      "type": "string"
+    },
+    "host": {
+      "enum": [
+        "desktop",
+        "after-effects",
+        "premiere-pro"
+      ]
+    },
+    "projectId": {
+      "type": "string"
+    },
+    "action": {
+      "type": "string"
+    },
+    "target": {
+      "type": "object"
+    },
+    "params": {
+      "type": "object"
+    },
+    "riskLevel": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 5
+    },
+    "requiresConfirmation": {
+      "type": "boolean"
+    },
+    "createdAt": {
+      "type": "string"
+    },
+    "timeoutMs": {
+      "type": "integer"
+    }
+  }
+}

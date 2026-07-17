@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Kuroii Provider Config Form",
+  "type": "object",
+  "required": [
+    "providerId",
+    "displayName",
+    "fields",
+    "modelDiscovery",
+    "testConnection"
+  ],
+  "properties": {
+    "providerId": {
+      "type": "string"
+    },
+    "displayName": {
+      "type": "string"
+    },
+    "fields": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "modelDiscovery": {
+      "type": "object"
+    },
+    "testConnection": {
+      "type": "object"
+    },
+    "ui": {
+      "type": "object"
+    }
+  }
+}

@@ -1,0 +1,346 @@
+.imageGenerationWorkbench {
+  grid-template-rows: 54px minmax(0, 1fr);
+  color: var(--color-text-primary);
+  background: var(--color-bg-app);
+}
+
+.imageGenerationWorkbenchBody {
+  grid-template-columns: 292px minmax(360px, 1fr) 292px;
+  grid-template-areas: "composer canvas inspector";
+  overflow: hidden;
+}
+
+.imageGenerationComposer {
+  grid-area: composer;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--color-line-subtle);
+  background: var(--color-surface-1);
+}
+
+.imageGenerationCanvas {
+  grid-area: canvas;
+  padding: var(--space-6);
+  background: var(--color-canvas);
+}
+
+.imageGenerationInspector {
+  grid-area: inspector;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+  border-left: 1px solid var(--color-line-subtle);
+  background: var(--color-surface-1);
+}
+
+.imageGenerationComposer > textarea {
+  min-height: 132px;
+  margin: 0 var(--space-3) var(--space-3);
+  padding: var(--space-3);
+  border-color: var(--color-line-control);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-2);
+  font-size: var(--text-body);
+  line-height: 1.55;
+}
+
+.imageGenerationComposer .workbenchPromptChips {
+  margin: 0 var(--space-3) var(--space-3);
+}
+
+.imageGenerationSettingsDisclosure {
+  margin: 0 var(--space-3) var(--space-3);
+  border-top: 1px solid var(--color-line-subtle);
+  border-bottom: 1px solid var(--color-line-subtle);
+}
+
+.imageGenerationSettingsDisclosure summary {
+  min-height: var(--control-md);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  font-size: var(--text-label);
+  font-weight: 650;
+  list-style: none;
+}
+
+.imageGenerationSettingsDisclosure summary::-webkit-details-marker {
+  display: none;
+}
+
+.imageGenerationSettingsDisclosure summary::before {
+  content: "+";
+  width: 18px;
+  color: var(--color-text-muted);
+  font-size: 16px;
+}
+
+.imageGenerationSettingsDisclosure[open] summary::before {
+  content: "−";
+}
+
+.imageGenerationSettingsDisclosure summary span {
+  margin-left: auto;
+  color: var(--color-text-muted);
+  font-family: var(--font-code);
+  font-size: var(--text-caption);
+  font-weight: 400;
+}
+
+.imageGenerationSettingsDisclosure .imageGenerationControls {
+  padding: 0 0 var(--space-3);
+}
+
+.imageGenerationControls label {
+  color: var(--color-text-secondary);
+  font-size: var(--text-label);
+}
+
+.imageGenerationControls .imageExportNote {
+  grid-column: 1 / -1;
+  margin: var(--space-1) 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-caption);
+  line-height: 1.5;
+}
+
+.imageGenerationComposer .workbenchActionBar {
+  position: sticky;
+  bottom: 0;
+  z-index: 4;
+  margin: auto 0 0;
+  padding: var(--space-3);
+  border-top: 1px solid var(--color-line-subtle);
+  background: var(--color-surface-1);
+}
+
+.imageGenerationComposer .workbenchActionBar .featurePrimaryButton {
+  flex: 1 1 auto;
+}
+
+.imageExportResultLabel {
+  color: var(--color-text-muted);
+  font-size: var(--text-caption);
+  white-space: nowrap;
+}
+
+.imageInspectorTabs {
+  min-height: 42px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 4px var(--space-3) 0;
+  border-bottom: 1px solid var(--color-line-subtle);
+}
+
+.imageInspectorTabs button {
+  min-height: 36px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--color-text-muted);
+  background: transparent;
+  cursor: pointer;
+  font-size: var(--text-label);
+  font-weight: 650;
+}
+
+.imageInspectorTabs button:hover,
+.imageInspectorTabs button.active {
+  color: var(--color-text-primary);
+  border-bottom-color: var(--color-accent);
+}
+
+.imageInspectorPanel {
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.imageHistorySection {
+  border-top: 0;
+}
+
+.imageHistoryList {
+  max-height: none;
+}
+
+.imageGenerationDiagnostics {
+  padding: 0 var(--space-3) var(--space-3);
+}
+
+.imageGenerationDiagnostics span {
+  color: var(--color-text-muted);
+  font-size: var(--text-caption);
+}
+
+.imageGenerationDiagnostics strong {
+  color: var(--color-text-primary);
+  font-size: var(--text-small);
+}
+
+.imageHistoryRefresh,
+.imageHistoryAction {
+  font-size: var(--text-caption);
+}
+
+.imageHistoryText strong {
+  font-size: var(--text-small);
+}
+
+.imageHistoryText small {
+  font-size: var(--text-caption);
+}
+
+.imageHistoryType {
+  font-size: var(--text-caption);
+}
+
+.imageGenerationPreview,
+.imageCanvas,
+.imageResultStage {
+  border-color: var(--color-line-subtle);
+  background: var(--color-canvas);
+}
+
+.imageGenerationCanvas > .textGenerationEmpty {
+  width: min(440px, 100%);
+  border: 0;
+  background: transparent;
+}
+
+.imageGenerationPreview img {
+  border-color: var(--color-line-subtle);
+  border-radius: var(--radius-md);
+  background: var(--color-canvas-panel);
+}
+
+.imageGenerationDiagnostics,
+.imageHistoryPanel,
+.imageGenerationControls {
+  border-color: var(--color-line-subtle);
+  background: var(--color-surface-1);
+}
+
+@media (max-width: 1120px) {
+  .imageGenerationWorkbenchBody {
+    grid-template-columns: 270px minmax(320px, 1fr) 250px;
+  }
+}
+
+@media (max-width: 840px) {
+  .workspace.view-create .featureWorkspace {
+    min-height: 0;
+    padding: var(--space-3);
+  }
+
+  .workspace.view-create .workbenchHeader {
+    position: sticky;
+    top: var(--topbar-height);
+    z-index: 12;
+    scroll-margin-top: var(--topbar-height);
+    background: var(--color-surface-1);
+  }
+
+  .workspace.view-create .workbenchHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+  }
+
+  .workspace.view-create .workbenchIdentity {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .workspace.view-create .workbenchHeaderMeta {
+    flex: 0 0 auto;
+    justify-content: flex-end;
+    flex-wrap: nowrap;
+    margin-left: auto;
+  }
+
+  .imageGenerationWorkbench {
+    height: auto;
+    min-height: calc(100dvh - var(--topbar-height) - 24px);
+    grid-template-rows: auto auto;
+    overflow: visible;
+  }
+
+  .imageGenerationWorkbenchBody {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "canvas" "composer" "inspector";
+    overflow: visible;
+  }
+
+  .imageGenerationCanvas {
+    min-height: 320px;
+    padding: var(--space-4);
+    border-bottom: 1px solid var(--color-line-subtle);
+  }
+
+  .imageGenerationComposer,
+  .imageGenerationInspector {
+    min-height: auto;
+    overflow: visible;
+    border: 0;
+  }
+
+  .imageGenerationComposer {
+    padding-top: var(--space-3);
+  }
+
+  .imageGenerationComposer .railHeading {
+    padding-top: 0;
+  }
+
+  .imageGenerationComposer > textarea {
+    min-height: 112px;
+  }
+
+  .imageGenerationSettingsDisclosure:not([open]) .imageGenerationControls {
+    display: none;
+  }
+
+  .imageGenerationComposer .workbenchActionBar {
+    position: static;
+    margin: 0;
+  }
+
+  .imageGenerationInspector {
+    border-top: 1px solid var(--color-line-subtle);
+  }
+
+  .imageInspectorPanel {
+    max-height: 360px;
+  }
+}
+
+@media (max-width: 520px) {
+  .imageGenerationCanvas {
+    min-height: 280px;
+  }
+
+  .imageGenerationPreview figcaption {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .imageGenerationPreviewActions {
+    width: 100%;
+  }
+
+  .imageGenerationPreviewActions button {
+    flex: 1 1 0;
+  }
+
+  .imageGenerationComposer .workbenchActionBar {
+    flex-direction: row;
+  }
+
+  .imageGenerationComposer .workbenchActionBar button {
+    flex: 1 1 0;
+  }
+}

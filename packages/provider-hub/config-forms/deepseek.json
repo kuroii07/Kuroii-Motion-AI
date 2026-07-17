@@ -1,0 +1,41 @@
+{
+  "providerId": "deepseek",
+  "displayName": "DeepSeek",
+  "fields": [
+    {
+      "id": "apiKey",
+      "labelKey": "provider.field.apiKey",
+      "type": "password",
+      "required": true,
+      "secret": true
+    },
+    {
+      "id": "baseUrl",
+      "labelKey": "provider.field.baseUrl",
+      "type": "url",
+      "required": false,
+      "defaultValue": "https://api.deepseek.com"
+    }
+  ],
+  "modelDiscovery": {
+    "method": "POST",
+    "path": "/providers/deepseek/models",
+    "refreshButton": true
+  },
+  "testConnection": {
+    "method": "POST",
+    "path": "/providers/deepseek/test",
+    "stages": [
+      "config",
+      "network",
+      "auth",
+      "model"
+    ]
+  },
+  "ui": {
+    "categoryTabs": [
+      "Text"
+    ],
+    "guideKey": "provider.guide.deepseek"
+  }
+}

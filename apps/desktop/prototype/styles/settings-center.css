@@ -1,0 +1,308 @@
+.settingsWorkspace {
+  width: min(100%, 1120px);
+  min-width: 0;
+  display: grid;
+  gap: var(--space-6);
+  margin-inline: auto;
+}
+
+.settingsHeader {
+  min-width: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-6);
+  padding: var(--space-2) var(--space-1) 0;
+}
+
+.settingsHeader > div:first-child {
+  min-width: 0;
+}
+
+.settingsEyebrow {
+  color: var(--color-accent);
+  font-size: var(--text-caption);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.settingsHeader h2 {
+  margin: var(--space-1) 0 0;
+  color: var(--color-text-primary);
+  font-size: var(--text-h1);
+  font-weight: 650;
+}
+
+.settingsHeader p {
+  max-width: 760px;
+  margin: var(--space-1) 0 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-body);
+  line-height: 1.55;
+}
+
+.settingsHeaderStatus {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding-bottom: var(--space-1);
+}
+
+.settingsHeaderStatus > span:last-child {
+  display: grid;
+  gap: 2px;
+}
+
+.settingsHeaderStatus strong {
+  color: var(--color-text-primary);
+  font-size: var(--text-small);
+}
+
+.settingsHeaderStatus small {
+  color: var(--color-text-muted);
+  font-size: var(--text-caption);
+}
+
+.settingsGroups {
+  display: grid;
+  gap: var(--space-6);
+  padding-bottom: var(--space-8);
+}
+
+.settingsGroup {
+  min-width: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.settingsGroup > h3 {
+  margin: 0;
+  padding-inline: var(--space-1);
+  color: var(--color-text-secondary);
+  font-size: var(--text-small);
+  font-weight: 600;
+}
+
+.settingsGroupPanel {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--color-line-control);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-1);
+}
+
+.settingsRow {
+  min-width: 0;
+  min-height: 72px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-6);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-line-subtle);
+}
+
+.settingsRow:last-child {
+  border-bottom: 0;
+}
+
+.settingsRowLabel {
+  min-width: 0;
+  display: grid;
+  gap: var(--space-1);
+}
+
+.settingsRowLabel strong {
+  color: var(--color-text-primary);
+  font-size: var(--text-body);
+  font-weight: 600;
+}
+
+.settingsRowLabel span {
+  color: var(--color-text-muted);
+  font-size: var(--text-small);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.settingsSegmented {
+  flex: 0 0 auto;
+  display: inline-flex;
+  padding: 2px;
+  border: 1px solid var(--color-line-subtle);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-2);
+}
+
+.settingsSegmented button {
+  min-height: var(--control-xs);
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-pill);
+  color: var(--color-text-secondary);
+  background: transparent;
+  cursor: pointer;
+}
+
+.settingsSegmented button:hover {
+  color: var(--color-text-primary);
+  background: var(--color-surface-hover);
+}
+
+.settingsSegmented button.active {
+  color: var(--color-text-primary);
+  background: var(--color-surface-3);
+  box-shadow: 0 1px 4px var(--color-shadow);
+}
+
+.settingsColorSwatches {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.settingsColorSwatch {
+  position: relative;
+  width: var(--control-sm);
+  height: var(--control-sm);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  cursor: pointer;
+}
+
+.settingsColorSwatch > span {
+  width: 22px;
+  height: 22px;
+  display: block;
+  border: 1px solid color-mix(in srgb, var(--swatch-color) 72%, var(--color-line-control));
+  border-radius: var(--radius-pill);
+  background: var(--swatch-color);
+}
+
+.settingsColorSwatch:hover {
+  background: var(--color-surface-hover);
+}
+
+.settingsColorSwatch.active {
+  background: transparent;
+}
+
+.settingsColorSwatch.active > span {
+  border: 2px solid var(--color-text-primary);
+}
+
+.settingsColorSwatch:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+
+.settingsRowAction {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}
+
+.settingsInlineStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text-secondary);
+  font-size: var(--text-small);
+}
+
+.settingsActionButton {
+  min-height: var(--control-sm);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-line-control);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
+  background: var(--color-surface-2);
+  cursor: pointer;
+}
+
+.settingsActionButton:hover {
+  border-color: var(--color-line-strong);
+  background: var(--color-surface-hover);
+}
+
+.settingsStateLabel,
+.settingsVersion {
+  color: var(--color-text-secondary);
+  font-size: var(--text-small);
+  font-weight: 600;
+}
+
+.settingsStateLabel.success {
+  color: var(--color-success);
+}
+
+.settingsStateLabel.warning {
+  color: var(--color-warning);
+}
+
+.settingsShortcutRows kbd {
+  min-width: 76px;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-line-control);
+  border-bottom-color: var(--color-line-strong);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
+  background: var(--color-surface-2);
+  font-family: var(--font-code);
+  font-size: var(--text-caption);
+  text-align: center;
+}
+
+@media (max-width: 840px) {
+  .settingsWorkspace {
+    width: 100%;
+  }
+}
+
+@media (max-width: 520px) {
+  .settingsHeader {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .settingsHeaderStatus {
+    padding-bottom: 0;
+  }
+
+  .settingsGroups {
+    gap: var(--space-4);
+  }
+
+  .settingsRow {
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+    padding: var(--space-4);
+  }
+
+  .settingsSegmented,
+  .settingsRowAction,
+  .settingsColorSwatches {
+    width: 100%;
+  }
+
+  .settingsSegmented button {
+    flex: 1;
+    min-width: 0;
+    padding-inline: var(--space-2);
+  }
+
+  .settingsRowAction {
+    justify-content: space-between;
+  }
+
+  .settingsColorSwatches {
+    justify-content: flex-start;
+  }
+}

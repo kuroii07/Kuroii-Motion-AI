@@ -1,0 +1,29 @@
+{
+  "categories": [
+    "Text",
+    "Vision"
+  ],
+  "auth": "apiKey",
+  "modelDiscovery": {
+    "mode": "adapter",
+    "refreshButton": true
+  },
+  "documentation": {
+    "guide": "Kuroii provider guide",
+    "officialDocs": "provider docs",
+    "apiKeyPage": "provider console"
+  },
+  "compatibility": {
+    "multimodalReady": true
+  },
+  "knownIssues": [],
+  "providerId": "custom-base-url",
+  "displayName": "Custom Base URL",
+  "protocol": "openai-compatible",
+  "endpoint": "custom",
+  "capabilities": [
+    "chat.completions",
+    "embeddings.optional",
+    "vision.optional"
+  ]
+}

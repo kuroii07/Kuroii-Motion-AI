@@ -1,0 +1,357 @@
+{
+    "nav":  {
+                "home":  "Home",
+                "copilot":  "Copilot",
+                "projects":  "Projects",
+                "jobs":  "Jobs",
+                "workflows":  "Workflows",
+                "assets":  "Assets",
+                "hostCenter":  "Host Center",
+                "commandCenter":  "Command Center",
+                "providerHub":  "Provider Hub",
+                "development":  "Development",
+                "system":  "System"
+            },
+    "status":  {
+                   "offline":  "Waiting for Local Service"
+               },
+    "commandCenter":  {
+                          "title":  "Command Center",
+                          "subtitle":  "Inspect host context, run read-only trusted actions, and review execution results.",
+                          "sections":  {
+                                           "hostContext":  "Host Context",
+                                           "trustedActions":  "Read-only Trusted Actions",
+                                           "resultHistory":  "Result History",
+                                           "hostReadiness":  "Host Readiness",
+                                           "rehearsalResult":  "Rehearsal Result",
+                                           "hostSmokeRunbook":  "Host Smoke Runbook",
+                                           "hostSmokeEvidencePack":  "Host Smoke Evidence Pack",
+                                           "hostSmokeReviewChecklist":  "Host Smoke Review Checklist",
+                                           "hostSmokeSessionDraft":  "Host Smoke Session Draft",
+                                           "visualPreview":  "Visual Preview",
+                                           "visualReview":  "Visual Review Matrix",
+                                           "visualSignoff":  "Visual Sign-off",
+                                           "visualEvidence":  "Visual Evidence Export",
+                                           "visualEvidenceReviewLock":  "Evidence Review Lock"
+                                       },
+                          "empty":  {
+                                        "title":  "Waiting for host connection",
+                                        "message":  "Start Local Service and open the AE or PR extension to inspect context."
+                                    },
+                          "detail":  {
+                                         "emptyTitle":  "No command selected",
+                                         "emptyMessage":  "Select a command from result history to inspect details."
+                                     },
+                          "activity":  {
+                                           "ready":  "Service connected",
+                                           "mockReady":  "Local mock ready",
+                                           "refreshing":  "Refreshing context",
+                                           "executing":  "Running read-only action",
+                                           "loadingDetail":  "Loading command detail",
+                                           "error":  "Connection needs attention"
+                                       },
+                          "recovery":  {
+                                           "retryRefresh":  "Retry refresh",
+                                           "clearError":  "Clear error",
+                                           "useMockMode":  "Use mock mode",
+                                           "resetFilters":  "Reset filters",
+                                           "viewLatestError":  "View latest error"
+                                       },
+                          "readiness":  {
+                                            "summary":  {
+                                                            "ready":  "Ready for real host test preflight.",
+                                                            "warning":  "Preflight has warnings to review.",
+                                                            "blocked":  "Real host testing is still blocked by preflight."
+                                                        },
+                                            "localService":  {
+                                                                 "ready":  "Local Service is connected.",
+                                                                 "blocked":  "Connect Local Service first."
+                                                             },
+                                            "hostTarget":  {
+                                                               "ready":  "Selected host target is available.",
+                                                               "blocked":  "Select an online host target."
+                                                           },
+                                            "hostHeartbeat":  {
+                                                                  "ready":  "Host heartbeat is inside the allowed window.",
+                                                                  "blocked":  "Host heartbeat is missing or stale."
+                                                              },
+                                            "trustedActions":  {
+                                                                   "ready":  "Read-only trusted actions are available.",
+                                                                   "blocked":  "At least one risk-0 read-only action is required."
+                                                               },
+                                            "commandHistory":  {
+                                                                   "ready":  "Command history is readable.",
+                                                                   "warning":  "Command history is empty; run a read-only action first.",
+                                                                   "blocked":  "Local Service command history endpoint is required."
+                                                               },
+                                            "diagnosticRecovery":  {
+                                                                       "ready":  "Diagnostic blockers have recovery actions.",
+                                                                       "blocked":  "A diagnostic blocker is missing recovery actions."
+                                                                   },
+                                            "viewRelatedArea":  "View related area"
+                                        },
+                          "filters":  {
+                                          "host":  "Host",
+                                          "action":  "Action",
+                                          "status":  "Status",
+                                          "query":  "Search",
+                                          "limit":  "Limit",
+                                          "all":  "All",
+                                          "selected":  "Selected host",
+                                          "success":  "Success",
+                                          "failed":  "Failed"
+                                      },
+                          "safety":  {
+                                         "mutationDisabled":  "This slice only allows risk-0 read-only actions; project mutation actions require confirmation and dry run in a later phase."
+                                     },
+                          "rehearsal":  {
+                                            "status":  {
+                                                           "ready":  "Rehearsal passed. Manual host smoke prep can continue.",
+                                                           "blocked":  "Rehearsal is blocked. Review the checks below first."
+                                                       },
+                                            "canProceed":  "Ready for manual host smoke",
+                                            "cannotProceed":  "Not ready for manual host smoke",
+                                            "checks":  "Checks",
+                                            "history":  "Simulated result history",
+                                            "pass":  "Pass",
+                                            "blocked":  "Blocked",
+                                            "allowed":  "Allowed actions",
+                                            "forbidden":  "Forbidden actions",
+                                            "simulated":  "Simulated records",
+                                            "failureReason":  "Failure reason",
+                                            "noFailure":  "No failure interrupt triggered",
+                                            "readOnlyRecord":  "Read-only record; no host project mutation",
+                                            "noHistory":  "No simulated result history yet.",
+                                            "toggle":  "Toggle rehearsal result",
+                                            "check":  {
+                                                          "checklist-loaded":  "Handoff checklist loaded",
+                                                          "target-lock-valid":  "Target lock is valid",
+                                                          "selected-host-connected":  "Selected host is connected",
+                                                          "required-readiness-ready":  "Required readiness checks are ready",
+                                                          "allowed-actions-present":  "Allowed read-only actions are present",
+                                                          "forbidden-actions-absent":  "No forbidden actions are mixed in",
+                                                          "result-history-captures-read-only-records":  "Result history captures read-only records",
+                                                          "failure-interrupts-run":  "Failure interrupts the run"
+                                                      }
+                                        },
+                          "runbook":  {
+                                          "copy":  "Copy",
+                                          "exportMarkdown":  "Export MD",
+                                          "exportJson":  "Export JSON",
+                                          "status":  {
+                                                         "ready":  "Runbook is ready for manual steps.",
+                                                         "blocked":  "Runbook is generated but still has blockers."
+                                                     },
+                                          "canProceed":  "Can proceed",
+                                          "cannotProceed":  "Cannot proceed yet",
+                                          "copyOk":  "Runbook copied",
+                                          "copyFailed":  "Clipboard unavailable; select the text manually",
+                                          "feedback":  {
+                                                           "generated":  "Runbook generated locally.",
+                                                           "copySuccess":  "Markdown copied to clipboard.",
+                                                           "copyFailed":  "Copy failed. Select the preview text manually.",
+                                                           "exportMarkdownSuccess":  "Markdown draft export started locally.",
+                                                           "exportJsonSuccess":  "JSON draft export started locally.",
+                                                           "exportFailed":  "Export failed. Copy the preview text as a fallback.",
+                                                           "lastAction":  "Last action",
+                                                           "persisted":  "Lightweight state saved"
+                                                       }
+                                        },
+                          "evidencePack":  {
+                                               "copy":  "Copy",
+                                               "exportMarkdown":  "Export MD",
+                                               "exportJson":  "Export JSON",
+                                               "status":  {
+                                                              "ready":  "Evidence pack draft is ready for manual review.",
+                                                              "blocked":  "Evidence pack draft is generated but still has blockers."
+                                                          },
+                                               "canProceed":  "Ready for manual review",
+                                               "cannotProceed":  "Manual review is not ready yet",
+                                               "notesLabel":  "Manual reviewer notes",
+                                               "notesPlaceholder":  "Record manual review findings, project-copy status, or blockers to revisit. Do not enter API keys, tokens, or private project content.",
+                                               "notesSaved":  "Notes saved to local draft",
+                                               "copyOk":  "Evidence pack Markdown copied",
+                                               "copyFailed":  "Copy failed. Select the preview text manually",
+                                               "exportMarkdownSuccess":  "Evidence pack Markdown draft export started locally.",
+                                               "exportJsonSuccess":  "Evidence pack JSON draft export started locally.",
+                                               "exportFailed":  "Evidence pack export failed. Copy the preview text as a fallback."
+                                        },
+                          "reviewChecklist":  {
+                                                  "reset":  "Reset",
+                                                  "status":  {
+                                                                 "ready":  "Review checklist is complete for the final manual host smoke confirmation.",
+                                                                 "needsReview":  "Review conditions are met. Confirm each item manually.",
+                                                                 "blocked":  "Review checklist is still blocked. Resolve the condition items first."
+                                                             },
+                                                  "ready":  "Confirmed",
+                                                  "needsReview":  "Needs review",
+                                                  "blocked":  "Blocked",
+                                                  "summary":  "Review progress",
+                                                  "item":  {
+                                                               "evidencePackGenerated":  "Evidence pack is generated and traceable",
+                                                               "projectCopyConfirmed":  "Disposable or backed-up project copy is confirmed",
+                                                               "targetLockReviewed":  "Target lock matches the selected host",
+                                                               "readinessBlockersReviewed":  "Readiness blockers are reviewed and clear",
+                                                               "runbookExportReviewed":  "Runbook export feedback state is reviewed",
+                                                               "allowedActionsReviewed":  "Read-only action allowlist is reviewed",
+                                                               "manualNotesReviewed":  "Manual reviewer notes are reviewed",
+                                                               "sensitiveDataReviewed":  "Notes contain no API keys, tokens, or private project content",
+                                                               "manualLaunchOnlyConfirmed":  "AE/PR will only be opened manually by the user"
+                                                           }
+                                        },
+                          "sessionDraft":  {
+                                               "save":  "Generate",
+                                               "copy":  "Copy",
+                                               "exportMarkdown":  "Export MD",
+                                               "exportJson":  "Export JSON",
+                                               "reset":  "Reset",
+                                               "status":  {
+                                                              "ready":  "Session draft is ready while waiting for the user to open the host manually.",
+                                                              "blocked":  "Session draft is still blocked by review conditions."
+                                                          },
+                                               "canStart":  "Ready to record",
+                                               "cannotStart":  "Cannot start yet",
+                                               "saved":  "Session draft saved locally",
+                                               "copyOk":  "Session draft Markdown copied",
+                                               "copyFailed":  "Copy failed. Select the preview text manually",
+                                               "exportMarkdownSuccess":  "Session draft Markdown export started locally.",
+                                               "exportJsonSuccess":  "Session draft JSON export started locally.",
+                                               "exportFailed":  "Session draft export failed. Copy the preview text as a fallback.",
+                                               "startConditions":  "Start conditions",
+                                               "allowedActions":  "Allowed actions",
+                                               "stopConditions":  "Stop conditions",
+                                               "placeholders":  "Result placeholders"
+                                           },
+                          "visualPreview":  {
+                                                "overviewToggle":  "Feature Overview",
+                                                "overviewClose":  "Hide Overview",
+                                                "summary":  "Visual preview is ready: Desktop full workspace plus compact AE/PR extension panels. Review only; no host launch.",
+                                                "profile":  "Profile",
+                                                "density":  "Density",
+                                                "brandLevel":  "Brand level",
+                                                "widthChecks":  "Width checks",
+                                                "actions":  "Read-only actions",
+                                                "previewOnly":  "Visual preview only",
+                                                "surface":  {
+                                                                "desktop":  "Desktop Command Center",
+                                                                "afterEffects":  "After Effects Panel",
+                                                                "premierePro":  "Premiere Pro Panel"
+                                                            },
+                                                "notes":  {
+                                                              "desktop":  "Keeps the full sidebar, top status, and command hierarchy; professional areas stay mostly L0/L1.",
+                                                              "afterEffects":  "Usable at 240/320/420px compact widths, focused on comp context and read-only actions.",
+                                                              "premierePro":  "Keeps editing-workspace density with sequence context, status lights, and read-only records."
+                                                          },
+                                                "drawerTitle":  "Feature Area Overview",
+                                                "drawerDesktop":  "Desktop: Command Center, host readiness, Runbook, evidence pack, and Session Draft.",
+                                                "drawerAe":  "AE: project / comp / selected-layer context, read-only actions, and local heartbeat state.",
+                                                "drawerPr":  "PR: project / sequence context, read-only actions, future subtitle / marker entry points, and event log.",
+                                                "drawerSafety":  "Safety: this phase does not auto-launch AE/PR, execute real host actions, or mutate projects."
+                                           },
+                          "visualReview":  {
+                                               "summary":  "Screenshot review matrix is ready. Complete manual visual sign-off before real host smoke.",
+                                               "pending":  "Pending review",
+                                               "fileName":  "Screenshot file",
+                                               "scorecard":  "Scorecard",
+                                               "blockers":  "Blockers",
+                                               "minimumScore":  "Minimum score",
+                                               "notes":  {
+                                                             "desktopExpanded":  "Check full sidebar, top status, command hierarchy, and restrained branding in professional areas.",
+                                                             "desktopCollapsed":  "Check collapsed sidebar identity, English short copy, and tooltips.",
+                                                             "lightTheme":  "Check dropdown, tooltip, and panel contrast in light theme.",
+                                                             "englishDensity":  "Check English text does not overflow buttons or cards.",
+                                                             "aeNarrow":  "AE 240px narrow panel must not overflow horizontally.",
+                                                             "aeEnglish":  "AE English compact panel buttons and logs remain readable.",
+                                                             "aeLight":  "AE light compact panel status lights and borders remain readable.",
+                                                             "prNarrow":  "PR 240px narrow panel keeps editing-workspace density.",
+                                                             "prEnglish":  "PR English compact panel sequence context does not overflow.",
+                                                             "prLight":  "PR light compact panel status, log, and read-only badges remain readable."
+                                                         },
+                                               "blocker":  {
+                                                               "unreadable-text":  "Unreadable text",
+                                                               "horizontal-overflow":  "Horizontal overflow",
+                                                               "missing-tooltip":  "Missing tooltip",
+                                                               "placeholder-question-marks":  "Question-mark placeholders or mojibake",
+                                                               "auto-host-launch":  "Automatic host launch entry",
+                                                               "host-mutation-control":  "Real project mutation control"
+                                                           }
+                                           },
+                          "visualSignoff":  {
+                                                "summary":  "Visual sign-off is saved locally. All shots must be accepted with no open findings before the next manual gate.",
+                                                "ready":  "Visual sign-off complete",
+                                                "needsReview":  "Needs review",
+                                                "blocked":  "Blocked",
+                                                "pending":  "Pending",
+                                                "accepted":  "Accepted",
+                                                "needsRecheck":  "Recheck",
+                                                "markAccepted":  "Accept",
+                                                "markBlocked":  "Block",
+                                                "markRecheck":  "Recheck",
+                                                "findings":  "Findings Backlog",
+                                                "findingItem":  "Shot",
+                                                "findingType":  "Type",
+                                                "findingSeverity":  "Severity",
+                                                "findingNote":  "Note",
+                                                "findingPlaceholder":  "Record location, symptom, and recheck request.",
+                                                "addFinding":  "Add Finding",
+                                                "resolveFinding":  "Resolve",
+                                                "noFindings":  "No open findings.",
+                                                "reset":  "Reset Sign-off",
+                                                "saved":  "Local sign-off state saved",
+                                                "openFindings":  "Open findings",
+                                                "type":  {
+                                                             "unreadable-text":  "Unreadable text",
+                                                             "horizontal-overflow":  "Horizontal overflow",
+                                                             "missing-tooltip":  "Missing tooltip",
+                                                             "placeholder-question-marks":  "Question placeholders or mojibake",
+                                                             "contrast":  "Contrast",
+                                                             "layout":  "Layout",
+                                                             "copy":  "Copy",
+                                                             "brand-consistency":  "Brand consistency"
+                                                         }
+                                           },
+                          "visualEvidence":  {
+                                                "summary":  "Visual evidence bundles the screenshot matrix, sign-off summary, and findings backlog for manual review before real host smoke.",
+                                                "ready":  "Visual evidence ready",
+                                                "needsReview":  "Manual review still needed",
+                                                "copy":  "Copy",
+                                                "exportMarkdown":  "Export MD",
+                                                "exportJson":  "Export JSON",
+                                                "copyOk":  "Visual evidence Markdown copied",
+                                                "copyFailed":  "Copy failed. Select the preview text manually",
+                                                "exportMarkdownSuccess":  "Visual evidence Markdown draft export started locally.",
+                                                "exportJsonSuccess":  "Visual evidence JSON draft export started locally.",
+                                                "exportFailed":  "Visual evidence export failed. Copy the preview text as a fallback."
+                                           },
+                          "visualEvidenceReviewLock":  {
+                                                "reviewer":  "Reviewer",
+                                                "note":  "Review note",
+                                                "lock":  "Lock evidence",
+                                                "unlock":  "Unlock",
+                                                "locked":  "Evidence locked",
+                                                "blocked":  "Open blockers remain",
+                                                "pending-review":  "Awaiting reviewer confirmation",
+                                                "openBlockers":  "Open blockers"
+                                           }
+                      },
+    "providerAdvice":  {
+                           "checkKey":  "Check API key",
+                           "switchModel":  "Switch model",
+                           "waitRateLimit":  "Wait for rate limit recovery",
+                           "checkBaseUrl":  "Check Base URL",
+                           "openConsole":  "Open provider console",
+                           "refreshModels":  "Refresh models",
+                           "checkProxy":  "Check proxy",
+                           "retry":  "Retry",
+                           "completeConfig":  "Complete config"
+                       },
+    "provider":  {
+                     "field":  {
+                                   "apiKey":  "API Key",
+                                   "baseUrl":  "Base URL",
+                                   "organization":  "Organization ID",
+                                   "headers":  "Custom headers",
+                                   "compatibilityMode":  "Compatibility mode"
+                               }
+                 }
+}

@@ -1,0 +1,191 @@
+{
+  "AUTH_INVALID_KEY": {
+    "severity": "error",
+    "title": "API Key 无效",
+    "message": "当前 Key 无法通过身份认证。",
+    "advice": [
+      {
+        "id": "check-key",
+        "labelZh": "检查 Key",
+        "labelEn": "Check API key",
+        "kind": "settings",
+        "descriptionZh": "确认 API Key 未填错、未过期，并拥有当前模型权限。"
+      },
+      {
+        "id": "open-provider-console",
+        "labelZh": "打开官方控制台",
+        "labelEn": "Open provider console",
+        "kind": "external",
+        "descriptionZh": "到官方控制台重新生成或复制 API Key。"
+      }
+    ]
+  },
+  "MODEL_NOT_FOUND": {
+    "severity": "warning",
+    "title": "模型不可用",
+    "message": "当前模型不在平台返回的可用列表中。",
+    "advice": [
+      {
+        "id": "refresh-models",
+        "labelZh": "刷新模型",
+        "labelEn": "Refresh models",
+        "kind": "action",
+        "descriptionZh": "根据 Base URL 和 Key 重新拉取可用模型。"
+      },
+      {
+        "id": "switch-model",
+        "labelZh": "切换模型",
+        "labelEn": "Switch model",
+        "kind": "settings",
+        "descriptionZh": "选择当前 Provider 可用模型。"
+      }
+    ]
+  },
+  "RATE_LIMITED": {
+    "severity": "warning",
+    "title": "请求被限流",
+    "message": "Provider 暂时限制了请求频率或额度。",
+    "advice": [
+      {
+        "id": "wait-rate-limit",
+        "labelZh": "等待限流",
+        "labelEn": "Wait for rate limit",
+        "kind": "wait",
+        "descriptionZh": "稍后重试，或降低请求频率。"
+      },
+      {
+        "id": "switch-model",
+        "labelZh": "切换模型",
+        "labelEn": "Switch model",
+        "kind": "settings",
+        "descriptionZh": "切换到其他模型或 Provider。"
+      }
+    ]
+  },
+  "BASE_URL_UNREACHABLE": {
+    "severity": "error",
+    "title": "Base URL 不可达",
+    "message": "无法访问当前 Base URL 或路径不符合 OpenAI Compatible 协议。",
+    "advice": [
+      {
+        "id": "check-base-url",
+        "labelZh": "检查 Base URL",
+        "labelEn": "Check Base URL",
+        "kind": "settings",
+        "descriptionZh": "确认协议、域名、端口和 `/v1` 路径是否正确。"
+      },
+      {
+        "id": "check-proxy",
+        "labelZh": "检查网络代理",
+        "labelEn": "Check proxy",
+        "kind": "diagnostics",
+        "descriptionZh": "确认本机代理、防火墙或本地服务端口没有阻断。"
+      }
+    ]
+  },
+  "NETWORK_TIMEOUT": {
+    "severity": "error",
+    "title": "网络超时",
+    "message": "连接 Provider 时超过等待时间。",
+    "advice": [
+      {
+        "id": "check-base-url",
+        "labelZh": "检查 Base URL",
+        "labelEn": "Check Base URL",
+        "kind": "settings",
+        "descriptionZh": "确认 Provider 地址可访问。"
+      },
+      {
+        "id": "retry",
+        "labelZh": "重试",
+        "labelEn": "Retry",
+        "kind": "action",
+        "descriptionZh": "网络恢复后重新测试连接。"
+      }
+    ]
+  },
+  "PROVIDER_UNAVAILABLE": {
+    "severity": "error",
+    "title": "Provider 服务不可用",
+    "message": "Provider 当前返回服务端错误，可能正在维护或临时故障。",
+    "advice": [
+      {
+        "id": "retry",
+        "labelZh": "稍后重试",
+        "labelEn": "Retry later",
+        "kind": "action",
+        "descriptionZh": "等待 Provider 服务恢复后重新测试。"
+      },
+      {
+        "id": "switch-provider",
+        "labelZh": "切换 Provider",
+        "labelEn": "Switch provider",
+        "kind": "settings",
+        "descriptionZh": "临时切换到其他已配置平台。"
+      }
+    ]
+  },
+  "PROVIDER_RESPONSE_INVALID": {
+    "severity": "error",
+    "title": "Provider 响应格式异常",
+    "message": "Provider 当前操作返回的数据不符合 OpenAI Compatible 格式。",
+    "advice": [
+      {
+        "id": "increase-timeout",
+        "labelZh": "延长超时",
+        "labelEn": "Increase timeout",
+        "kind": "settings",
+        "descriptionZh": "图片生成可能需要更长时间；可在高级连接选项中将超时提高到 120–180 秒。"
+      },
+      {
+        "id": "check-base-url",
+        "labelZh": "检查 Base URL",
+        "labelEn": "Check Base URL",
+        "kind": "settings",
+        "descriptionZh": "确认 Base URL 指向 OpenAI Compatible API 根路径，而不是网页或其他接口。"
+      },
+      {
+        "id": "check-compatibility",
+        "labelZh": "检查兼容协议",
+        "labelEn": "Check compatibility",
+        "kind": "diagnostics",
+        "descriptionZh": "确认当前平台的 GET /models 或 POST /chat/completions 返回兼容的数据结构。"
+      }
+    ]
+  },
+  "CONFIG_MISSING": {
+    "severity": "error",
+    "title": "配置缺失",
+    "message": "必要 Provider 配置未填写。",
+    "advice": [
+      {
+        "id": "complete-config",
+        "labelZh": "补全配置",
+        "labelEn": "Complete config",
+        "kind": "settings",
+        "descriptionZh": "补全 API Key、Base URL 或必要参数后再测试。"
+      }
+    ]
+  },
+  "CONFIG_INVALID": {
+    "severity": "error",
+    "title": "配置格式无效",
+    "message": "Provider 高级配置包含无效模型路径、生成路径、超时或请求头。",
+    "advice": [
+      {
+        "id": "check-advanced-config",
+        "labelZh": "检查高级配置",
+        "labelEn": "Check advanced config",
+        "kind": "settings",
+        "descriptionZh": "检查模型列表路径、文本生成路径、1–60 秒超时范围，以及自定义 Header 的名称和值。"
+      },
+      {
+        "id": "remove-authorization-header",
+        "labelZh": "移除 Authorization",
+        "labelEn": "Remove Authorization header",
+        "kind": "settings",
+        "descriptionZh": "Authorization 由 API Key 自动生成，不允许在自定义 Header 中覆盖。"
+      }
+    ]
+  }
+}

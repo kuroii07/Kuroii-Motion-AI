@@ -1,0 +1,168 @@
+{
+  "host": "after-effects",
+  "extensionId": "com.kuroii.motionai.ae",
+  "capabilities": [
+    {
+      "id": "ae.context.getProject",
+      "riskLevel": 0,
+      "supportsUndo": false,
+      "testStatus": "stub"
+    },
+    {
+      "id": "ae.context.getActiveComp",
+      "riskLevel": 0,
+      "supportsUndo": false,
+      "testStatus": "stub"
+    },
+    {
+      "id": "ae.context.getSelection",
+      "riskLevel": 0,
+      "supportsUndo": false,
+      "testStatus": "stub"
+    },
+    {
+      "id": "ae.text.readSelectedLayers",
+      "riskLevel": 0,
+      "supportsUndo": false,
+      "testStatus": "stub"
+    },
+    {
+      "id": "ae.text.replaceSelectedLayers",
+      "riskLevel": 1,
+      "supportsUndo": true,
+      "testStatus": "stub"
+    },
+    {
+      "id": "ae.text.autoFit",
+      "riskLevel": 1,
+      "supportsUndo": true,
+      "testStatus": "stub"
+    },
+    {
+      "id": "ae.layer.batchRename",
+      "riskLevel": 1,
+      "supportsUndo": true,
+      "testStatus": "stub"
+    },
+    {
+      "id": "ae.layer.stagger",
+      "riskLevel": 1,
+      "supportsUndo": true,
+      "testStatus": "stub"
+    },
+    {
+      "id": "ae.layer.alignInPoint",
+      "riskLevel": 1,
+      "supportsUndo": true,
+      "testStatus": "stub"
+    },
+    {
+      "id": "ae.layer.createNull",
+      "riskLevel": 1,
+      "supportsUndo": true,
+      "testStatus": "stub"
+    },
+    {
+      "id": "ae.layer.createText",
+      "riskLevel": 1,
+      "supportsUndo": true,
+      "testStatus": "stub"
+    },
+    {
+      "id": "ae.layer.createShape",
+      "riskLevel": 1,
+      "supportsUndo": true,
+      "testStatus": "stub"
+    },
+    {
+      "id": "ae.layer.precompose",
+      "riskLevel": 1,
+      "supportsUndo": true,
+      "testStatus": "stub"
+    },
+    {
+      "id": "ae.motion.elasticScaleIn",
+      "riskLevel": 1,
+      "supportsUndo": true,
+      "testStatus": "stub"
+    },
+    {
+      "id": "ae.motion.fadeSlideIn",
+      "riskLevel": 1,
+      "supportsUndo": true,
+      "testStatus": "stub"
+    },
+    {
+      "id": "ae.motion.applyEasyEase",
+      "riskLevel": 1,
+      "supportsUndo": true,
+      "testStatus": "stub"
+    },
+    {
+      "id": "ae.expression.apply",
+      "riskLevel": 1,
+      "supportsUndo": true,
+      "testStatus": "stub"
+    },
+    {
+      "id": "ae.expression.remove",
+      "riskLevel": 1,
+      "supportsUndo": true,
+      "testStatus": "stub"
+    },
+    {
+      "id": "ae.expression.scanErrors",
+      "riskLevel": 0,
+      "supportsUndo": false,
+      "testStatus": "stub"
+    },
+    {
+      "id": "ae.comp.duplicate",
+      "riskLevel": 1,
+      "supportsUndo": true,
+      "testStatus": "stub"
+    },
+    {
+      "id": "ae.comp.create",
+      "riskLevel": 1,
+      "supportsUndo": true,
+      "testStatus": "stub"
+    },
+    {
+      "id": "ae.comp.createAspectVariants",
+      "riskLevel": 1,
+      "supportsUndo": true,
+      "testStatus": "stub"
+    },
+    {
+      "id": "ae.comp.addMarkers",
+      "riskLevel": 1,
+      "supportsUndo": true,
+      "testStatus": "stub"
+    },
+    {
+      "id": "ae.project.createFolders",
+      "riskLevel": 1,
+      "supportsUndo": true,
+      "testStatus": "stub"
+    },
+    {
+      "id": "ae.project.organizeItems",
+      "riskLevel": 1,
+      "supportsUndo": true,
+      "testStatus": "stub"
+    },
+    {
+      "id": "ae.project.scanMissingFootage",
+      "riskLevel": 0,
+      "supportsUndo": false,
+      "testStatus": "stub"
+    },
+    {
+      "id": "ae.render.addToQueue",
+      "riskLevel": 1,
+      "supportsUndo": true,
+      "testStatus": "stub"
+    }
+  ]
+}

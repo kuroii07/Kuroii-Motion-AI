@@ -1,0 +1,12 @@
+{
+  "levels": [
+    "Read-only",
+    "Safe Execute",
+    "Advanced",
+    "Developer"
+  ],
+  "providerSendSummary": true,
+  "extensionStoresApiKey": false,
+  "redactLogs": true,
+  "highRiskRequiresConfirmation": true
+}
