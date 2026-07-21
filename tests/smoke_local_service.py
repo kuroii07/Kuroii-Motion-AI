@@ -5,6 +5,7 @@ import os
 import socket
 import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 from urllib.error import HTTPError
@@ -76,6 +77,8 @@ def main() -> int:
     env = os.environ.copy()
     env["PYTHONIOENCODING"] = "utf-8"
     env["PYTHONUTF8"] = "1"
+    audio_history_directory = tempfile.TemporaryDirectory()
+    env["KUROII_AUDIO_HISTORY_PATH"] = str(Path(audio_history_directory.name) / "audio-history.json")
     process = subprocess.Popen(
         [sys.executable, str(server_script), "--port", str(port), "--token", TOKEN],
         cwd=str(ROOT),
@@ -97,6 +100,18 @@ def main() -> int:
         status, providers = request_json("GET", f"{base_url}/providers")
         assert status == 200 and providers["count"] >= 4
         assert any(item["providerId"] == "openai-compatible" for item in providers["providers"])
+
+        status, audio_history = request_json("GET", f"{base_url}/ai/audio/history")
+        assert status == 200 and audio_history["items"] == [] and audio_history["storage"]["audioCount"] == 0
+        status, audio_plan = request_json("POST", f"{base_url}/ai/audio/drafts", {
+            "kind": "music-direction",
+            "title": "Smoketest music plan",
+            "content": {"prompt": "instrumental", "blueprint": "arc"},
+            "metadata": {"useCase": "video", "mode": "instrumental", "apiKey": "must-not-save"},
+        })
+        assert status == 201 and audio_plan["item"]["hasAudio"] is False
+        status, audio_history = request_json("GET", f"{base_url}/ai/audio/history")
+        assert status == 200 and audio_history["count"] == 1
 
         cors_headers = {
             "Origin": "null",
@@ -165,6 +180,7 @@ def main() -> int:
             process.kill()
             process.wait(timeout=5)
     output = process.stdout.read() if process.stdout else ""
+    audio_history_directory.cleanup()
     assert "sk-test-secret" not in output, "service logs leaked full API key"
     assert "sk-t…cret" in output, "service logs did not show the expected redacted API key marker"
     print("[OK] Local Service smoke test passed")

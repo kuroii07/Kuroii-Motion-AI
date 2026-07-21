@@ -1,5 +1,19 @@
 # v3.0 下一步路线
 
+## 2026-07-21 音频计划资产基础（已完成）
+
+- 内容生成已新增独立的音乐方向台与配音脚本台；两页不复用图片画布语义。
+- Local Service 新增受会话令牌保护的 `/ai/audio/drafts` 与 `/ai/audio/history`，用于保存音乐提示词/蓝图和配音分段/参数。
+- 记录只保存创作计划元数据，不保存 API Key、不伪造音频文件，并明确标记为 `local-planning` / `planned`。
+- Desktop 刷新后可读取这些本地计划记录；真实音乐、试听、WAV/MP3 下载仍保持未接入状态。
+
+## 下一步：真实音频 Provider 接入计划
+
+1. 用户选定音乐与 TTS 平台，并在 Provider Hub 保存各自的模型、能力标签、提交路径和 API Key。
+2. 根据供应商实际协议实现音乐/配音任务提交、状态查询、失败恢复与取消；仅展示平台实际支持的字段。
+3. 将完成的真实音频文件接入试听、下载、历史恢复与来源/授权元数据，替换当前 `planned` 状态，但绝不把失败显示为成功。
+4. 最后把图片、视频、音乐、配音记录汇入统一资产库，补项目关联、筛选、复用参数与导出清单。
+
 ## v0.5.9 Provider Image Generation Slice（已完成）
 
 - 已新增 OpenAI / OpenAI Compatible `/images/generations` 图片适配器和 `imagesPath` 配置。

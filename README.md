@@ -2,7 +2,11 @@
 
 Development roadmap: [`docs/DEVELOPMENT_ROADMAP.md`](docs/DEVELOPMENT_ROADMAP.md).
 
+Latest execution plan: [`docs/NEXT_STEPS_v3.md`](docs/NEXT_STEPS_v3.md).
+
 Kuroii Motion AI Suite 是面向 After Effects 与 Premiere Pro 的 AI 创作、控制与自动化工作台。v3.0 从旧 CEP 单面板路线重建为 Desktop + Local Service + AE/PR Host Agent + Shared Packages 的 monorepo。
+
+内容生成现已将文案、图片、视频、音乐和配音拆为不同工作台。音乐与配音在未配置真实 Provider 时可生成并保存本地创作计划（提示词、蓝图、脚本分段与交付参数），但不会虚构音频、试听或下载文件；真实音频任务会在绑定对应模型后接入。
 
 ## 当前阶段
 

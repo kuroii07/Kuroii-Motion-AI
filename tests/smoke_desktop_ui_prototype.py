@@ -78,10 +78,35 @@ def main() -> int:
     assert "imageGenerationOutputHtml" in js
     assert 'data-create-mode="image"' in js
     assert 'data-create-mode="video"' in js
+    assert 'data-create-mode="music"' in js
+    assert 'data-create-mode="voice"' in js
     assert "runVideoGeneration" in js
     assert "renderVideoGenerationWorkbench" in js
+    assert "renderMusicDirectionWorkbench" in js
+    assert "buildMusicDirection" in js
+    assert 'id="musicDirectionBrief"' in js
+    assert "musicDirectionWorkbench" in js
+    assert "musicDirectionDesk" in js
+    assert "musicDirectionStage" in js
+    assert "musicDirectionReadiness" in js
+    assert ".musicDirectionDesk" in read("apps/desktop/prototype/styles/image-workspace.css")
+    assert ".musicDirectionStage" in read("apps/desktop/prototype/styles/image-workspace.css")
+    assert "renderVoiceDirectionWorkbench" in js
+    assert "buildVoiceDirection" in js
+    assert 'id="voiceDirectionScript"' in js
+    assert "voiceDirectionDesk" in js
+    assert "voiceDirectionSheet" in js
+    assert ".voiceDirectionDesk" in read("apps/desktop/prototype/styles/image-workspace.css")
+    assert "/ai/audio/drafts" in js
+    assert "/ai/audio/history" in js
+    assert "saveAudioPlan" in js
+    assert "audioHistoryHtml" in js
+    assert 'id="refreshAudioHistoryButton"' in js
     assert "loadVideoReadiness" in js
     assert "refreshVideoReadinessButton" in js
+    assert "addManualProviderModel" in js
+    assert 'id="providerManualModelId"' in js
+    assert 'data-provider-manual-capability' in js
     assert "videoGenerationOutputHtml" in js
     assert 'id="videoGenerationAspectRatio"' in js
     assert 'id="videoGenerationDuration"' in js

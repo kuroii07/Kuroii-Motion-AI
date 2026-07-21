@@ -222,9 +222,506 @@
   background: var(--color-surface-1);
 }
 
+/* Music direction is a creative planning desk, not a disguised image canvas. */
+.musicDirectionWorkbench {
+  grid-template-rows: 54px minmax(0, 1fr);
+  color: var(--color-text-primary);
+  background: var(--color-bg-app);
+}
+
+.musicDirectionDesk {
+  display: grid;
+  grid-template-columns: 300px minmax(380px, 1fr) 250px;
+  grid-template-areas: "brief stage readiness";
+  min-height: 0;
+  overflow: hidden;
+}
+
+.musicDirectionBriefPanel {
+  grid-area: brief;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--color-line-subtle);
+  background: var(--color-surface-1);
+}
+
+.musicDirectionBriefPanel > textarea {
+  min-height: 170px;
+  margin: 0 var(--space-3) var(--space-3);
+  padding: var(--space-3);
+  border-color: var(--color-line-control);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-2);
+  font-size: var(--text-body);
+  line-height: 1.6;
+}
+
+.musicDirectionControls {
+  display: grid;
+  gap: var(--space-3);
+  padding: 0 var(--space-3);
+}
+
+.musicDirectionControls label {
+  display: grid;
+  gap: var(--space-1);
+  color: var(--color-text-secondary);
+  font-size: var(--text-label);
+}
+
+.musicDirectionHint {
+  margin: var(--space-3);
+  color: var(--color-text-muted);
+  font-size: var(--text-caption);
+  line-height: 1.55;
+}
+
+.musicDirectionAction {
+  margin-top: auto;
+  padding: var(--space-3);
+  border-top: 1px solid var(--color-line-subtle);
+}
+
+.musicDirectionAction .featurePrimaryButton {
+  width: 100%;
+}
+
+.musicDirectionStage {
+  grid-area: stage;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: clamp(var(--space-5), 4vw, var(--space-8));
+  background: var(--color-canvas);
+}
+
+.musicDirectionStageHeading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: clamp(var(--space-5), 5vh, var(--space-8));
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--color-line-subtle);
+}
+
+.musicDirectionStageHeading p,
+.musicDirectionEyebrow {
+  margin: 0 0 var(--space-1);
+  color: var(--color-accent);
+  font-size: var(--text-caption);
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.musicDirectionStageHeading h3 {
+  margin: 0;
+  font-size: clamp(20px, 2vw, 28px);
+  letter-spacing: -.03em;
+}
+
+.musicDirectionStageHeading > span {
+  flex: 0 0 auto;
+  padding: 5px 9px;
+  border: 1px solid var(--color-line-control);
+  border-radius: 999px;
+  color: var(--color-text-secondary);
+  font-size: var(--text-caption);
+}
+
+.musicDirectionEmpty {
+  width: min(490px, 100%);
+  margin: auto;
+  padding: clamp(var(--space-5), 5vw, var(--space-8));
+  border-left: 2px solid var(--color-accent);
+  background: var(--color-canvas-panel);
+}
+
+.musicDirectionEmpty > strong {
+  display: block;
+  margin-bottom: var(--space-2);
+  font-size: var(--text-title);
+}
+
+.musicDirectionEmpty > p:not(.musicDirectionEyebrow) {
+  margin: 0;
+  color: var(--color-text-secondary);
+  line-height: 1.65;
+}
+
+.musicDirectionEmpty ol,
+.musicDirectionReadiness ol {
+  display: grid;
+  gap: var(--space-2);
+  margin: var(--space-5) 0 0;
+  padding-left: 20px;
+  color: var(--color-text-secondary);
+  font-size: var(--text-small);
+  line-height: 1.5;
+}
+
+.musicDirectionOutput {
+  display: grid;
+  gap: var(--space-4);
+  width: min(680px, 100%);
+  margin: auto;
+}
+
+.musicDirectionOutput section {
+  padding: var(--space-4);
+  border: 1px solid var(--color-line-subtle);
+  background: var(--color-canvas-panel);
+}
+
+.musicDirectionOutput section > span,
+.musicDirectionPrompt span {
+  color: var(--color-text-muted);
+  font-size: var(--text-caption);
+  font-weight: 700;
+}
+
+.musicDirectionOutput p {
+  margin: var(--space-2) 0 0;
+  color: var(--color-text-primary);
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.musicDirectionPrompt {
+  border-left: 2px solid var(--color-accent) !important;
+}
+
+.musicDirectionPrompt > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.musicDirectionPrompt small {
+  color: var(--color-text-muted);
+  font-size: var(--text-caption);
+}
+
+.musicDirectionError {
+  width: min(520px, 100%);
+  margin: auto;
+  padding: var(--space-4);
+  border-left: 2px solid var(--color-error);
+  background: var(--color-canvas-panel);
+  color: var(--color-error);
+}
+
+.musicDirectionReadiness {
+  grid-area: readiness;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-4) var(--space-3);
+  border-left: 1px solid var(--color-line-subtle);
+  background: var(--color-surface-1);
+}
+
+.musicDirectionReadiness section {
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-line-subtle);
+}
+
+.musicDirectionReadiness section > p {
+  display: inline;
+  margin: 0 0 0 var(--space-1);
+  color: var(--color-text-secondary);
+  font-size: var(--text-caption);
+}
+
+.musicDirectionReadiness strong {
+  display: block;
+  margin-top: var(--space-2);
+  font-size: var(--text-small);
+}
+
+.audioPlanningHistory {
+  min-width: 0;
+}
+
+.audioPlanningHistory .railHeading {
+  padding: 0 0 var(--space-2);
+}
+
+.audioHistoryEmpty {
+  color: var(--color-text-muted);
+  font-size: var(--text-caption);
+  line-height: 1.5;
+}
+
+.audioHistoryList {
+  display: grid;
+  gap: 2px;
+}
+
+.audioHistoryList article {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px var(--space-2);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--color-line-subtle);
+}
+
+.audioHistoryList strong {
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--text-caption);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.audioHistoryList small,
+.audioHistoryList span {
+  color: var(--color-text-muted);
+  font-size: var(--text-caption);
+}
+
+.audioHistoryList span {
+  grid-column: 1 / -1;
+}
+
+/* Voice direction prioritizes editable script segments and delivery parameters. */
+.voiceDirectionWorkbench {
+  grid-template-rows: 54px minmax(0, 1fr);
+  color: var(--color-text-primary);
+  background: var(--color-bg-app);
+}
+
+.voiceDirectionDesk {
+  display: grid;
+  grid-template-columns: minmax(310px, .86fr) minmax(430px, 1.4fr) 244px;
+  grid-template-areas: "composer stage delivery";
+  min-height: 0;
+  overflow: hidden;
+}
+
+.voiceDirectionComposer {
+  grid-area: composer;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--color-line-subtle);
+  background: var(--color-surface-1);
+}
+
+.voiceDirectionComposer > textarea {
+  min-height: 260px;
+  margin: 0 var(--space-3) var(--space-3);
+  padding: var(--space-3);
+  border-color: var(--color-line-control);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-2);
+  font-size: var(--text-body);
+  line-height: 1.7;
+}
+
+.voiceDirectionControls {
+  display: grid;
+  gap: var(--space-3);
+  padding: 0 var(--space-3);
+}
+
+.voiceDirectionControls label,
+.voiceDirectionInlineControls label {
+  display: grid;
+  gap: var(--space-1);
+  color: var(--color-text-secondary);
+  font-size: var(--text-label);
+}
+
+.voiceDirectionAction {
+  margin-top: auto;
+  padding: var(--space-3);
+  border-top: 1px solid var(--color-line-subtle);
+}
+
+.voiceDirectionAction .featurePrimaryButton {
+  width: 100%;
+}
+
+.voiceDirectionStage {
+  grid-area: stage;
+  min-width: 0;
+  padding: var(--space-5);
+  overflow-y: auto;
+  background: var(--color-canvas);
+}
+
+.voiceDirectionStageHeading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
+.voiceDirectionStageHeading p,
+.voiceDirectionEyebrow {
+  margin: 0 0 var(--space-1);
+  color: var(--color-accent);
+  font-size: var(--text-caption);
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.voiceDirectionStageHeading h3 {
+  margin: 0;
+  font-size: clamp(20px, 2vw, 28px);
+  letter-spacing: -.03em;
+}
+
+.voiceDirectionInlineControls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(108px, 1fr));
+  gap: var(--space-2);
+}
+
+.voiceDirectionEmpty {
+  max-width: 550px;
+  margin: clamp(var(--space-6), 11vh, var(--space-10)) auto 0;
+  padding: var(--space-5) 0;
+  border-top: 1px solid var(--color-line-control);
+  border-bottom: 1px solid var(--color-line-control);
+}
+
+.voiceDirectionEmpty > strong {
+  display: block;
+  margin-bottom: var(--space-2);
+  font-size: var(--text-title);
+}
+
+.voiceDirectionEmpty > p:not(.voiceDirectionEyebrow) {
+  margin: 0;
+  color: var(--color-text-secondary);
+  line-height: 1.65;
+}
+
+.voiceDirectionSheet {
+  max-width: 760px;
+  margin: 0 auto;
+  border-top: 2px solid var(--color-accent);
+}
+
+.voiceDirectionSheet > header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-line-subtle);
+}
+
+.voiceDirectionSheet > header p {
+  margin: 0 0 2px;
+  color: var(--color-text-muted);
+  font-size: var(--text-caption);
+}
+
+.voiceDirectionSheet > header span {
+  color: var(--color-text-secondary);
+  font-size: var(--text-caption);
+  text-align: right;
+}
+
+.voiceDirectionSheet ol {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.voiceDirectionSheet li {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: start;
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-line-subtle);
+}
+
+.voiceDirectionSheet li > span {
+  color: var(--color-accent);
+  font-family: var(--font-code);
+  font-size: var(--text-caption);
+  font-weight: 700;
+}
+
+.voiceDirectionSheet li p {
+  margin: 0;
+  line-height: 1.6;
+}
+
+.voiceDirectionSheet li small {
+  padding-top: 2px;
+  color: var(--color-text-muted);
+  font-size: var(--text-caption);
+  white-space: nowrap;
+}
+
+.voiceDirectionError {
+  max-width: 550px;
+  margin: clamp(var(--space-6), 11vh, var(--space-10)) auto 0;
+  padding: var(--space-4);
+  border-left: 2px solid var(--color-error);
+  background: var(--color-canvas-panel);
+  color: var(--color-error);
+}
+
+.voiceDirectionDelivery {
+  grid-area: delivery;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-4) var(--space-3);
+  border-left: 1px solid var(--color-line-subtle);
+  background: var(--color-surface-1);
+}
+
+.voiceDirectionDelivery section {
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-line-subtle);
+}
+
+.voiceDirectionDelivery section > p {
+  display: inline;
+  margin: 0 0 0 var(--space-1);
+  color: var(--color-text-secondary);
+  font-size: var(--text-caption);
+}
+
+.voiceDirectionDelivery strong {
+  display: block;
+  margin-top: var(--space-2);
+  font-size: var(--text-small);
+}
+
+.voiceDirectionDelivery ul {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding-left: 18px;
+  color: var(--color-text-secondary);
+  font-size: var(--text-small);
+  line-height: 1.5;
+}
+
 @media (max-width: 1120px) {
   .imageGenerationWorkbenchBody {
     grid-template-columns: 270px minmax(320px, 1fr) 250px;
+  }
+
+  .musicDirectionDesk {
+    grid-template-columns: 270px minmax(320px, 1fr) 220px;
+  }
+
+  .voiceDirectionDesk {
+    grid-template-columns: 280px minmax(350px, 1fr) 210px;
   }
 }
 
@@ -273,6 +770,79 @@
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas: "canvas" "composer" "inspector";
     overflow: visible;
+  }
+
+  .musicDirectionWorkbench {
+    height: auto;
+    min-height: calc(100dvh - var(--topbar-height) - 24px);
+    grid-template-rows: auto auto;
+    overflow: visible;
+  }
+
+  .musicDirectionDesk {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "stage" "brief" "readiness";
+    overflow: visible;
+  }
+
+  .voiceDirectionWorkbench {
+    height: auto;
+    min-height: calc(100dvh - var(--topbar-height) - 24px);
+    grid-template-rows: auto auto;
+    overflow: visible;
+  }
+
+  .voiceDirectionDesk {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "stage" "composer" "delivery";
+    overflow: visible;
+  }
+
+  .voiceDirectionStage {
+    min-height: 360px;
+    padding: var(--space-5) var(--space-4);
+    overflow: visible;
+    border-bottom: 1px solid var(--color-line-subtle);
+  }
+
+  .voiceDirectionComposer,
+  .voiceDirectionDelivery {
+    border: 0;
+  }
+
+  .voiceDirectionComposer {
+    padding-top: var(--space-3);
+  }
+
+  .voiceDirectionDelivery {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    border-top: 1px solid var(--color-line-subtle);
+  }
+
+  .musicDirectionStage {
+    min-height: 340px;
+    padding: var(--space-5) var(--space-4);
+    border-bottom: 1px solid var(--color-line-subtle);
+  }
+
+  .musicDirectionBriefPanel,
+  .musicDirectionReadiness {
+    border: 0;
+  }
+
+  .musicDirectionBriefPanel {
+    padding-top: var(--space-3);
+  }
+
+  .musicDirectionReadiness {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    border-top: 1px solid var(--color-line-subtle);
+  }
+
+  .audioPlanningHistory .railHeading {
+    padding-top: 0;
   }
 
   .imageGenerationCanvas {
@@ -342,5 +912,55 @@
 
   .imageGenerationComposer .workbenchActionBar button {
     flex: 1 1 0;
+  }
+
+  .musicDirectionStageHeading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .musicDirectionStageHeading > span {
+    align-self: flex-start;
+  }
+
+  .musicDirectionReadiness {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .musicDirectionEmpty,
+  .musicDirectionOutput {
+    margin: 0;
+  }
+
+  .musicDirectionPrompt > div {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .voiceDirectionStageHeading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .voiceDirectionInlineControls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .voiceDirectionDelivery {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .voiceDirectionSheet > header,
+  .voiceDirectionSheet li {
+    gap: var(--space-2);
+  }
+
+  .voiceDirectionSheet li {
+    grid-template-columns: 28px minmax(0, 1fr);
+  }
+
+  .voiceDirectionSheet li small {
+    grid-column: 2;
   }
 }

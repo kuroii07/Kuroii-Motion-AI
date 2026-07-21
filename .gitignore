@@ -26,6 +26,7 @@ apps/local-service/data/provider-profile.json
 apps/local-service/data/provider-secrets.json
 apps/local-service/data/provider-secrets.dpapi.json
 apps/local-service/data/image-history.json
+apps/local-service/data/audio-history.json
 apps/local-service/data/video-tasks.json
 apps/local-service/data/generated-images/
 apps/local-service/data/generated-videos/

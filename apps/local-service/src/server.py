@@ -8,6 +8,7 @@ from typing import Any
 from urllib.parse import parse_qs, urlparse
 
 from action_runtime import execute_trusted_read_only_action, host_context_payload, trusted_actions
+from audio_history import audio_history_storage_summary, get_audio_history_item, list_audio_history, save_audio_plan
 from command_history import get_command_record, list_command_history, record_command
 from config import ServiceConfig, load_config
 from data_store import capability_detail, capability_exists, provider_manifests
@@ -216,6 +217,7 @@ class KuroiiLocalServiceHandler(BaseHTTPRequestHandler):
                     "/providers/{providerId}/models", "/providers/{providerId}/test",
                     "/providers/{providerId}/generate", "/providers/{providerId}/image",
                     "/ai/text/generate", "/ai/image/generate", "/ai/image/history", "/ai/image/history/{imageId}",
+                    "/ai/audio/drafts", "/ai/audio/history", "/ai/audio/history/{audioId}",
                     "/ai/video/generate", "/ai/video/tasks", "/ai/video/tasks/{taskId}",
                     "/provider-bindings/{capability}", "/hosts",
                     "/hosts/{host}", "/hosts/{host}/register", "/hosts/{host}/heartbeat",
@@ -225,7 +227,7 @@ class KuroiiLocalServiceHandler(BaseHTTPRequestHandler):
                 "ts": now_iso(),
             })
             return
-        if (path in {"/providers", "/provider-profile", "/hosts", "/provider-errors", "/host-target", "/actions/trusted", "/commands", "/ai/image/history", "/ai/video/readiness", "/ai/video/tasks"} or path.startswith("/ai/image/history/") or path.startswith("/ai/video/tasks/")) and not self._require_auth():
+        if (path in {"/providers", "/provider-profile", "/hosts", "/provider-errors", "/host-target", "/actions/trusted", "/commands", "/ai/image/history", "/ai/audio/history", "/ai/video/readiness", "/ai/video/tasks"} or path.startswith("/ai/image/history/") or path.startswith("/ai/audio/history/") or path.startswith("/ai/video/tasks/")) and not self._require_auth():
             return
         if path == "/providers":
             providers = provider_manifests()
@@ -250,6 +252,22 @@ class KuroiiLocalServiceHandler(BaseHTTPRequestHandler):
             item = get_image_history_item(artifact_id)
             if not item:
                 self._error(404, "IMAGE_HISTORY_NOT_FOUND", f"Image history item not found: {artifact_id}")
+                return
+            self._send_json(200, {"ok": True, "item": item})
+            return
+        if path == "/ai/audio/history":
+            try:
+                limit = int(self._query().get("limit", "24"))
+            except ValueError:
+                limit = 24
+            items = list_audio_history(limit)
+            self._send_json(200, {"ok": True, "items": items, "count": len(items), "storage": audio_history_storage_summary()})
+            return
+        if path.startswith("/ai/audio/history/"):
+            artifact_id = path.rsplit("/", 1)[-1]
+            item = get_audio_history_item(artifact_id)
+            if not item:
+                self._error(404, "AUDIO_HISTORY_NOT_FOUND", f"Audio history item not found: {artifact_id}")
                 return
             self._send_json(200, {"ok": True, "item": item})
             return
@@ -486,6 +504,19 @@ class KuroiiLocalServiceHandler(BaseHTTPRequestHandler):
                     "source": "provider-profile",
                 }
             self._send_json(status, body)
+            return
+        if path == "/ai/audio/drafts":
+            if not self._require_auth():
+                return
+            payload = self._read_json_body()
+            if payload is None:
+                return
+            try:
+                item = save_audio_plan(payload)
+            except ValueError as error:
+                self._error(400, "AUDIO_PLAN_INVALID", str(error))
+                return
+            self._send_json(201, {"ok": True, "item": item, "storage": audio_history_storage_summary()})
             return
         if path == "/ai/image/generate":
             if not self._require_auth():

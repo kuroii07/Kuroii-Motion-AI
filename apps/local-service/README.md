@@ -40,6 +40,9 @@ python apps/local-service/src/server.py --port 17631 --token dev-local-token
 | GET | `/ai/image/history/{imageId}` | 是 | 返回单条历史详情及可显示的本地图片 data URL |
 | DELETE | `/ai/image/history/{imageId}` | 是 | 删除单条图片历史索引与受管理的本地图片文件 |
 | DELETE | `/ai/image/history` | 是 | 使用 `ids` 批量删除，或传入 `cleanupMissing: true` 清理已丢失本地文件的索引 |
+| POST | `/ai/audio/drafts` | 是 | 保存音乐方向或配音清单的本地计划元数据，不生成音频文件 |
+| GET | `/ai/audio/history?limit=24` | 是 | 返回最近音频计划记录；记录不包含 API Key 或音频内容 |
+| GET | `/ai/audio/history/{audioId}` | 是 | 返回单条音频计划详情与分段/参数元数据 |
 | GET | `/hosts` | 是 | 返回 AE / PR Host 状态与能力数量 |
 | GET | `/hosts/{host}` | 是 | 返回单个 Host 详情 |
 | POST | `/hosts/{host}/register` | 是 | 注册 Host Agent 并设置 Connected |
@@ -69,4 +72,5 @@ python apps/local-service/src/server.py --port 17631 --token dev-local-token
 - OpenAI Compatible 默认请求超时为 60 秒；可分别配置模型列表、文本生成和图片生成路径。
 - 图片生成当前支持单图同步返回，接受 Provider 返回的 `b64_json` 或远程 `url`。Base64 图片会原子写入 `apps/local-service/data/generated-images/`，历史索引写入 `apps/local-service/data/image-history.json`，默认最多保留 200 条且不记录 API Key。
 - 图片历史已支持列表、单条详情、下载、恢复参数再次使用、单条/批量删除、失效文件索引清理与本地存储占用摘要；编辑、跨页面检索和异步任务尚未接入。
+- 音乐与配音当前保存的是本地创作计划，不包含试听、音频文件或伪造的生成结果；真实 Provider 接入后才会新增任务、文件与下载能力。
 - WebSocket、队列持久化、重放保护、真实 CEP 通信和取消任务将在后续阶段实现。

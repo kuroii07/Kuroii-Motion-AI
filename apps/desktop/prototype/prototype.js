@@ -1797,6 +1797,29 @@ function defaultVideoGenerationState() {
   };
 }
 
+function defaultMusicDirectionState() {
+  return {
+    brief: "",
+    useCase: "video",
+    mode: "instrumental",
+    prompt: "",
+    blueprint: "",
+    status: "idle"
+  };
+}
+
+function defaultVoiceDirectionState() {
+  return {
+    script: "",
+    language: "zh-CN",
+    voice: "narrator",
+    pace: "natural",
+    emotion: "confident",
+    segments: [],
+    status: "idle"
+  };
+}
+
 function defaultTextFeatureSettings() {
   return {
     create: {
@@ -1840,6 +1863,9 @@ function providerConfigFromProfile(profile) {
     customHeadersText: formatProviderHeaders(item.headers),
     timeoutSeconds: Number(item.timeoutSeconds) || 120,
     defaultCapabilities: normalizeProviderCapabilities(item.defaultCapabilities),
+    manualModelId: "",
+    manualModelLabel: "",
+    manualModelCapabilities: ["video"],
     model,
     models,
     status: "ready",
@@ -1893,6 +1919,8 @@ const state = {
     background: "opaque"
   },
   videoGeneration: defaultVideoGenerationState(),
+  musicDirection: defaultMusicDirectionState(),
+  voiceDirection: defaultVoiceDirectionState(),
   videoReadiness: { status: "idle", ready: false, code: "PROVIDER_BINDING_MISSING", message: "", advice: [] },
   videoGenerationSettings: { aspectRatio: "16:9", durationSeconds: 5, resolution: "720p" },
   videoTasks: [],
@@ -1902,6 +1930,10 @@ const state = {
   imageHistoryStatus: "idle",
   imageHistoryStorage: null,
   imageHistoryNotice: "",
+  audioHistory: [],
+  audioHistoryStatus: "idle",
+  audioHistoryStorage: null,
+  audioHistoryNotice: "",
   selectedImageHistoryId: null,
   selectedImageHistoryIds: [],
   imageInspectorTab: "history",
@@ -2226,6 +2258,40 @@ function selectedModelCapabilities() {
   return advertised.length ? advertised : normalizeProviderCapabilities(state.providerConfig.defaultCapabilities);
 }
 
+function addManualProviderModel() {
+  if (providerOperationPending()) return;
+  syncProviderFormState();
+  const modelId = String(state.providerConfig.manualModelId || "").trim();
+  const label = String(state.providerConfig.manualModelLabel || "").trim() || modelId;
+  const capabilities = normalizeProviderCapabilities(state.providerConfig.manualModelCapabilities);
+  if (!modelId) {
+    state.providerConfig.errorCode = "MODEL_REQUIRED";
+    state.providerConfig.message = state.locale === "zh-CN" ? "请填写供应商文档中的模型 ID。" : "Enter the model ID from the provider documentation.";
+    requestFocus("providerManualModelId");
+    render();
+    return;
+  }
+  if (!capabilities.length) {
+    state.providerConfig.errorCode = "MODEL_CAPABILITY_MISMATCH";
+    state.providerConfig.message = state.locale === "zh-CN" ? "至少选择一个模型能力标签。" : "Select at least one model capability.";
+    render();
+    return;
+  }
+  const models = currentProviderModels().filter((model) => model.id !== modelId);
+  models.push({ id: modelId, label, tags: capabilities, source: "manual" });
+  state.providerConfig.models = models;
+  state.providerConfig.model = modelId;
+  state.providerConfig.manualModelId = "";
+  state.providerConfig.manualModelLabel = "";
+  state.providerConfig.manualModelCapabilities = ["video"];
+  state.providerConfig.errorCode = null;
+  state.providerConfig.stage = "manual-model-added";
+  state.providerConfig.message = state.locale === "zh-CN"
+    ? "模型已加入当前配置。点击“保存配置”后将写入本地 Provider Profile。"
+    : "The model was added to this profile. Save the profile to persist it locally.";
+  render();
+}
+
 function currentModelCanBindCapability(capabilityId) {
   const capabilities = selectedModelCapabilities();
   return capabilities.includes(capabilityId);
@@ -2327,6 +2393,8 @@ function syncProviderFormState() {
   const videoStatusPath = el("providerVideoStatusPath");
   const customHeaders = el("providerCustomHeaders");
   const timeoutSeconds = el("providerTimeoutSeconds");
+  const manualModelId = el("providerManualModelId");
+  const manualModelLabel = el("providerManualModelLabel");
   if (profileName) state.providerConfig.name = profileName.value;
   if (providerSelect) state.providerConfig.providerId = providerSelect.value;
   if (baseUrl) state.providerConfig.baseUrl = baseUrl.value;
@@ -2340,11 +2408,19 @@ function syncProviderFormState() {
   if (videoStatusPath) state.providerConfig.videoStatusPath = videoStatusPath.value;
   if (customHeaders) state.providerConfig.customHeadersText = customHeaders.value;
   if (timeoutSeconds) state.providerConfig.timeoutSeconds = Number(timeoutSeconds.value);
+  if (manualModelId) state.providerConfig.manualModelId = manualModelId.value;
+  if (manualModelLabel) state.providerConfig.manualModelLabel = manualModelLabel.value;
   const capabilityInputs = [...document.querySelectorAll("[data-provider-default-capability]")];
   if (capabilityInputs.length) {
     state.providerConfig.defaultCapabilities = capabilityInputs
       .filter((input) => input.checked)
       .map((input) => input.dataset.providerDefaultCapability);
+  }
+  const manualCapabilityInputs = [...document.querySelectorAll("[data-provider-manual-capability]")];
+  if (manualCapabilityInputs.length) {
+    state.providerConfig.manualModelCapabilities = manualCapabilityInputs
+      .filter((input) => input.checked)
+      .map((input) => input.dataset.providerManualCapability);
   }
 }
 
@@ -2369,6 +2445,11 @@ function providerRequestBody() {
     config.headers = parseProviderHeaders(state.providerConfig.customHeadersText).headers;
     config.timeoutSeconds = Number(state.providerConfig.timeoutSeconds) || 120;
     config.defaultCapabilities = normalizeProviderCapabilities(state.providerConfig.defaultCapabilities);
+    config.models = currentProviderModels().map((model) => ({
+      id: model.id,
+      label: model.label,
+      capabilities: Array.isArray(model.tags) ? model.tags : []
+    }));
   }
   if (state.providerConfig.providerId === "custom-base-url") {
     config.compatibilityMode = "openai-compatible";
@@ -4068,6 +4149,8 @@ function createModeToggleHtml() {
       <button type="button" data-create-mode="text" class="${state.createMode === "text" ? "active" : ""}" aria-pressed="${state.createMode === "text" ? "true" : "false"}">${state.locale === "zh-CN" ? "文案" : "Text"}</button>
       <button type="button" data-create-mode="image" class="${state.createMode === "image" ? "active" : ""}" aria-pressed="${state.createMode === "image" ? "true" : "false"}">${state.locale === "zh-CN" ? "图片" : "Image"}</button>
       <button type="button" data-create-mode="video" class="${state.createMode === "video" ? "active" : ""}" aria-pressed="${state.createMode === "video" ? "true" : "false"}">${state.locale === "zh-CN" ? "视频" : "Video"}</button>
+      <button type="button" data-create-mode="music" class="${state.createMode === "music" ? "active" : ""}" aria-pressed="${state.createMode === "music" ? "true" : "false"}">${state.locale === "zh-CN" ? "音乐" : "Music"}</button>
+      <button type="button" data-create-mode="voice" class="${state.createMode === "voice" ? "active" : ""}" aria-pressed="${state.createMode === "voice" ? "true" : "false"}">${state.locale === "zh-CN" ? "配音" : "Voice"}</button>
     </div>
   `;
 }
@@ -4087,6 +4170,7 @@ function bindCreateModeControls() {
         if (state.videoTasksStatus === "idle") void loadVideoTasks();
         void loadVideoReadiness();
       }
+      if (["music", "voice"].includes(nextMode) && state.audioHistoryStatus === "idle") void loadAudioHistory();
     });
   });
 }
@@ -4146,6 +4230,67 @@ async function loadImageHistory(options = {}) {
   } finally {
     if (renderAfter) render();
   }
+}
+
+function audioHistoryDateLabel(value) {
+  const date = new Date(value || "");
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleString(state.locale === "zh-CN" ? "zh-CN" : "en-US", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+
+async function loadAudioHistory(options = {}) {
+  const renderAfter = options.renderAfter !== false;
+  state.audioHistoryStatus = "loading";
+  if (renderAfter) render();
+  try {
+    const response = await fetch("http://127.0.0.1:17631/ai/audio/history?limit=24", {
+      headers: { "X-Kuroii-Session": "dev-local-token" }
+    });
+    if (!response.ok) throw await serviceResponseError(response);
+    const payload = await response.json();
+    state.audioHistory = Array.isArray(payload.items) ? payload.items : [];
+    state.audioHistoryStorage = payload.storage && typeof payload.storage === "object" ? payload.storage : null;
+    state.audioHistoryStatus = "ready";
+    state.serviceOnline = true;
+  } catch (error) {
+    state.audioHistoryStatus = "error";
+    state.audioHistoryNotice = state.locale === "zh-CN" ? "本地服务不可用，计划尚未保存。" : "Local service is unavailable; the plan was not saved.";
+  } finally {
+    if (renderAfter) render();
+  }
+}
+
+async function saveAudioPlan(kind, payload) {
+  try {
+    const response = await fetch("http://127.0.0.1:17631/ai/audio/drafts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Kuroii-Session": "dev-local-token" },
+      body: JSON.stringify({ kind, ...payload })
+    });
+    if (!response.ok) throw await serviceResponseError(response);
+    const result = await response.json();
+    if (!result.ok || !result.item) throw new Error("Audio plan was not saved.");
+    state.audioHistory = [result.item, ...(state.audioHistory || []).filter((item) => item.id !== result.item.id)].slice(0, 24);
+    state.audioHistoryStorage = result.storage && typeof result.storage === "object" ? result.storage : state.audioHistoryStorage;
+    state.audioHistoryStatus = "ready";
+    state.audioHistoryNotice = state.locale === "zh-CN" ? "已保存到本地音频资产记录。" : "Saved to local audio asset history.";
+    state.serviceOnline = true;
+  } catch (error) {
+    state.audioHistoryNotice = state.locale === "zh-CN" ? "计划已生成，但本地服务未保存记录。" : "The plan was created, but the local service did not save it.";
+  }
+  if (state.activeView === "create" && ["music", "voice"].includes(state.createMode)) render();
+}
+
+function audioHistoryHtml(kind) {
+  const items = (state.audioHistory || []).filter((item) => item.kind === kind).slice(0, 4);
+  const label = kind === "music-direction" ? (state.locale === "zh-CN" ? "音乐方向" : "Music directions") : (state.locale === "zh-CN" ? "配音清单" : "Voice plans");
+  if (!items.length) return `<div class="audioHistoryEmpty">${state.audioHistoryStatus === "loading" ? (state.locale === "zh-CN" ? "正在读取本地记录…" : "Loading local records…") : (state.audioHistoryStatus === "error" ? (state.locale === "zh-CN" ? "本地记录暂不可用" : "Local records unavailable") : (state.locale === "zh-CN" ? "尚无已保存的计划" : "No saved plans yet"))}</div>`;
+  return `<div class="audioHistoryList" aria-label="${escapeHtml(label)}">${items.map((item) => `<article><strong>${escapeHtml(item.title || label)}</strong><small>${escapeHtml(audioHistoryDateLabel(item.createdAt))}</small><span>${item.kind === "voice-plan" ? `${Array.isArray(item.segments) ? item.segments.length : 0} ${state.locale === "zh-CN" ? "段" : "segments"}` : escapeHtml((item.metadata && item.metadata.mode) || "")}</span></article>`).join("")}</div>`;
 }
 
 async function mutateImageHistory(payload, options = {}) {
@@ -4712,6 +4857,108 @@ function bindVideoGenerationWorkspace() {
   bindCreateModeControls();
 }
 
+function buildMusicDirection() {
+  const music = state.musicDirection;
+  const brief = String(music.brief || "").trim();
+  if (!brief) {
+    music.status = "error";
+    requestFocus("musicDirectionBrief");
+    render();
+    return;
+  }
+  const isInstrumental = music.mode === "instrumental";
+  const useCase = music.useCase === "video" ? "服务画面动作、镜头能量与剪辑节奏" : "建立独立的音乐情绪与记忆点";
+  music.blueprint = `使用目标：${useCase}。情绪与受众质感围绕“${brief}”展开；先建立清晰的节奏引擎，再以主配器推进能量，并保留可剪辑的呼吸与收束。`;
+  music.prompt = `${isInstrumental ? "纯音乐，不含演唱。" : "歌曲方向，演唱语言与歌词由后续平台配置决定。"} 围绕“${brief}”建立单一清晰的音乐身份；用具有层次的节奏引擎和主配器推动情绪，制作质感干净、具有空间感。${music.useCase === "video" ? "音乐的能量变化跟随画面动作和镜头推进，保留可用于剪辑转场的呼吸与收束。" : "旋律、律动与制作层次形成明确记忆点，并自然完成能量收束。"}`;
+  music.status = "ready";
+  render();
+  void saveAudioPlan("music-direction", {
+    title: brief.slice(0, 72),
+    content: { prompt: music.prompt, blueprint: music.blueprint },
+    metadata: { useCase: music.useCase, mode: music.mode }
+  });
+}
+
+function musicDirectionOutputHtml(music) {
+  if (music.status === "error") return `<div class="musicDirectionError"><strong>${state.locale === "zh-CN" ? "请先描述音乐要服务的画面或创作目标。" : "Describe the visual or creative goal first."}</strong></div>`;
+  if (music.status !== "ready") return `<div class="musicDirectionEmpty"><span class="statusDot muted"></span><p class="musicDirectionEyebrow">${state.locale === "zh-CN" ? "从画面到声音" : "From picture to sound"}</p><strong>${state.locale === "zh-CN" ? "先定方向，再接入生成" : "Set the direction, then connect generation"}</strong><p>${state.locale === "zh-CN" ? "这里产出可复制的音乐提示词和创作蓝图；在绑定音乐模型前，不会伪造试听、波形或音频文件。" : "This space produces a reusable prompt and creative blueprint. It never fabricates previews, waveforms, or audio before a music model is connected."}</p><ol><li>${state.locale === "zh-CN" ? "描述画面与情绪" : "Describe picture and emotion"}</li><li>${state.locale === "zh-CN" ? "选择用途与作品模式" : "Choose use case and mode"}</li><li>${state.locale === "zh-CN" ? "生成可带往平台的方向" : "Build a direction for your platform"}</li></ol></div>`;
+  return `<div class="musicDirectionOutput"><section class="musicDirectionBlueprint"><span>${state.locale === "zh-CN" ? "创作蓝图" : "Creative blueprint"}</span><p>${escapeHtml(music.blueprint)}</p></section><section class="musicDirectionPrompt"><div><span>${state.locale === "zh-CN" ? "通用音乐提示词" : "General music prompt"}</span><small>${state.locale === "zh-CN" ? "可直接带往已接入的平台" : "Ready for a connected platform"}</small></div><p>${escapeHtml(music.prompt)}</p></section></div>`;
+}
+
+function bindMusicDirectionWorkspace() {
+  const music = state.musicDirection;
+  el("musicDirectionBrief")?.addEventListener("input", (event) => { music.brief = event.target.value; });
+  el("musicDirectionUseCase")?.addEventListener("change", (event) => { music.useCase = event.target.value; });
+  el("musicDirectionMode")?.addEventListener("change", (event) => { music.mode = event.target.value; });
+  el("buildMusicDirectionButton")?.addEventListener("click", buildMusicDirection);
+  el("refreshAudioHistoryButton")?.addEventListener("click", () => loadAudioHistory());
+  bindCreateModeControls();
+}
+
+function voiceScriptSegments(script) {
+  return String(script || "")
+    .replace(/([。！？!?])/g, "$1\n")
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .slice(0, 24);
+}
+
+function buildVoiceDirection() {
+  const voice = state.voiceDirection;
+  const script = String(voice.script || "").trim();
+  if (!script) {
+    voice.status = "error";
+    requestFocus("voiceDirectionScript");
+    render();
+    return;
+  }
+  voice.segments = voiceScriptSegments(script);
+  voice.status = "ready";
+  render();
+  void saveAudioPlan("voice-plan", {
+    title: script.slice(0, 72),
+    content: { script, segments: voice.segments },
+    metadata: { language: voice.language, voice: voice.voice, pace: voice.pace, emotion: voice.emotion }
+  });
+}
+
+function voiceDirectionOutputHtml(voice) {
+  if (voice.status === "error") return `<div class="voiceDirectionError"><strong>${state.locale === "zh-CN" ? "请先输入需要配音的脚本。" : "Enter the script to voice first."}</strong></div>`;
+  if (voice.status !== "ready") return `<div class="voiceDirectionEmpty"><span class="statusDot muted"></span><p class="voiceDirectionEyebrow">${state.locale === "zh-CN" ? "台词到交付" : "Script to delivery"}</p><strong>${state.locale === "zh-CN" ? "把脚本拆成可审阅的配音清单" : "Turn your script into a reviewable voice list"}</strong><p>${state.locale === "zh-CN" ? "先确定角色、语言和表达方式；接入语音模型后，再逐段生成试听与可下载的音频文件。" : "Set the character, language, and delivery first. After a voice model is connected, generate previewable and downloadable audio per segment."}</p></div>`;
+  const language = voice.language === "zh-CN" ? "中文" : (voice.language === "en-US" ? "English" : "日本語");
+  const profile = { narrator: "沉稳旁白", explainer: "明快讲解", character: "角色对白" }[voice.voice] || "沉稳旁白";
+  const pace = { slow: "舒缓", natural: "自然", brisk: "明快" }[voice.pace] || "自然";
+  const emotion = { confident: "坚定", warm: "温暖", energetic: "有活力" }[voice.emotion] || "坚定";
+  return `<div class="voiceDirectionSheet"><header><div><p>${state.locale === "zh-CN" ? "配音清单" : "Voice delivery list"}</p><strong>${voice.segments.length} ${state.locale === "zh-CN" ? "段待生成" : "segments queued"}</strong></div><span>${escapeHtml(`${language} · ${profile} · ${pace} · ${emotion}`)}</span></header><ol>${voice.segments.map((segment, index) => `<li><span>${String(index + 1).padStart(2, "0")}</span><p>${escapeHtml(segment)}</p><small>${state.locale === "zh-CN" ? "待生成试听" : "Preview pending"}</small></li>`).join("")}</ol></div>`;
+}
+
+function bindVoiceDirectionWorkspace() {
+  const voice = state.voiceDirection;
+  el("voiceDirectionScript")?.addEventListener("input", (event) => { voice.script = event.target.value; });
+  el("voiceDirectionLanguage")?.addEventListener("change", (event) => { voice.language = event.target.value; });
+  el("voiceDirectionVoice")?.addEventListener("change", (event) => { voice.voice = event.target.value; });
+  el("voiceDirectionPace")?.addEventListener("change", (event) => { voice.pace = event.target.value; });
+  el("voiceDirectionEmotion")?.addEventListener("change", (event) => { voice.emotion = event.target.value; });
+  el("buildVoiceDirectionButton")?.addEventListener("click", buildVoiceDirection);
+  el("refreshAudioHistoryButton")?.addEventListener("click", () => loadAudioHistory());
+  bindCreateModeControls();
+}
+
+function renderVoiceDirectionWorkbench(feature, workspace) {
+  const voice = state.voiceDirection;
+  workspace.setAttribute("aria-label", localText(feature.title));
+  workspace.innerHTML = `<section class="taskWorkbench voiceDirectionWorkbench">${workbenchHeaderHtml(feature, `${createModeToggleHtml()}<span>${state.locale === "zh-CN" ? "配音脚本台" : "Voice script desk"}</span>`)}<div class="voiceDirectionDesk"><aside class="voiceDirectionComposer"><div class="railHeading"><strong>${state.locale === "zh-CN" ? "脚本" : "Script"}</strong><span>${state.locale === "zh-CN" ? "可逐行输入，也可直接粘贴完整口播" : "Enter line by line or paste the full voiceover"}</span></div><textarea id="voiceDirectionScript" placeholder="${state.locale === "zh-CN" ? "例如：欢迎来到喵喵冒险团。\n现在，和我们一起踏上新的旅程。" : "Example: Welcome to the Meow Adventure Guild.\nNow, begin a new journey with us."}">${escapeHtml(voice.script)}</textarea><div class="voiceDirectionControls"><label><span>${state.locale === "zh-CN" ? "语言" : "Language"}</span><select id="voiceDirectionLanguage"><option value="zh-CN" ${voice.language === "zh-CN" ? "selected" : ""}>中文</option><option value="en-US" ${voice.language === "en-US" ? "selected" : ""}>English</option><option value="ja-JP" ${voice.language === "ja-JP" ? "selected" : ""}>日本語</option></select></label><label><span>${state.locale === "zh-CN" ? "角色 / 音色方向" : "Role / voice direction"}</span><select id="voiceDirectionVoice"><option value="narrator" ${voice.voice === "narrator" ? "selected" : ""}>${state.locale === "zh-CN" ? "沉稳旁白" : "Grounded narrator"}</option><option value="explainer" ${voice.voice === "explainer" ? "selected" : ""}>${state.locale === "zh-CN" ? "明快讲解" : "Bright explainer"}</option><option value="character" ${voice.voice === "character" ? "selected" : ""}>${state.locale === "zh-CN" ? "角色对白" : "Character dialogue"}</option></select></label></div><div class="voiceDirectionAction"><button class="featurePrimaryButton" id="buildVoiceDirectionButton" type="button">${state.locale === "zh-CN" ? "拆分配音清单" : "Build voice list"}</button></div></aside><main class="voiceDirectionStage" aria-live="polite"><div class="voiceDirectionStageHeading"><div><p>${state.locale === "zh-CN" ? "交付节奏" : "Delivery rhythm"}</p><h3>${state.locale === "zh-CN" ? "先审台词，再生成声音" : "Review lines before generating voice"}</h3></div><div class="voiceDirectionInlineControls"><label><span>${state.locale === "zh-CN" ? "语速" : "Pace"}</span><select id="voiceDirectionPace"><option value="slow" ${voice.pace === "slow" ? "selected" : ""}>${state.locale === "zh-CN" ? "舒缓" : "Calm"}</option><option value="natural" ${voice.pace === "natural" ? "selected" : ""}>${state.locale === "zh-CN" ? "自然" : "Natural"}</option><option value="brisk" ${voice.pace === "brisk" ? "selected" : ""}>${state.locale === "zh-CN" ? "明快" : "Brisk"}</option></select></label><label><span>${state.locale === "zh-CN" ? "情绪" : "Emotion"}</span><select id="voiceDirectionEmotion"><option value="confident" ${voice.emotion === "confident" ? "selected" : ""}>${state.locale === "zh-CN" ? "坚定" : "Confident"}</option><option value="warm" ${voice.emotion === "warm" ? "selected" : ""}>${state.locale === "zh-CN" ? "温暖" : "Warm"}</option><option value="energetic" ${voice.emotion === "energetic" ? "selected" : ""}>${state.locale === "zh-CN" ? "有活力" : "Energetic"}</option></select></label></div></div>${voiceDirectionOutputHtml(voice)}</main><aside class="voiceDirectionDelivery"><section><span class="statusDot muted"></span><p>${state.locale === "zh-CN" ? "语音模型尚未绑定" : "No voice model bound"}</p><strong>${state.locale === "zh-CN" ? "本页不会生成假音频" : "This page never fabricates audio"}</strong></section><section class="audioPlanningHistory"><div class="railHeading"><strong>${state.locale === "zh-CN" ? "本地资产记录" : "Local asset history"}</strong><button class="imageHistoryRefresh" id="refreshAudioHistoryButton" type="button">${state.locale === "zh-CN" ? "刷新" : "Refresh"}</button></div>${audioHistoryHtml("voice-plan")}</section><div><p class="voiceDirectionEyebrow">${state.locale === "zh-CN" ? "交付预设" : "Delivery preset"}</p><ul><li>${state.locale === "zh-CN" ? "按段试听与重试" : "Preview and retry by segment"}</li><li>${state.locale === "zh-CN" ? "导出 WAV / MP3" : "Export WAV / MP3"}</li><li>${state.locale === "zh-CN" ? "保留模型与来源元数据" : "Retain model and source metadata"}</li></ul></div></aside></div></section>`;
+  bindVoiceDirectionWorkspace();
+}
+
+function renderMusicDirectionWorkbench(feature, workspace) {
+  const music = state.musicDirection;
+  workspace.setAttribute("aria-label", localText(feature.title));
+  workspace.innerHTML = `<section class="taskWorkbench musicDirectionWorkbench">${workbenchHeaderHtml(feature, `${createModeToggleHtml()}<span>${state.locale === "zh-CN" ? "音乐方向台" : "Music direction desk"}</span>`)}<div class="musicDirectionDesk"><aside class="musicDirectionBriefPanel"><div class="railHeading"><strong>${state.locale === "zh-CN" ? "声音意图" : "Sound intent"}</strong><span>${state.locale === "zh-CN" ? "说明画面、受众、情绪与要强化的瞬间" : "Describe the visual, audience, emotion, and moments to amplify"}</span></div><textarea id="musicDirectionBrief" placeholder="${state.locale === "zh-CN" ? "例如：奇幻 RPG 猫咪冒险的开场，轻快探索感，镜头从村庄推进到远方城堡。" : "Example: An opening for a fantasy RPG cat adventure, playful exploration, moving from village to distant castle."}">${escapeHtml(music.brief)}</textarea><div class="musicDirectionControls"><label><span>${state.locale === "zh-CN" ? "使用场景" : "Use case"}</span><select id="musicDirectionUseCase"><option value="video" ${music.useCase === "video" ? "selected" : ""}>${state.locale === "zh-CN" ? "视频 / UA 配乐" : "Video / UA"}</option><option value="music" ${music.useCase === "music" ? "selected" : ""}>${state.locale === "zh-CN" ? "音乐先行探索" : "Music-first exploration"}</option></select></label><label><span>${state.locale === "zh-CN" ? "作品模式" : "Mode"}</span><select id="musicDirectionMode"><option value="instrumental" ${music.mode === "instrumental" ? "selected" : ""}>${state.locale === "zh-CN" ? "纯音乐" : "Instrumental"}</option><option value="song" ${music.mode === "song" ? "selected" : ""}>${state.locale === "zh-CN" ? "歌曲" : "Song"}</option></select></label></div><p class="musicDirectionHint">${state.locale === "zh-CN" ? "未明确要求时，不在提示词中擅自限制时长或按秒划分结构。" : "No duration or second-by-second structure is inferred unless explicitly requested."}</p><div class="musicDirectionAction"><button class="featurePrimaryButton" id="buildMusicDirectionButton" type="button">${state.locale === "zh-CN" ? "生成音乐方向" : "Build music direction"}</button></div></aside><main class="musicDirectionStage" aria-live="polite"><div class="musicDirectionStageHeading"><div><p>${state.locale === "zh-CN" ? "声音叙事" : "Sound narrative"}</p><h3>${state.locale === "zh-CN" ? "让节奏服务镜头" : "Make rhythm serve the shot"}</h3></div><span>${music.mode === "instrumental" ? (state.locale === "zh-CN" ? "纯音乐" : "Instrumental") : (state.locale === "zh-CN" ? "歌曲方向" : "Song direction")}</span></div>${musicDirectionOutputHtml(music)}</main><aside class="musicDirectionReadiness"><section><span class="statusDot muted"></span><p>${state.locale === "zh-CN" ? "音乐模型尚未绑定" : "No music model bound"}</p><strong>${state.locale === "zh-CN" ? "当前可完成方向设计" : "Direction design is available"}</strong></section><section class="audioPlanningHistory"><div class="railHeading"><strong>${state.locale === "zh-CN" ? "本地资产记录" : "Local asset history"}</strong><button class="imageHistoryRefresh" id="refreshAudioHistoryButton" type="button">${state.locale === "zh-CN" ? "刷新" : "Refresh"}</button></div>${audioHistoryHtml("music-direction")}</section><div><p class="musicDirectionEyebrow">${state.locale === "zh-CN" ? "下一步" : "Next"}</p><ol><li>${state.locale === "zh-CN" ? "在 Provider 中登记支持音乐的模型" : "Register a music-capable model in Provider"}</li><li>${state.locale === "zh-CN" ? "绑定后再开放生成与试听" : "Enable generation and listening after binding"}</li></ol></div></aside></div></section>`;
+  bindMusicDirectionWorkspace();
+}
+
 function renderVideoGenerationWorkbench(feature, workspace) {
   const generation = state.videoGeneration;
   const settings = state.videoGenerationSettings;
@@ -4807,12 +5054,15 @@ function renderImageGenerationWorkbench(feature, workspace) {
 
 function workbenchHeaderHtml(feature, meta = "") {
   const textDrivenViews = new Set(["copilot", "create", "copy", "translate", "storyboard", "motion", "expression", "script", "analyze", "automate"]);
+  const audioPlanningMode = state.activeView === "create" && ["music", "voice"].includes(state.createMode);
   const binding = state.activeView === "create" && state.createMode === "image"
     ? imageCapabilityBinding()
     : (state.activeView === "create" && state.createMode === "video" ? videoCapabilityBinding() : textCapabilityBinding());
-  const runtimeLabel = textDrivenViews.has(state.activeView)
+  const runtimeLabel = audioPlanningMode
+    ? (state.locale === "zh-CN" ? "音频模型待接入" : "Audio model pending")
+    : (textDrivenViews.has(state.activeView)
     ? providerModelLabel(binding.providerId, binding.model)
-    : (state.serviceOnline ? "Local Service" : (state.locale === "zh-CN" ? "服务离线" : "Service offline"));
+    : (state.serviceOnline ? "Local Service" : (state.locale === "zh-CN" ? "服务离线" : "Service offline")));
   return `
     <header class="workbenchHeader">
       <div class="workbenchIdentity">
@@ -4936,6 +5186,14 @@ function renderDocumentWorkbench(feature, workspace, mode) {
   }
   if (mode === "create" && state.createMode === "video") {
     renderVideoGenerationWorkbench(feature, workspace);
+    return;
+  }
+  if (mode === "create" && state.createMode === "music") {
+    renderMusicDirectionWorkbench(feature, workspace);
+    return;
+  }
+  if (mode === "create" && state.createMode === "voice") {
+    renderVoiceDirectionWorkbench(feature, workspace);
     return;
   }
   const generation = textGenerationState(mode);
@@ -6004,6 +6262,15 @@ function providerConnectionTabHtml(provider, providerOptions) {
             <fieldset class="providerCapabilityOptions"><legend>${state.locale === "zh-CN" ? "默认能力标签" : "Default capability tags"}</legend><div>${capabilityOptions}</div></fieldset>
           </div>
         </details>
+        <section class="providerManualModel" aria-label="${state.locale === "zh-CN" ? "手动登记模型" : "Register model manually"}">
+          <div class="providerSectionHeading"><div><strong>${state.locale === "zh-CN" ? "手动登记模型" : "Register model manually"}</strong><span>${state.locale === "zh-CN" ? "当 /models 未返回视频模型时，按供应商文档填写模型 ID 和能力标签。" : "Use the provider documentation when /models does not return a video model."}</span></div></div>
+          <div class="providerManualModelGrid">
+            <label><span>${state.locale === "zh-CN" ? "模型 ID" : "Model ID"}</span><input id="providerManualModelId" type="text" value="${escapeHtml(state.providerConfig.manualModelId || "")}" placeholder="provider-video-model" spellcheck="false" ${disabled}></label>
+            <label><span>${state.locale === "zh-CN" ? "显示名称（可选）" : "Display name (optional)"}</span><input id="providerManualModelLabel" type="text" value="${escapeHtml(state.providerConfig.manualModelLabel || "")}" placeholder="Video model" ${disabled}></label>
+            <fieldset class="providerCapabilityOptions providerManualModelCapabilities"><legend>${state.locale === "zh-CN" ? "模型能力" : "Model capabilities"}</legend><div>${providerCapabilities.map((capability) => `<label class="providerCapabilityOption"><input type="checkbox" data-provider-manual-capability="${escapeHtml(capability.id)}" ${state.providerConfig.manualModelCapabilities.includes(capability.id) ? "checked" : ""} ${disabled}><span>${escapeHtml(localText(capability.label))}</span></label>`).join("")}</div></fieldset>
+            <button class="featureSecondaryButton" id="addManualProviderModelButton" type="button" ${disabled}>${state.locale === "zh-CN" ? "加入模型列表" : "Add model"}</button>
+          </div>
+        </section>
       ` : ""}
       <section class="providerConnectionModels" aria-label="${state.locale === "zh-CN" ? "模型能力分类" : "Model capability categories"}">
         <div class="providerSectionHeading">
@@ -6222,6 +6489,7 @@ function bindProviderHubV2Workspace() {
     state.providerConfig.errorCode = null;
     render();
   });
+  el("addManualProviderModelButton")?.addEventListener("click", addManualProviderModel);
   document.querySelectorAll("[data-provider-model-capability]").forEach((button) => {
     button.addEventListener("click", () => {
       syncProviderFormState();
