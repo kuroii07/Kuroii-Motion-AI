@@ -46,6 +46,7 @@ from provider_profiles import (
     select_named_provider_profile,
     store_named_provider_models,
     update_named_provider_profile,
+    video_generation_readiness,
 )
 from provider_runtime import (
     generate_image,
@@ -224,7 +225,7 @@ class KuroiiLocalServiceHandler(BaseHTTPRequestHandler):
                 "ts": now_iso(),
             })
             return
-        if (path in {"/providers", "/provider-profile", "/hosts", "/provider-errors", "/host-target", "/actions/trusted", "/commands", "/ai/image/history", "/ai/video/tasks"} or path.startswith("/ai/image/history/") or path.startswith("/ai/video/tasks/")) and not self._require_auth():
+        if (path in {"/providers", "/provider-profile", "/hosts", "/provider-errors", "/host-target", "/actions/trusted", "/commands", "/ai/image/history", "/ai/video/readiness", "/ai/video/tasks"} or path.startswith("/ai/image/history/") or path.startswith("/ai/video/tasks/")) and not self._require_auth():
             return
         if path == "/providers":
             providers = provider_manifests()
@@ -259,6 +260,9 @@ class KuroiiLocalServiceHandler(BaseHTTPRequestHandler):
                 limit = 24
             items = list_video_tasks(limit)
             self._send_json(200, {"ok": True, "items": items, "count": len(items)})
+            return
+        if path == "/ai/video/readiness":
+            self._send_json(200, video_generation_readiness())
             return
         if path.startswith("/ai/video/tasks/"):
             task_id = path.rsplit("/", 1)[-1]
@@ -532,15 +536,13 @@ class KuroiiLocalServiceHandler(BaseHTTPRequestHandler):
             payload = self._read_json_body()
             if payload is None:
                 return
-            binding, provider_profile = resolve_capability_binding("video")
-            if not isinstance(binding, dict):
-                self._error(409, "PROVIDER_BINDING_MISSING", "No video capability binding is configured.", ["Bind a video model in Provider Hub before generating."])
+            readiness = video_generation_readiness()
+            if not readiness.get("ready"):
+                self._error(409, str(readiness.get("code") or "VIDEO_NOT_READY"), str(readiness.get("message") or "Video generation is not ready."), readiness.get("advice") if isinstance(readiness.get("advice"), list) else [])
                 return
+            binding, provider_profile = resolve_capability_binding("video")
             provider_id = str(binding.get("providerId", "")).strip()
             model = str(binding.get("model", "")).strip()
-            if not provider_id or not model or not isinstance(provider_profile, dict):
-                self._error(409, "PROVIDER_PROFILE_NOT_CONFIGURED", "The bound video provider is not configured.", ["Save the provider profile in Provider Hub, then retry."])
-                return
             status, body = submit_video(provider_id, {"config": provider_profile, "model": model, "prompt": payload.get("prompt"), "options": payload.get("options")})
             if status < 300:
                 binding_payload = {"capability": "video", "profileId": binding.get("profileId"), "providerId": provider_id, "model": model, "source": "provider-profile"}

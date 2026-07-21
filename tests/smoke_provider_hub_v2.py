@@ -158,6 +158,10 @@ def main() -> int:
     try:
         wait_for_health(base_url)
 
+        status, video_readiness = request_json("GET", f"{base_url}/ai/video/readiness")
+        assert status == 200 and video_readiness["ready"] is False
+        assert video_readiness["code"] == "PROVIDER_BINDING_MISSING"
+
         status, paper = request_json("POST", f"{base_url}/provider-profiles", {
             "name": "Paper-GPT",
             "providerId": "openai-compatible",
@@ -170,6 +174,7 @@ def main() -> int:
                 "models": [
                     {"id": "gpt-5.5", "label": "gpt-5.5", "capabilities": ["text"]},
                     {"id": "gpt-image-2", "label": "gpt-image-2", "capabilities": ["image"]},
+                    {"id": "video-test", "label": "video-test", "capabilities": ["video"]},
                 ],
             },
         })
@@ -275,6 +280,16 @@ def main() -> int:
         assert status == 200
         assert image_bound["profile"]["capabilityBindings"]["image"]["model"] == "gpt-image-2"
         assert image_bound["profile"]["capabilityModelBindings"]["image"][0]["model"] == "gpt-image-2"
+
+        status, video_bound = request_json("POST", f"{base_url}/provider-bindings/video", {
+            "profileId": paper_profile["profileId"],
+            "model": "video-test",
+        })
+        assert status == 200
+        assert video_bound["profile"]["capabilityBindings"]["video"]["model"] == "video-test"
+        status, video_readiness = request_json("GET", f"{base_url}/ai/video/readiness")
+        assert status == 200 and video_readiness["ready"] is True
+        assert video_readiness["binding"]["model"] == "video-test"
 
         status, selected = request_json(
             "POST", f"{base_url}/provider-profiles/{company_profile['profileId']}/select", {}

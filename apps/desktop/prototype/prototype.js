@@ -1537,7 +1537,7 @@ function defaultProviderProfile() {
       text: { profileId: "openai", providerId: "openai", model: "gpt-4.1" },
       vision: { profileId: "openai", providerId: "openai", model: "gpt-4.1" },
       image: { profileId: "openai", providerId: "openai", model: "gpt-image-1" },
-      video: { providerId: "custom-base-url", model: "custom-video" },
+      video: {},
       voice: { providerId: "custom-base-url", model: "custom-voice" },
       speech: { providerId: "custom-base-url", model: "custom-speech" },
       music: { providerId: "custom-base-url", model: "custom-music" },
@@ -1893,6 +1893,7 @@ const state = {
     background: "opaque"
   },
   videoGeneration: defaultVideoGenerationState(),
+  videoReadiness: { status: "idle", ready: false, code: "PROVIDER_BINDING_MISSING", message: "", advice: [] },
   videoGenerationSettings: { aspectRatio: "16:9", durationSeconds: 5, resolution: "720p" },
   videoTasks: [],
   videoTasksStatus: "idle",
@@ -2439,6 +2440,7 @@ async function loadProviderProfileFromService() {
     state.providerProfileReady = true;
     render();
     void loadImageHistory();
+    void loadVideoReadiness({ renderAfter: false });
   }
 }
 
@@ -4081,7 +4083,10 @@ function bindCreateModeControls() {
       state.createMode = nextMode;
       render();
       if (nextMode === "image" && state.imageHistoryStatus === "idle") void loadImageHistory();
-      if (nextMode === "video" && state.videoTasksStatus === "idle") void loadVideoTasks();
+      if (nextMode === "video") {
+        if (state.videoTasksStatus === "idle") void loadVideoTasks();
+        void loadVideoReadiness();
+      }
     });
   });
 }
@@ -4539,6 +4544,36 @@ async function loadVideoTasks(options = {}) {
   if (options.renderAfter !== false) render();
 }
 
+async function loadVideoReadiness(options = {}) {
+  state.videoReadiness.status = "loading";
+  if (options.renderAfter !== false) render();
+  try {
+    const response = await fetch("http://127.0.0.1:17631/ai/video/readiness", { headers: { "X-Kuroii-Session": "dev-local-token" } });
+    if (!response.ok) throw await serviceResponseError(response);
+    const payload = await response.json();
+    state.videoReadiness = {
+      status: "ready",
+      ready: payload.ready === true,
+      code: payload.code || "VIDEO_NOT_READY",
+      message: payload.message || "",
+      advice: Array.isArray(payload.advice) ? payload.advice : [],
+      binding: payload.binding || null
+    };
+    state.serviceOnline = true;
+  } catch (error) {
+    const payload = error && error.payload ? error.payload : {};
+    state.videoReadiness = {
+      status: "error",
+      ready: false,
+      code: payload.code || "LOCAL_SERVICE_OFFLINE",
+      message: payload.message || (state.locale === "zh-CN" ? "无法检查视频模型配置。" : "Could not check the video model configuration."),
+      advice: Array.isArray(payload.advice) ? payload.advice : []
+    };
+  } finally {
+    if (options.renderAfter !== false) render();
+  }
+}
+
 function videoTaskStatusLabel(status) {
   const labels = {
     queued: state.locale === "zh-CN" ? "排队中" : "Queued",
@@ -4590,6 +4625,18 @@ async function refreshVideoTask(taskId, options = {}) {
 
 async function runVideoGeneration() {
   if (!state.providerProfileReady) return;
+  if (!state.videoReadiness.ready) {
+    await loadVideoReadiness({ renderAfter: false });
+    if (!state.videoReadiness.ready) {
+      const readiness = state.videoReadiness;
+      state.videoGeneration.status = "error";
+      state.videoGeneration.errorCode = readiness.code || "VIDEO_NOT_READY";
+      state.videoGeneration.message = readiness.message || (state.locale === "zh-CN" ? "视频模型尚未配置完成。" : "The video model is not configured yet.");
+      state.videoGeneration.advice = readiness.advice || [];
+      render();
+      return;
+    }
+  }
   const generation = state.videoGeneration;
   const prompt = String(generation.prompt || "").trim();
   if (!prompt) {
@@ -4653,6 +4700,7 @@ function bindVideoGenerationWorkspace() {
   el("featureGenerateButton")?.addEventListener("click", runVideoGeneration);
   el("featureCancelButton")?.addEventListener("click", () => videoGenerationController?.abort());
   el("refreshVideoTasksButton")?.addEventListener("click", () => loadVideoTasks());
+  el("refreshVideoReadinessButton")?.addEventListener("click", () => loadVideoReadiness());
   el("downloadGeneratedVideoButton")?.addEventListener("click", () => {
     const source = safeGeneratedVideoSource(generation.task && generation.task.videoUrl);
     if (source) window.open(source, "_blank", "noopener,noreferrer");
@@ -4668,6 +4716,15 @@ function renderVideoGenerationWorkbench(feature, workspace) {
   const generation = state.videoGeneration;
   const settings = state.videoGenerationSettings;
   const generating = generation.status === "generating";
+  const readiness = state.videoReadiness;
+  const readyLabel = readiness.status === "loading"
+    ? (state.locale === "zh-CN" ? "正在检查视频模型配置…" : "Checking video model configuration…")
+    : (readiness.ready
+      ? (state.locale === "zh-CN" ? "视频模型已就绪，可以提交真实异步任务。" : "Video model is ready for real async task submission.")
+      : (readiness.message || (state.locale === "zh-CN" ? "尚未绑定可用的视频模型。" : "No usable video model is bound yet.")));
+  const readyAdvice = !readiness.ready && readiness.advice && readiness.advice.length
+    ? `<small>${escapeHtml(readiness.advice[0])}</small>`
+    : "";
   workspace.setAttribute("aria-label", localText(feature.title));
   workspace.innerHTML = `
     <section class="taskWorkbench imageGenerationWorkbench videoGenerationWorkbench">
@@ -4677,7 +4734,8 @@ function renderVideoGenerationWorkbench(feature, workspace) {
           <textarea id="featurePromptInput" placeholder="${state.locale === "zh-CN" ? "例如：雨夜霓虹街头，一只黑猫从水洼旁走过，镜头低机位缓慢跟拍，电影感，16:9。" : "Example: A black cat walks beside a puddle on a neon rainy street; low-angle slow tracking shot, cinematic."}" spellcheck="true">${escapeHtml(generation.prompt)}</textarea>
           <div class="imageGenerationControls"><label><span>${state.locale === "zh-CN" ? "画面比例" : "Aspect ratio"}</span><select id="videoGenerationAspectRatio">${["16:9", "9:16", "1:1", "21:9", "4:3"].map((value) => `<option value="${value}" ${settings.aspectRatio === value ? "selected" : ""}>${value}</option>`).join("")}</select></label><label><span>${state.locale === "zh-CN" ? "时长" : "Duration"}</span><select id="videoGenerationDuration">${[5, 10, 15].map((value) => `<option value="${value}" ${Number(settings.durationSeconds) === value ? "selected" : ""}>${value}s</option>`).join("")}</select></label><label><span>${state.locale === "zh-CN" ? "输出规格" : "Resolution"}</span><select id="videoGenerationResolution">${["480p", "720p", "1080p"].map((value) => `<option value="${value}" ${settings.resolution === value ? "selected" : ""}>${value}</option>`).join("")}</select></label></div>
           <p class="imageExportNote">${state.locale === "zh-CN" ? "不同视频供应商对时长和规格的支持不同；本页会按绑定模型返回真实状态和错误。" : "Video providers differ in supported duration and resolution; this page shows the bound model's real status and errors."}</p>
-          <div class="workbenchActionBar"><button class="featurePrimaryButton" id="featureGenerateButton" type="button" ${generating || !state.providerProfileReady ? "disabled" : ""}>${generating ? (state.locale === "zh-CN" ? "生成中" : "Generating") : (state.locale === "zh-CN" ? "生成视频" : "Generate video")}</button><button class="featureSecondaryButton" id="featureCancelButton" type="button" ${generating ? "" : "hidden disabled"}>${state.locale === "zh-CN" ? "停止轮询" : "Stop polling"}</button></div>
+          <p class="imageExportNote"><span class="statusDot ${readiness.ready ? "success" : (readiness.status === "loading" ? "warning" : "muted")}"></span>${escapeHtml(readyLabel)} ${readyAdvice}<button class="imageHistoryRefresh" id="refreshVideoReadinessButton" type="button">${state.locale === "zh-CN" ? "检查" : "Check"}</button></p>
+          <div class="workbenchActionBar"><button class="featurePrimaryButton" id="featureGenerateButton" type="button" ${generating || !state.providerProfileReady || !readiness.ready ? "disabled" : ""}>${generating ? (state.locale === "zh-CN" ? "生成中" : "Generating") : (state.locale === "zh-CN" ? "生成视频" : "Generate video")}</button><button class="featureSecondaryButton" id="featureCancelButton" type="button" ${generating ? "" : "hidden disabled"}>${state.locale === "zh-CN" ? "停止轮询" : "Stop polling"}</button></div>
         </aside>
         <main class="imageGenerationCanvas" aria-live="polite">${videoGenerationOutputHtml(generation)}</main>
         <aside class="imageGenerationInspector"><section class="imageHistorySection"><div class="railHeading"><strong>${state.locale === "zh-CN" ? "视频任务历史" : "Video task history"}</strong><button class="imageHistoryRefresh" id="refreshVideoTasksButton" type="button">${state.locale === "zh-CN" ? "刷新" : "Refresh"}</button></div>${videoTaskHistoryHtml()}</section></aside>

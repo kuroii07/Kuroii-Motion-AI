@@ -19,7 +19,7 @@ from provider_secrets import (
     save_provider_secret,
     secret_store_metadata,
 )
-from provider_runtime import mock_models, provider_exists
+from provider_runtime import mock_models, provider_exists, supports_live_video_generation
 
 
 PROFILE_STORE_PATH = "apps/local-service/data/provider-profile.json"
@@ -27,7 +27,9 @@ DEFAULT_BINDINGS = {
     "text": {"providerId": "openai", "model": "gpt-4.1"},
     "vision": {"providerId": "openai", "model": "gpt-4.1"},
     "image": {"providerId": "openai", "model": "gpt-image-1"},
-    "video": {"providerId": "custom-base-url", "model": "custom-video"},
+    # Video is deliberately unbound until a real async-capable model is configured.
+    # A placeholder binding makes the generation screen look ready when it is not.
+    "video": {},
     "voice": {"providerId": "custom-base-url", "model": "custom-voice"},
     "speech": {"providerId": "custom-base-url", "model": "custom-speech"},
     "music": {"providerId": "custom-base-url", "model": "custom-music"},
@@ -115,6 +117,19 @@ def _bindings_with_profile_ids(bindings: dict[str, Any], provider_to_profile: di
     return normalized
 
 
+def _remove_legacy_video_placeholder(bindings: dict[str, Any], provider_to_profile: dict[str, str]) -> dict[str, Any]:
+    """Drop the old unconfigured Custom Video placeholder during profile reads."""
+    video = bindings.get("video")
+    if (
+        isinstance(video, dict)
+        and video.get("providerId") == "custom-base-url"
+        and video.get("model") == "custom-video"
+        and "custom-base-url" not in provider_to_profile
+    ):
+        bindings.pop("video", None)
+    return bindings
+
+
 def _capability_model_bindings(
     raw_bindings: Any,
     fallback_bindings: dict[str, Any],
@@ -192,7 +207,9 @@ def _migrate_legacy_profile(data: dict[str, Any]) -> dict[str, Any]:
     active_provider_id = str(data.get("activeProviderId", "")).strip()
     active_profile_id = provider_to_profile.get(active_provider_id) or next(iter(instances))
     bindings = data.get("capabilityBindings") if isinstance(data.get("capabilityBindings"), dict) else DEFAULT_BINDINGS
-    normalized_bindings = _bindings_with_profile_ids({**DEFAULT_BINDINGS, **bindings}, provider_to_profile)
+    normalized_bindings = _remove_legacy_video_placeholder(
+        _bindings_with_profile_ids({**DEFAULT_BINDINGS, **bindings}, provider_to_profile), provider_to_profile
+    )
     return {
         "version": 2,
         "activeProfileId": active_profile_id,
@@ -239,7 +256,9 @@ def _normalize_v2_profile(data: dict[str, Any]) -> dict[str, Any]:
     if active_profile_id not in instances:
         active_profile_id = next(iter(instances))
     bindings = data.get("capabilityBindings") if isinstance(data.get("capabilityBindings"), dict) else DEFAULT_BINDINGS
-    normalized_bindings = _bindings_with_profile_ids({**DEFAULT_BINDINGS, **bindings}, provider_to_profile)
+    normalized_bindings = _remove_legacy_video_placeholder(
+        _bindings_with_profile_ids({**DEFAULT_BINDINGS, **bindings}, provider_to_profile), provider_to_profile
+    )
     return {
         "version": 2,
         "activeProfileId": active_profile_id,
@@ -724,3 +743,82 @@ def resolve_capability_binding(capability: str) -> tuple[dict[str, Any] | None, 
             None,
         )
     return binding, item if isinstance(item, dict) else None
+
+
+def video_generation_readiness() -> dict[str, Any]:
+    """Describe whether the current video binding can submit a real task.
+
+    This is intentionally a configuration-only check.  It never sends a request
+    to the provider and never exposes a secret value.
+    """
+    binding, profile = resolve_capability_binding("video")
+    if not isinstance(binding, dict) or not str(binding.get("providerId", "")).strip() or not str(binding.get("model", "")).strip():
+        return {
+            "ok": True,
+            "ready": False,
+            "code": "PROVIDER_BINDING_MISSING",
+            "message": "No video model is bound yet.",
+            "advice": ["In Provider Hub, add a video-capable model and set it as the default video binding."],
+        }
+
+    provider_id = str(binding.get("providerId", "")).strip()
+    model_id = str(binding.get("model", "")).strip()
+    public_binding = {
+        "profileId": str(binding.get("profileId", "")).strip(),
+        "providerId": provider_id,
+        "model": model_id,
+    }
+    if not isinstance(profile, dict):
+        return {
+            "ok": True,
+            "ready": False,
+            "code": "PROVIDER_PROFILE_NOT_CONFIGURED",
+            "message": "The bound video provider profile is unavailable.",
+            "advice": ["Save the provider profile in Provider Hub, then bind its video model again."],
+            "binding": public_binding,
+        }
+    if not profile.get("enabled", True):
+        return {
+            "ok": True,
+            "ready": False,
+            "code": "PROVIDER_PROFILE_DISABLED",
+            "message": "The bound video provider profile is disabled.",
+            "advice": ["Enable the provider profile in Provider Hub."],
+            "binding": public_binding,
+        }
+    if not supports_live_video_generation(provider_id):
+        return {
+            "ok": True,
+            "ready": False,
+            "code": "VIDEO_PROVIDER_NOT_SUPPORTED",
+            "message": "This provider is not supported by the live video runtime yet.",
+            "advice": ["Use an OpenAI Compatible video provider, or add an adapter for this provider first."],
+            "binding": public_binding,
+        }
+    if not profile_model_supports_capability(profile, provider_id, model_id, "video"):
+        return {
+            "ok": True,
+            "ready": False,
+            "code": "MODEL_CAPABILITY_MISMATCH",
+            "message": "The bound model is not marked as video-capable.",
+            "advice": ["Refresh or edit the model capabilities, then bind a model tagged with Video."],
+            "binding": public_binding,
+        }
+    api_key_status = get_provider_secret_status(provider_id, str(profile.get("apiKeyRef", "")))
+    if not api_key_status.get("configured"):
+        return {
+            "ok": True,
+            "ready": False,
+            "code": "CONFIG_MISSING",
+            "message": "The video provider API key is not configured.",
+            "advice": ["Save the API key for the bound provider profile in Provider Hub."],
+            "binding": public_binding,
+        }
+    return {
+        "ok": True,
+        "ready": True,
+        "code": "VIDEO_READY",
+        "message": "The bound video provider is ready for task submission.",
+        "advice": [],
+        "binding": public_binding,
+    }

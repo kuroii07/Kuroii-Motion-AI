@@ -72,6 +72,7 @@ def main() -> int:
     assert "/ai/text/generate" in js
     assert "/ai/image/generate" in js
     assert "/ai/video/generate" in js
+    assert "/ai/video/readiness" in js
     assert "/ai/video/tasks" in js
     assert "runImageGeneration" in js
     assert "imageGenerationOutputHtml" in js
@@ -79,6 +80,8 @@ def main() -> int:
     assert 'data-create-mode="video"' in js
     assert "runVideoGeneration" in js
     assert "renderVideoGenerationWorkbench" in js
+    assert "loadVideoReadiness" in js
+    assert "refreshVideoReadinessButton" in js
     assert "videoGenerationOutputHtml" in js
     assert 'id="videoGenerationAspectRatio"' in js
     assert 'id="videoGenerationDuration"' in js

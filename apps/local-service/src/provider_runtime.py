@@ -19,6 +19,13 @@ from provider_secrets import get_provider_secret, provider_secret_ref
 
 REMOTE_PROVIDERS = {"openai", "deepseek", "openai-compatible"}
 LIVE_MODEL_DISCOVERY_PROVIDERS = {"openai", "deepseek", "openai-compatible"}
+
+
+def supports_live_video_generation(provider_id: str) -> bool:
+    """Return whether the current runtime can submit and poll video tasks."""
+    return provider_id in LIVE_MODEL_DISCOVERY_PROVIDERS
+
+
 PROVIDER_DISPLAY_NAMES = {
     "openai": "OpenAI",
     "deepseek": "DeepSeek",
@@ -336,7 +343,7 @@ def submit_video(provider_id: str, payload: dict[str, Any]) -> tuple[int, dict[s
     config, error = validate_provider_request(provider_id, payload)
     if error:
         return {"AUTH_INVALID_KEY": 401, "NETWORK_TIMEOUT": 504, "RATE_LIMITED": 429}.get(error["code"], 400), error
-    if provider_id not in LIVE_MODEL_DISCOVERY_PROVIDERS:
+    if not supports_live_video_generation(provider_id):
         return 400, error_result(provider_id, "CONFIG_INVALID", "config", "This provider does not support live video generation yet.")
     model = str(payload.get("model") or payload.get("modelId") or request_config(payload).get("model") or "").strip()
     started = perf_counter()
