@@ -17,6 +17,14 @@
       "secret": true
     },
     {
+      "id": "modelsPath",
+      "labelKey": "provider.field.modelsPath",
+      "type": "text",
+      "required": false,
+      "defaultValue": "/models",
+      "placeholder": "/models"
+    },
+    {
       "id": "compatibilityMode",
       "labelKey": "provider.field.compatibilityMode",
       "type": "select",

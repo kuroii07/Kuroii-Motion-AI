@@ -40,6 +40,7 @@ DEFAULT_PROVIDER_NAMES = {
     "openai": "OpenAI",
     "openai-compatible": "OpenAI Compatible",
     "deepseek": "DeepSeek",
+    "minimax": "MiniMax",
     "custom-base-url": "Custom Base URL",
     "ollama": "Ollama",
 }
@@ -320,7 +321,7 @@ def _compatibility_profiles(profile: dict[str, Any], public_instances: dict[str,
         provider_id = str(item.get("providerId", ""))
         if provider_id and provider_id not in selected:
             selected[provider_id] = item
-    for provider_id in ("openai", "deepseek", "openai-compatible", "custom-base-url"):
+    for provider_id in ("openai", "deepseek", "openai-compatible", "minimax", "custom-base-url"):
         if provider_id in selected:
             continue
         legacy_ref = provider_secret_ref(provider_id)
@@ -469,14 +470,16 @@ def normalize_profile_payload(
         if "\r" in organization or "\n" in organization:
             return {}, {"code": "INVALID_PROVIDER_PROFILE", "message": "OpenAI organization is invalid."}
         item["organization"] = organization
-    if provider_id == "openai-compatible":
+    if provider_id in {"openai-compatible", "custom-base-url"}:
         models_path = str(config.get("modelsPath", "/models") or "/models").strip()
+        if not models_path or "\r" in models_path or "\n" in models_path:
+            return {}, {"code": "INVALID_PROVIDER_PROFILE", "message": "Models path is invalid."}
+        item["modelsPath"] = models_path
+    if provider_id == "openai-compatible":
         chat_path = str(config.get("chatPath", "/chat/completions") or "/chat/completions").strip()
         images_path = str(config.get("imagesPath", "/images/generations") or "/images/generations").strip()
         video_path = str(config.get("videoPath", "/videos/generations") or "/videos/generations").strip()
         video_status_path = str(config.get("videoStatusPath", "/videos/generations/{taskId}") or "/videos/generations/{taskId}").strip()
-        if not models_path or "\r" in models_path or "\n" in models_path:
-            return {}, {"code": "INVALID_PROVIDER_PROFILE", "message": "Models path is invalid."}
         if not chat_path or "\r" in chat_path or "\n" in chat_path:
             return {}, {"code": "INVALID_PROVIDER_PROFILE", "message": "Chat path is invalid."}
         if not images_path or "\r" in images_path or "\n" in images_path:
@@ -504,7 +507,6 @@ def normalize_profile_payload(
             if capability and capability not in capabilities:
                 capabilities.append(capability)
         item.update({
-            "modelsPath": models_path,
             "chatPath": chat_path,
             "imagesPath": images_path,
             "videoPath": video_path,

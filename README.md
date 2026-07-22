@@ -20,6 +20,8 @@ Provider Hub 已完成响应式主从流程：桌面保留配置列表与详情�
 
 模型平台已升级为 Provider Hub V2：支持同一 Provider 类型创建多条可命名配置，使用固定高度主从布局管理连接、模型和能力绑定；API Key 按 `profileId` 通过 Windows DPAPI 独立加密保存，真实刷新或测试失败不再回退成 Mock 成功。
 
+2026-07-22 已新增 MiniMax 原生 Provider：它使用内置的官方模型目录而非错误调用通用 `/models`。`image-01` 与 `image-01-live` 已接入 MiniMax `/v1/image_generation`，成功图片照常落入内容生成历史；视频、音乐和配音只显示为可登记模型，尚未接入各自任务协议，因此不会被展示为已可生成。
+
 内容生成页现已支持“文案 / 图片”双模式。图片模式通过 Provider Hub 的 `image` 能力绑定调用 OpenAI Compatible `/images/generations`，支持尺寸、质量、背景设置、图片预览和不包含密钥的请求诊断。成功结果会自动保存到 `apps/local-service/data/generated-images/`，并可在最近生成历史中查看、下载或恢复提示词与参数再次使用。2026-07-14 已使用 `gpt-image-2` 完成真实 PNG 生成验证。
 
 Desktop 原型已增加 Kuroii 原生控件皮肤：深浅色主题分别控制滚动条、输入、复选/单选和滑块；单选下拉使用保留原始 `select` 值与事件的自绘浮层，避免回退到 Windows 原生菜单外观。

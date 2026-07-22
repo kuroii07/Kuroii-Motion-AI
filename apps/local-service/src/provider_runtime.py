@@ -15,21 +15,25 @@ from openai_protocol_adapter import (
     sanitize_custom_headers,
     submit_video_generation as submit_protocol_video_generation,
 )
+from minimax_protocol_adapter import generate_image as generate_minimax_image
 from provider_secrets import get_provider_secret, provider_secret_ref
 
-REMOTE_PROVIDERS = {"openai", "deepseek", "openai-compatible"}
-LIVE_MODEL_DISCOVERY_PROVIDERS = {"openai", "deepseek", "openai-compatible"}
+REMOTE_PROVIDERS = {"openai", "deepseek", "openai-compatible", "minimax"}
+LIVE_MODEL_DISCOVERY_PROVIDERS = {"openai", "deepseek", "openai-compatible", "custom-base-url"}
+LIVE_VIDEO_PROVIDERS = {"openai", "deepseek", "openai-compatible"}
 
 
 def supports_live_video_generation(provider_id: str) -> bool:
     """Return whether the current runtime can submit and poll video tasks."""
-    return provider_id in LIVE_MODEL_DISCOVERY_PROVIDERS
+    return provider_id in LIVE_VIDEO_PROVIDERS
 
 
 PROVIDER_DISPLAY_NAMES = {
     "openai": "OpenAI",
     "deepseek": "DeepSeek",
     "openai-compatible": "OpenAI Compatible",
+    "custom-base-url": "Custom Base URL",
+    "minimax": "MiniMax",
 }
 CONFIG_FORM_PATH = "packages/provider-hub/config-forms/{provider_id}.json"
 MODEL_PATH = "packages/provider-hub/mock-models/models.json"
@@ -236,6 +240,18 @@ def refresh_models(provider_id: str, payload: dict[str, Any]) -> tuple[int, dict
     if provider_id in LIVE_MODEL_DISCOVERY_PROVIDERS:
         return live_models(provider_id, config)
     models = mock_models(provider_id)
+    if provider_id == "minimax":
+        return 200, {
+            "providerId": provider_id,
+            "ok": True,
+            "models": models,
+            "count": len(models),
+            "source": "catalog",
+            "protocol": "minimax-native",
+            "stage": "model",
+            "refreshedAt": utc_now(),
+            "note": "MiniMax publishes separate generation APIs rather than a shared /models endpoint; this catalog mirrors the supported MiniMax model families.",
+        }
     return 200, {
         "providerId": provider_id,
         "ok": True,
@@ -305,12 +321,16 @@ def generate_image(provider_id: str, payload: dict[str, Any]) -> tuple[int, dict
             "RATE_LIMITED": 429,
         }.get(error["code"], 400)
         return status, error
-    if provider_id not in LIVE_MODEL_DISCOVERY_PROVIDERS:
+    if provider_id not in LIVE_MODEL_DISCOVERY_PROVIDERS and provider_id != "minimax":
         return 400, error_result(provider_id, "CONFIG_INVALID", "config", "This provider does not support live image generation yet.")
     model = str(payload.get("model") or payload.get("modelId") or request_config(payload).get("model") or "").strip()
     started = perf_counter()
     try:
-        result = generate_protocol_image(provider_id, config, model, payload.get("prompt"), payload.get("options"))
+        result = (
+            generate_minimax_image(config, model, payload.get("prompt"), payload.get("options"))
+            if provider_id == "minimax"
+            else generate_protocol_image(provider_id, config, model, payload.get("prompt"), payload.get("options"))
+        )
     except AdapterError as adapter_error:
         return adapter_error_result(provider_id, adapter_error)
     endpoint_path = urlparse(result["endpoint"]).path
@@ -394,6 +414,26 @@ def test_connection(provider_id: str, payload: dict[str, Any]) -> tuple[int, dic
         status = {"CONFIG_MISSING": 400, "CONFIG_INVALID": 400, "AUTH_INVALID_KEY": 401, "BASE_URL_UNREACHABLE": 400, "NETWORK_TIMEOUT": 504, "RATE_LIMITED": 429}.get(error["code"], 400)
         return status, error
     model = payload.get("model") or payload.get("modelId") or request_config(payload).get("model")
+    if provider_id == "minimax":
+        models = mock_models(provider_id)
+        model_ids = {item.get("id") for item in models}
+        if model and model not in model_ids:
+            return 404, error_result(provider_id, "MODEL_NOT_FOUND", "model")
+        selected = str(model or models[0]["id"])
+        response = success_result(
+            provider_id,
+            stage="catalog",
+            message="MiniMax catalog is ready. API key verification happens on the first supported generation request.",
+            model=selected,
+        )
+        response["source"] = "catalog"
+        response["protocol"] = "minimax-native"
+        response["checks"] = [
+            {"stage": "config", "ok": True},
+            {"stage": "catalog", "ok": True, "model": selected},
+            {"stage": "auth", "ok": None, "note": "Verified by the first supported generation request."},
+        ]
+        return 200, response
     if provider_id in LIVE_MODEL_DISCOVERY_PROVIDERS:
         status, result = live_models(provider_id, config)
         if status != 200:

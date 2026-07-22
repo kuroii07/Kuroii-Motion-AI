@@ -1,0 +1,12 @@
+{
+  "providerId": "minimax",
+  "displayName": "MiniMax",
+  "fields": [
+    {"id": "baseUrl", "labelKey": "provider.field.baseUrl", "type": "url", "required": true, "defaultValue": "https://api.minimaxi.com", "placeholder": "https://api.minimaxi.com"},
+    {"id": "apiKey", "labelKey": "provider.field.apiKey", "type": "password", "required": true, "secret": true},
+    {"id": "timeoutSeconds", "labelKey": "provider.field.timeoutSeconds", "type": "number", "required": false, "defaultValue": 120, "min": 1, "max": 180}
+  ],
+  "modelDiscovery": {"method": "catalog", "path": "built-in", "refreshButton": true},
+  "testConnection": {"method": "catalog", "path": "/providers/minimax/test", "stages": ["config", "catalog", "auth-on-generation"]},
+  "ui": {"categoryTabs": ["Text", "Image", "Video", "Voice", "Music"], "guideKey": "provider.guide.minimax"}
+}

@@ -1,5 +1,25 @@
 # v3.0 下一步路线
 
+## 2026-07-22 通用模型列表接口与多模态接入边界（已完成）
+
+- Provider Hub 将“模型列表接口”移动到 Base URL 下方；OpenAI Compatible 与 Custom Base URL 均可填写返回模型数组的路径（默认 `/models`）。
+- Custom Base URL 的刷新改为真实请求该接口，不再返回预置 mock 模型；接口、连接测试与模型列表会保留在独立配置实例中。
+- 生成接口（例如 MiniMax 的 `/v1/music_generation`）不能当作模型列表接口使用；没有模型发现 API 的平台必须采用专用 Adapter + 内置模型目录，或手动登记模型。
+
+## 2026-07-22 MiniMax 原生图片 Provider（已完成）
+
+- 新增 MiniMax 专用 Provider Manifest、配置表单与模型目录；API Key 继续只留在本地密钥层。
+- MiniMax 的模型刷新来自内置官方目录并明确标注为 `catalog`，不会将 `/v1/image_generation`、`/v1/music_generation` 等生成接口误当成模型列表接口。
+- `image-01` 与 `image-01-live` 已走 MiniMax `/v1/image_generation`：完成鉴权错误映射、比例参数转换、URL/Base64 回包解析、图片历史落盘和自动化模拟验证。
+- 视频、音乐与配音模型可以登记和绑定，但任务适配器尚未接通；连接测试会明确说明 API Key 在第一次已支持的生成任务中验证，不能伪造“已通过”的联网鉴权结果。
+
+## 下一步：MiniMax 音频与异步视频 Adapter
+
+1. 实现 MiniMax 音乐与配音的独立任务适配器：按各自字段提交、解析 URL/Base64 回包、保存真实音频资产并接入试听、下载与历史；未获得真实音频前保持 `planned`。
+2. 实现 MiniMax 视频的提交、轮询、文件查询与下载链路，记录 provider task id、进度、失败原因与可取消状态；不将异步提交误报为成片成功。
+3. 在 Provider Hub 中增加能力级别的“已接通 / 可绑定待接通 / 未支持”状态，替代当前仅凭 Provider 整体状态的判断，并将旧的 `future-*` 占位项降级为不可配置提示。
+4. 使用用户自己的 MiniMax Key 逐项做一次真实产物验收：先图片，再音乐/配音，最后视频；每项保留不含密钥的诊断与历史证据。
+
 ## 2026-07-21 音频计划资产基础（已完成）
 
 - 内容生成已新增独立的音乐方向台与配音脚本台；两页不复用图片画布语义。

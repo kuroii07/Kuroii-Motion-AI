@@ -159,6 +159,23 @@ class MockOpenAICompatibleHandler(BaseHTTPRequestHandler):
         if self.path == "/rate-limit/images/generations":
             self.send_json(429, {"error": {"message": "rate limited"}})
             return
+        if self.path == "/minimax/v1/image_generation":
+            UPSTREAM_REQUESTS.append({
+                "path": self.path,
+                "authorization": self.headers.get("Authorization"),
+                "body": body,
+            })
+            if self.headers.get("Authorization") != f"Bearer {UPSTREAM_KEY}":
+                self.send_json(200, {"base_resp": {"status_code": 1004, "status_msg": "invalid key"}})
+                return
+            self.send_json(200, {
+                "base_resp": {"status_code": 0, "status_msg": "success"},
+                "data": {
+                    "image_base64": ["iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC"],
+                },
+                "metadata": {"usage": {"image_count": 1}},
+            })
+            return
         if self.path in {"/v1/images/generations", "/v1/custom/images"}:
             UPSTREAM_REQUESTS.append({
                 "path": self.path,
@@ -341,6 +358,20 @@ def main() -> int:
         assert models["source"] == "live" and models["protocol"] == "openai-compatible"
         assert [item["id"] for item in models["models"]] == ["provider-chat", "provider-vision"]
         assert models["models"][0]["capabilities"] == ["text"]
+
+        status, custom_base_url_models = request_json(
+            "POST",
+            f"{service_url}/providers/custom-base-url/models",
+            provider_payload(
+                f"{upstream_url}/v1",
+                compatibilityMode="openai-compatible",
+                modelsPath="/catalog/models",
+            ),
+        )
+        assert status == 200 and custom_base_url_models["ok"] is True
+        assert custom_base_url_models["source"] == "live"
+        assert [item["id"] for item in custom_base_url_models["models"]] == ["provider-chat", "provider-vision"]
+        assert UPSTREAM_REQUESTS[-1]["path"] == "/v1/catalog/models"
 
         status, openai_models = request_json(
             "POST",
@@ -604,6 +635,59 @@ def main() -> int:
         assert status == 404 and missing_history_item["code"] == "IMAGE_HISTORY_NOT_FOUND"
         status, cleanup = request_json("DELETE", f"{service_url}/ai/image/history", {"cleanupMissing": True})
         assert status == 200 and cleanup["ok"] is True and cleanup["cleanup"]["removedCount"] == 0
+
+        status, minimax_models = request_json(
+            "POST",
+            f"{service_url}/providers/minimax/models",
+            provider_payload(f"{upstream_url}/minimax", model="image-01"),
+        )
+        assert status == 200 and minimax_models["source"] == "catalog"
+        assert minimax_models["protocol"] == "minimax-native"
+        assert {item["id"] for item in minimax_models["models"]} >= {"image-01", "image-01-live", "MiniMax-Hailuo-2.3"}
+        status, minimax_test = request_json(
+            "POST",
+            f"{service_url}/providers/minimax/test",
+            provider_payload(f"{upstream_url}/minimax", model="image-01"),
+        )
+        assert status == 200 and minimax_test["stage"] == "catalog"
+        assert minimax_test["checks"][-1]["ok"] is None
+
+        status, minimax_profile = request_json(
+            "POST",
+            f"{service_url}/providers/minimax/profile",
+            {
+                "config": {
+                    "baseUrl": f"{upstream_url}/minimax",
+                    "apiKey": UPSTREAM_KEY,
+                    "model": "image-01",
+                    "defaultCapabilities": ["image"],
+                    "models": [{"id": "image-01", "capabilities": ["image"]}],
+                },
+                "model": "image-01",
+                "bindCapabilities": ["image"],
+            },
+        )
+        assert status == 200 and minimax_profile["ok"] is True
+        status, minimax_image = request_json(
+            "POST",
+            f"{service_url}/ai/image/generate",
+            {"prompt": "A MiniMax image test.", "options": {"aspectRatio": "16:9", "outputResolution": "1k"}},
+        )
+        assert status == 200 and minimax_image["ok"] is True
+        assert minimax_image["providerId"] == "minimax" and minimax_image["model"] == "image-01"
+        assert minimax_image["protocol"] == "minimax" and minimax_image["binding"]["capability"] == "image"
+        assert minimax_image["imageUrl"].startswith("data:image/png;base64,")
+        assert minimax_image["artifact"]["saved"] is True
+        assert UPSTREAM_REQUESTS[-1]["path"] == "/minimax/v1/image_generation"
+        assert UPSTREAM_REQUESTS[-1]["body"] == {
+            "model": "image-01",
+            "prompt": "A MiniMax image test.",
+            "aspect_ratio": "16:9",
+            "response_format": "url",
+            "n": 1,
+        }
+        status, minimax_cleanup = request_json("DELETE", f"{service_url}/ai/image/history", {"ids": [minimax_image["artifact"]["id"]]})
+        assert status == 200 and minimax_cleanup["ok"] is True
 
         assert images_generations_url(f"{upstream_url}/v1", "/images/generations") == f"{upstream_url}/v1/images/generations"
         direct_image = generate_image(

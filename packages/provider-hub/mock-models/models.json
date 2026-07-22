@@ -36,6 +36,44 @@
       ]
     }
   ],
+  "minimax": [
+    {
+      "id": "MiniMax-M3",
+      "label": "MiniMax M3",
+      "capabilities": ["text"],
+      "recommendedFor": ["copy", "script", "analysis"]
+    },
+    {
+      "id": "image-01",
+      "label": "MiniMax Image 01",
+      "capabilities": ["image"],
+      "recommendedFor": ["assets", "storyboard"]
+    },
+    {
+      "id": "image-01-live",
+      "label": "MiniMax Image 01 Live",
+      "capabilities": ["image"],
+      "recommendedFor": ["style", "assets"]
+    },
+    {
+      "id": "MiniMax-Hailuo-2.3",
+      "label": "Hailuo 2.3",
+      "capabilities": ["video"],
+      "recommendedFor": ["text-to-video"]
+    },
+    {
+      "id": "music-3.0",
+      "label": "MiniMax Music 3.0",
+      "capabilities": ["music"],
+      "recommendedFor": ["background-music"]
+    },
+    {
+      "id": "speech-2.8-hd",
+      "label": "MiniMax Speech 2.8 HD",
+      "capabilities": ["voice"],
+      "recommendedFor": ["voiceover"]
+    }
+  ],
   "deepseek": [
     {
       "id": "deepseek-chat",

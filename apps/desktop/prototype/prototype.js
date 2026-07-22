@@ -134,6 +134,7 @@ const providerCapabilities = [
 const providerCatalog = [
   { id: "openai", label: "OpenAI", protocol: "OpenAI", baseUrl: "https://api.openai.com/v1", auth: "API Key", categories: ["text", "vision", "image"], status: "ready", guide: "OpenAI 官方模型与 OpenAI Compatible 任务路由入口" },
   { id: "deepseek", label: "DeepSeek", protocol: "OpenAI Compatible", baseUrl: "https://api.deepseek.com/v1", auth: "API Key", categories: ["text"], status: "ready", guide: "中文、代码与推理任务的低成本语言模型接入" },
+  { id: "minimax", label: "MiniMax", protocol: "MiniMax Native", baseUrl: "https://api.minimaxi.com", auth: "API Key", categories: ["text", "image", "video", "voice", "music"], status: "needs-config", guide: "MiniMax 专用协议：图片已接通；视频、音乐与配音模型可绑定，等待各自任务适配器接入" },
   { id: "openai-compatible", label: "OpenAI Compatible", protocol: "Custom", baseUrl: "https://example.com/v1", auth: "API Key", categories: ["text", "vision", "image"], status: "needs-config", guide: "适配第三方聚合平台或私有 OpenAI Compatible 服务" },
   { id: "custom-base-url", label: "Custom Base URL", protocol: "Custom", baseUrl: "https://example.com/v1", auth: "API Key", categories: ["text", "vision", "image", "video", "voice"], status: "needs-config", guide: "保留给自定义平台、企业网关和授权 API" },
   { id: "ollama", label: "Ollama Local", protocol: "Local", baseUrl: "http://127.0.0.1:11434/v1", auth: "None", categories: ["text", "local"], status: "local", guide: "本地优先与隐私优先任务" },
@@ -142,7 +143,7 @@ const providerCatalog = [
   { id: "future-voice", label: "Voice Providers", protocol: "Async / Realtime", baseUrl: "https://api.example-voice.com/v1", auth: "API Key", categories: ["voice", "speech", "music", "sfx"], status: "planned", guide: "预留给 TTS、STT、音乐和音效模型" }
 ];
 
-const providerServiceIds = ["openai", "deepseek", "openai-compatible", "custom-base-url", "ollama", "lm-studio"];
+const providerServiceIds = ["openai", "deepseek", "minimax", "openai-compatible", "custom-base-url", "ollama", "lm-studio"];
 
 const providerModelCatalog = {
   openai: [
@@ -153,6 +154,14 @@ const providerModelCatalog = {
   deepseek: [
     { id: "deepseek-chat", label: "DeepSeek Chat", tags: ["text"] },
     { id: "deepseek-reasoner", label: "DeepSeek Reasoner", tags: ["reasoning"] }
+  ],
+  minimax: [
+    { id: "MiniMax-M3", label: "MiniMax M3", tags: ["text"] },
+    { id: "image-01", label: "MiniMax Image 01", tags: ["image"] },
+    { id: "image-01-live", label: "MiniMax Image 01 Live", tags: ["image"] },
+    { id: "MiniMax-Hailuo-2.3", label: "Hailuo 2.3", tags: ["video"] },
+    { id: "music-3.0", label: "MiniMax Music 3.0", tags: ["music"] },
+    { id: "speech-2.8-hd", label: "MiniMax Speech 2.8 HD", tags: ["voice"] }
   ],
   "openai-compatible": [
     { id: "compatible-chat", label: "Compatible Chat", tags: ["text"] },
@@ -2364,8 +2373,10 @@ function validateProviderConfig() {
   if (/invalid/i.test(snapshot.apiKeyDraft)) return "AUTH_INVALID_KEY";
   if (/rate/i.test(snapshot.apiKeyDraft)) return "RATE_LIMITED";
   if (/timeout/i.test(snapshot.apiKeyDraft)) return "NETWORK_TIMEOUT";
-  if (snapshot.provider.id === "openai-compatible") {
+  if (["openai-compatible", "custom-base-url"].includes(snapshot.provider.id)) {
     if (!snapshot.modelsPath || /[\r\n]/.test(snapshot.modelsPath)) return "CONFIG_INVALID";
+  }
+  if (snapshot.provider.id === "openai-compatible") {
     if (!snapshot.chatPath || /[\r\n]/.test(snapshot.chatPath)) return "CONFIG_INVALID";
     if (!snapshot.imagesPath || /[\r\n]/.test(snapshot.imagesPath)) return "CONFIG_INVALID";
     if (!snapshot.videoPath || /[\r\n]/.test(snapshot.videoPath)) return "CONFIG_INVALID";
@@ -2436,8 +2447,10 @@ function providerRequestBody() {
   if (state.providerConfig.providerId === "openai" && state.providerConfig.organization) {
     config.organization = String(state.providerConfig.organization).trim();
   }
-  if (state.providerConfig.providerId === "openai-compatible") {
+  if (["openai-compatible", "custom-base-url"].includes(state.providerConfig.providerId)) {
     config.modelsPath = String(state.providerConfig.modelsPath || "/models").trim() || "/models";
+  }
+  if (state.providerConfig.providerId === "openai-compatible") {
     config.chatPath = String(state.providerConfig.chatPath || "/chat/completions").trim() || "/chat/completions";
     config.imagesPath = String(state.providerConfig.imagesPath || "/images/generations").trim() || "/images/generations";
     config.videoPath = String(state.providerConfig.videoPath || "/videos/generations").trim() || "/videos/generations";
@@ -3003,8 +3016,10 @@ function providerProfileClipboardPayload() {
   if (state.providerConfig.providerId === "openai") {
     config.organization = state.providerConfig.organization || "";
   }
-  if (state.providerConfig.providerId === "openai-compatible") {
+  if (["openai-compatible", "custom-base-url"].includes(state.providerConfig.providerId)) {
     config.modelsPath = state.providerConfig.modelsPath || "/models";
+  }
+  if (state.providerConfig.providerId === "openai-compatible") {
     config.chatPath = state.providerConfig.chatPath || "/chat/completions";
     config.imagesPath = state.providerConfig.imagesPath || "/images/generations";
     config.videoPath = state.providerConfig.videoPath || "/videos/generations";
@@ -6174,6 +6189,7 @@ function providerProfileListHtml() {
 function providerConnectionTabHtml(provider, providerOptions) {
   const isOpenAI = provider.id === "openai";
   const isCompatible = provider.id === "openai-compatible";
+  const supportsModelDiscoveryEndpoint = ["openai-compatible", "custom-base-url"].includes(provider.id);
   const pending = providerOperationPending();
   const disabled = pending ? "disabled" : "";
   const refreshing = state.providerConfig.status === "refreshing";
@@ -6227,6 +6243,13 @@ function providerConnectionTabHtml(provider, providerOptions) {
           <span>Base URL</span>
           <input id="providerBaseUrl" type="url" value="${escapeHtml(state.providerConfig.baseUrl || "")}" spellcheck="false" ${disabled}>
         </label>
+        ${supportsModelDiscoveryEndpoint ? `
+          <label class="providerWideField">
+            <span>${state.locale === "zh-CN" ? "模型列表接口" : "Model list endpoint"}</span>
+            <input id="providerModelsPath" type="text" value="${escapeHtml(state.providerConfig.modelsPath || "/models")}" placeholder="/models" spellcheck="false" ${disabled}>
+            <small>${state.locale === "zh-CN" ? "填写返回模型数组的接口路径（例如 /models）；生成接口不能用于刷新模型。" : "Enter an endpoint that returns a model array (for example, /models). Generation endpoints cannot refresh models."}</small>
+          </label>
+        ` : ""}
         <label class="providerWideField">
           <span>API Key <small>${escapeHtml(keyStatus)}</small></span>
           <div class="providerApiKeyRow">
@@ -6252,7 +6275,6 @@ function providerConnectionTabHtml(provider, providerOptions) {
         <details class="providerAdvancedConfig">
           <summary>${state.locale === "zh-CN" ? "高级连接选项" : "Advanced connection options"}</summary>
           <div class="providerAdvancedGrid">
-            <label><span>${state.locale === "zh-CN" ? "模型列表路径" : "Models path"}</span><input id="providerModelsPath" type="text" value="${escapeHtml(state.providerConfig.modelsPath || "/models")}" spellcheck="false" ${disabled}></label>
             <label><span>${state.locale === "zh-CN" ? "文本生成路径" : "Chat path"}</span><input id="providerChatPath" type="text" value="${escapeHtml(state.providerConfig.chatPath || "/chat/completions")}" spellcheck="false" ${disabled}></label>
             <label><span>${state.locale === "zh-CN" ? "图片生成路径" : "Images path"}</span><input id="providerImagesPath" type="text" value="${escapeHtml(state.providerConfig.imagesPath || "/images/generations")}" spellcheck="false" ${disabled}></label>
             <label><span>${state.locale === "zh-CN" ? "视频提交路径" : "Video submit path"}</span><input id="providerVideoPath" type="text" value="${escapeHtml(state.providerConfig.videoPath || "/videos/generations")}" spellcheck="false" ${disabled}></label>

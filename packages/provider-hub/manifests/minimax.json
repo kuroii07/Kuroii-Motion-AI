@@ -1,0 +1,17 @@
+{
+  "categories": ["Text", "Vision", "Image", "Video", "Voice", "Music"],
+  "auth": "apiKey",
+  "modelDiscovery": {"mode": "catalog", "refreshButton": true},
+  "documentation": {
+    "guide": "MiniMax dedicated adapter",
+    "officialDocs": "https://platform.minimaxi.com/docs",
+    "apiKeyPage": "https://platform.minimaxi.com/user-center/basic-information/interface-key"
+  },
+  "compatibility": {"multimodalReady": true},
+  "knownIssues": ["Only image generation is live in this slice. Video, music, and voice models are catalog entries until their dedicated task adapters land."],
+  "providerId": "minimax",
+  "displayName": "MiniMax",
+  "protocol": "minimax-native",
+  "endpoint": "https://api.minimaxi.com",
+  "capabilities": ["chat.completions", "image_generation", "video_generation.async", "music_generation", "speech_t2a"]
+}
