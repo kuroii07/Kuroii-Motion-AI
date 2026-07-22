@@ -68,10 +68,28 @@
       "recommendedFor": ["background-music"]
     },
     {
+      "id": "music-3.0-free",
+      "label": "MiniMax Music 3.0 Free",
+      "capabilities": ["music"],
+      "recommendedFor": ["background-music", "evaluation"]
+    },
+    {
+      "id": "music-2.6",
+      "label": "MiniMax Music 2.6",
+      "capabilities": ["music"],
+      "recommendedFor": ["background-music"]
+    },
+    {
       "id": "speech-2.8-hd",
       "label": "MiniMax Speech 2.8 HD",
       "capabilities": ["voice"],
       "recommendedFor": ["voiceover"]
+    },
+    {
+      "id": "speech-2.8-turbo",
+      "label": "MiniMax Speech 2.8 Turbo",
+      "capabilities": ["voice"],
+      "recommendedFor": ["voiceover", "fast-preview"]
     }
   ],
   "deepseek": [

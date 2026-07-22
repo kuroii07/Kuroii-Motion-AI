@@ -161,7 +161,10 @@ const providerModelCatalog = {
     { id: "image-01-live", label: "MiniMax Image 01 Live", tags: ["image"] },
     { id: "MiniMax-Hailuo-2.3", label: "Hailuo 2.3", tags: ["video"] },
     { id: "music-3.0", label: "MiniMax Music 3.0", tags: ["music"] },
-    { id: "speech-2.8-hd", label: "MiniMax Speech 2.8 HD", tags: ["voice"] }
+    { id: "music-3.0-free", label: "MiniMax Music 3.0 Free", tags: ["music"] },
+    { id: "music-2.6", label: "MiniMax Music 2.6", tags: ["music"] },
+    { id: "speech-2.8-hd", label: "MiniMax Speech 2.8 HD", tags: ["voice"] },
+    { id: "speech-2.8-turbo", label: "MiniMax Speech 2.8 Turbo", tags: ["voice"] }
   ],
   "openai-compatible": [
     { id: "compatible-chat", label: "Compatible Chat", tags: ["text"] },
@@ -1813,7 +1816,10 @@ function defaultMusicDirectionState() {
     mode: "instrumental",
     prompt: "",
     blueprint: "",
-    status: "idle"
+    status: "idle",
+    audio: null,
+    message: "",
+    errorCode: null
   };
 }
 
@@ -1824,8 +1830,12 @@ function defaultVoiceDirectionState() {
     voice: "narrator",
     pace: "natural",
     emotion: "confident",
+    voiceId: "male-qn-qingse",
     segments: [],
-    status: "idle"
+    status: "idle",
+    audio: null,
+    message: "",
+    errorCode: null
   };
 }
 
@@ -3614,6 +3624,16 @@ function videoCapabilityBinding() {
   return bindings.video || defaultProviderProfile().capabilityBindings.video;
 }
 
+function musicCapabilityBinding() {
+  const bindings = (state.providerProfile && state.providerProfile.capabilityBindings) || {};
+  return bindings.music || {};
+}
+
+function voiceCapabilityBinding() {
+  const bindings = (state.providerProfile && state.providerProfile.capabilityBindings) || {};
+  return bindings.voice || {};
+}
+
 function textGenerationState(viewId = state.activeView) {
   if (!state.textGeneration[viewId]) {
     state.textGeneration[viewId] = defaultTextGenerationState();
@@ -4301,11 +4321,44 @@ async function saveAudioPlan(kind, payload) {
   if (state.activeView === "create" && ["music", "voice"].includes(state.createMode)) render();
 }
 
+async function loadAudioHistoryItem(artifactId) {
+  const response = await fetch(`http://127.0.0.1:17631/ai/audio/history/${encodeURIComponent(artifactId)}`, {
+    headers: { "X-Kuroii-Session": "dev-local-token" }
+  });
+  if (!response.ok) throw await serviceResponseError(response);
+  const payload = await response.json();
+  if (!payload.ok || !payload.item) throw new Error("Audio history item was not found.");
+  return payload.item;
+}
+
+async function generateAudioAsset(kind, payload) {
+  const response = await fetch(`http://127.0.0.1:17631/ai/${kind}/generate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Kuroii-Session": "dev-local-token" },
+    body: JSON.stringify(payload)
+  });
+  if (!response.ok) throw await serviceResponseError(response);
+  const result = await response.json();
+  if (!result.ok || !result.artifact) throw new Error("Audio generation did not return an artifact.");
+  const item = await loadAudioHistoryItem(result.artifact.id);
+  state.audioHistory = [result.artifact, ...(state.audioHistory || []).filter((entry) => entry.id !== result.artifact.id)].slice(0, 24);
+  state.audioHistoryStorage = result.storage || state.audioHistoryStorage;
+  state.audioHistoryStatus = "ready";
+  state.serviceOnline = true;
+  return item;
+}
+
+function audioDownloadHtml(item) {
+  if (!item || !item.audioUrl) return "";
+  return `<a class="featureSecondaryButton" href="${escapeHtml(item.audioUrl)}" download="${escapeHtml(item.fileName || "kuroii-audio.mp3")}">${state.locale === "zh-CN" ? "下载音频" : "Download audio"}</a>`;
+}
+
 function audioHistoryHtml(kind) {
-  const items = (state.audioHistory || []).filter((item) => item.kind === kind).slice(0, 4);
+  const generatedKind = kind === "music-direction" ? "music" : "voice";
+  const items = (state.audioHistory || []).filter((item) => item.kind === kind || item.kind === generatedKind).slice(0, 4);
   const label = kind === "music-direction" ? (state.locale === "zh-CN" ? "音乐方向" : "Music directions") : (state.locale === "zh-CN" ? "配音清单" : "Voice plans");
   if (!items.length) return `<div class="audioHistoryEmpty">${state.audioHistoryStatus === "loading" ? (state.locale === "zh-CN" ? "正在读取本地记录…" : "Loading local records…") : (state.audioHistoryStatus === "error" ? (state.locale === "zh-CN" ? "本地记录暂不可用" : "Local records unavailable") : (state.locale === "zh-CN" ? "尚无已保存的计划" : "No saved plans yet"))}</div>`;
-  return `<div class="audioHistoryList" aria-label="${escapeHtml(label)}">${items.map((item) => `<article><strong>${escapeHtml(item.title || label)}</strong><small>${escapeHtml(audioHistoryDateLabel(item.createdAt))}</small><span>${item.kind === "voice-plan" ? `${Array.isArray(item.segments) ? item.segments.length : 0} ${state.locale === "zh-CN" ? "段" : "segments"}` : escapeHtml((item.metadata && item.metadata.mode) || "")}</span></article>`).join("")}</div>`;
+  return `<div class="audioHistoryList" aria-label="${escapeHtml(label)}">${items.map((item) => `<article><strong>${escapeHtml(item.title || label)}</strong><small>${escapeHtml(audioHistoryDateLabel(item.createdAt))}</small><span>${item.hasAudio ? (state.locale === "zh-CN" ? "已生成音频" : "Audio generated") : (item.kind === "voice-plan" ? `${Array.isArray(item.segments) ? item.segments.length : 0} ${state.locale === "zh-CN" ? "段" : "segments"}` : escapeHtml((item.metadata && item.metadata.mode) || ""))}</span></article>`).join("")}</div>`;
 }
 
 async function mutateImageHistory(payload, options = {}) {
@@ -4895,19 +4948,58 @@ function buildMusicDirection() {
 }
 
 function musicDirectionOutputHtml(music) {
-  if (music.status === "error") return `<div class="musicDirectionError"><strong>${state.locale === "zh-CN" ? "请先描述音乐要服务的画面或创作目标。" : "Describe the visual or creative goal first."}</strong></div>`;
+  if (music.status === "generating") return `<div class="musicDirectionEmpty"><span class="statusDot"></span><strong>${state.locale === "zh-CN" ? "正在请求已绑定的音乐模型…" : "Requesting the bound music model…"}</strong><p>${state.locale === "zh-CN" ? "仅在收到真实音频并保存为本地资产后才会显示试听。" : "Preview appears only after real audio is returned and saved locally."}</p></div>`;
+  if (music.status === "completed" && music.audio) return `<div class="musicDirectionOutput"><section class="musicDirectionBlueprint"><span>${state.locale === "zh-CN" ? "已生成音乐资产" : "Generated music asset"}</span><strong>${escapeHtml(music.audio.fileName || "audio")}</strong><audio controls src="${escapeHtml(music.audio.audioUrl || "")}"></audio><div class="imageResultActions">${audioDownloadHtml(music.audio)}</div></section><section class="musicDirectionPrompt"><div><span>${state.locale === "zh-CN" ? "本次音乐提示词" : "Music prompt"}</span><small>${escapeHtml(music.message || "")}</small></div><p>${escapeHtml(music.prompt)}</p></section></div>`;
+  if (music.status === "error") return `<div class="musicDirectionError"><strong>${escapeHtml(music.message || (state.locale === "zh-CN" ? "请先描述音乐要服务的画面或创作目标。" : "Describe the visual or creative goal first."))}</strong></div>`;
   if (music.status !== "ready") return `<div class="musicDirectionEmpty"><span class="statusDot muted"></span><p class="musicDirectionEyebrow">${state.locale === "zh-CN" ? "从画面到声音" : "From picture to sound"}</p><strong>${state.locale === "zh-CN" ? "先定方向，再接入生成" : "Set the direction, then connect generation"}</strong><p>${state.locale === "zh-CN" ? "这里产出可复制的音乐提示词和创作蓝图；在绑定音乐模型前，不会伪造试听、波形或音频文件。" : "This space produces a reusable prompt and creative blueprint. It never fabricates previews, waveforms, or audio before a music model is connected."}</p><ol><li>${state.locale === "zh-CN" ? "描述画面与情绪" : "Describe picture and emotion"}</li><li>${state.locale === "zh-CN" ? "选择用途与作品模式" : "Choose use case and mode"}</li><li>${state.locale === "zh-CN" ? "生成可带往平台的方向" : "Build a direction for your platform"}</li></ol></div>`;
   return `<div class="musicDirectionOutput"><section class="musicDirectionBlueprint"><span>${state.locale === "zh-CN" ? "创作蓝图" : "Creative blueprint"}</span><p>${escapeHtml(music.blueprint)}</p></section><section class="musicDirectionPrompt"><div><span>${state.locale === "zh-CN" ? "通用音乐提示词" : "General music prompt"}</span><small>${state.locale === "zh-CN" ? "可直接带往已接入的平台" : "Ready for a connected platform"}</small></div><p>${escapeHtml(music.prompt)}</p></section></div>`;
 }
 
 function bindMusicDirectionWorkspace() {
   const music = state.musicDirection;
+  const musicBinding = musicCapabilityBinding();
+  const musicProfile = providerProfileForBinding(musicBinding);
+  const musicConfigured = Boolean(musicProfile && musicProfile.apiKeyStatus && musicProfile.apiKeyStatus.configured);
+  const musicReadiness = document.querySelector(".musicDirectionReadiness > section:first-child");
+  if (musicReadiness) musicReadiness.innerHTML = `<span class="statusDot ${musicConfigured ? "success" : "muted"}"></span><p>${musicConfigured ? (state.locale === "zh-CN" ? "音乐模型已绑定" : "Music model bound") : (state.locale === "zh-CN" ? "音乐模型尚未绑定" : "No music model bound")}</p><strong>${musicConfigured ? `${escapeHtml(providerLabel(musicBinding.providerId))} · ${escapeHtml(providerModelLabel(musicBinding.providerId, musicBinding.model))}` : (state.locale === "zh-CN" ? "当前可完成方向设计" : "Direction design is available")}</strong>`;
+  const buildButton = el("buildMusicDirectionButton");
+  if (buildButton && !el("generateMusicAudioButton")) {
+    buildButton.insertAdjacentHTML("afterend", `<button class="featureSecondaryButton" id="generateMusicAudioButton" type="button" ${music.status === "generating" ? "disabled" : ""}>${music.status === "generating" ? (state.locale === "zh-CN" ? "生成中…" : "Generating…") : (state.locale === "zh-CN" ? "生成音乐" : "Generate music")}</button>`);
+  }
   el("musicDirectionBrief")?.addEventListener("input", (event) => { music.brief = event.target.value; });
   el("musicDirectionUseCase")?.addEventListener("change", (event) => { music.useCase = event.target.value; });
   el("musicDirectionMode")?.addEventListener("change", (event) => { music.mode = event.target.value; });
   el("buildMusicDirectionButton")?.addEventListener("click", buildMusicDirection);
+  el("generateMusicAudioButton")?.addEventListener("click", generateMusicAudio);
   el("refreshAudioHistoryButton")?.addEventListener("click", () => loadAudioHistory());
   bindCreateModeControls();
+}
+
+async function generateMusicAudio() {
+  const music = state.musicDirection;
+  if (!music.prompt) {
+    buildMusicDirection();
+    if (!music.prompt) return;
+  }
+  music.status = "generating";
+  music.message = "";
+  music.errorCode = null;
+  render();
+  try {
+    const isInstrumental = music.mode === "instrumental";
+    music.audio = await generateAudioAsset("music", {
+      title: String(music.brief || "Generated music").slice(0, 72),
+      prompt: music.prompt,
+      options: { isInstrumental, lyricsOptimizer: !isInstrumental, format: "mp3" }
+    });
+    music.status = "completed";
+    music.message = state.locale === "zh-CN" ? "已生成并保存到本地音频资产记录。" : "Generated and saved to local audio assets.";
+  } catch (error) {
+    music.status = "error";
+    music.errorCode = error && error.code;
+    music.message = error && error.message ? error.message : (state.locale === "zh-CN" ? "音乐生成失败，请检查音乐模型绑定和 API Key。" : "Music generation failed. Check the music binding and API key.");
+  }
+  render();
 }
 
 function voiceScriptSegments(script) {
@@ -4939,7 +5031,9 @@ function buildVoiceDirection() {
 }
 
 function voiceDirectionOutputHtml(voice) {
-  if (voice.status === "error") return `<div class="voiceDirectionError"><strong>${state.locale === "zh-CN" ? "请先输入需要配音的脚本。" : "Enter the script to voice first."}</strong></div>`;
+  if (voice.status === "generating") return `<div class="voiceDirectionEmpty"><span class="statusDot"></span><strong>${state.locale === "zh-CN" ? "正在请求已绑定的配音模型…" : "Requesting the bound voice model…"}</strong><p>${state.locale === "zh-CN" ? "仅在真实音频保存成功后提供试听和下载。" : "Preview and download appear only after real audio is saved."}</p></div>`;
+  if (voice.status === "completed" && voice.audio) return `<div class="voiceDirectionSheet"><header><div><p>${state.locale === "zh-CN" ? "已生成配音资产" : "Generated voice asset"}</p><strong>${escapeHtml(voice.audio.fileName || "audio")}</strong></div><span>${escapeHtml(voice.message || "")}</span></header><audio controls src="${escapeHtml(voice.audio.audioUrl || "")}"></audio><div class="imageResultActions">${audioDownloadHtml(voice.audio)}</div></div>`;
+  if (voice.status === "error") return `<div class="voiceDirectionError"><strong>${escapeHtml(voice.message || (state.locale === "zh-CN" ? "请先输入需要配音的脚本。" : "Enter the script to voice first."))}</strong></div>`;
   if (voice.status !== "ready") return `<div class="voiceDirectionEmpty"><span class="statusDot muted"></span><p class="voiceDirectionEyebrow">${state.locale === "zh-CN" ? "台词到交付" : "Script to delivery"}</p><strong>${state.locale === "zh-CN" ? "把脚本拆成可审阅的配音清单" : "Turn your script into a reviewable voice list"}</strong><p>${state.locale === "zh-CN" ? "先确定角色、语言和表达方式；接入语音模型后，再逐段生成试听与可下载的音频文件。" : "Set the character, language, and delivery first. After a voice model is connected, generate previewable and downloadable audio per segment."}</p></div>`;
   const language = voice.language === "zh-CN" ? "中文" : (voice.language === "en-US" ? "English" : "日本語");
   const profile = { narrator: "沉稳旁白", explainer: "明快讲解", character: "角色对白" }[voice.voice] || "沉稳旁白";
@@ -4950,14 +5044,59 @@ function voiceDirectionOutputHtml(voice) {
 
 function bindVoiceDirectionWorkspace() {
   const voice = state.voiceDirection;
+  const voiceBinding = voiceCapabilityBinding();
+  const voiceProfile = providerProfileForBinding(voiceBinding);
+  const voiceConfigured = Boolean(voiceProfile && voiceProfile.apiKeyStatus && voiceProfile.apiKeyStatus.configured);
+  const voiceReadiness = document.querySelector(".voiceDirectionDelivery > section:first-child");
+  if (voiceReadiness) voiceReadiness.innerHTML = `<span class="statusDot ${voiceConfigured ? "success" : "muted"}"></span><p>${voiceConfigured ? (state.locale === "zh-CN" ? "配音模型已绑定" : "Voice model bound") : (state.locale === "zh-CN" ? "语音模型尚未绑定" : "No voice model bound")}</p><strong>${voiceConfigured ? `${escapeHtml(providerLabel(voiceBinding.providerId))} · ${escapeHtml(providerModelLabel(voiceBinding.providerId, voiceBinding.model))}` : (state.locale === "zh-CN" ? "本页不会生成假音频" : "This page never fabricates audio")}</strong>`;
+  const controls = document.querySelector(".voiceDirectionControls");
+  if (controls && !el("voiceDirectionVoiceId")) {
+    controls.insertAdjacentHTML("beforeend", `<label><span>${state.locale === "zh-CN" ? "MiniMax 音色 ID" : "MiniMax voice ID"}</span><input id="voiceDirectionVoiceId" type="text" value="${escapeHtml(voice.voiceId || "")}" placeholder="male-qn-qingse"></label>`);
+  }
+  const buildButton = el("buildVoiceDirectionButton");
+  if (buildButton && !el("generateVoiceAudioButton")) {
+    buildButton.insertAdjacentHTML("afterend", `<button class="featureSecondaryButton" id="generateVoiceAudioButton" type="button" ${voice.status === "generating" ? "disabled" : ""}>${voice.status === "generating" ? (state.locale === "zh-CN" ? "生成中…" : "Generating…") : (state.locale === "zh-CN" ? "生成配音" : "Generate voice")}</button>`);
+  }
   el("voiceDirectionScript")?.addEventListener("input", (event) => { voice.script = event.target.value; });
   el("voiceDirectionLanguage")?.addEventListener("change", (event) => { voice.language = event.target.value; });
   el("voiceDirectionVoice")?.addEventListener("change", (event) => { voice.voice = event.target.value; });
   el("voiceDirectionPace")?.addEventListener("change", (event) => { voice.pace = event.target.value; });
   el("voiceDirectionEmotion")?.addEventListener("change", (event) => { voice.emotion = event.target.value; });
+  el("voiceDirectionVoiceId")?.addEventListener("input", (event) => { voice.voiceId = event.target.value; });
   el("buildVoiceDirectionButton")?.addEventListener("click", buildVoiceDirection);
+  el("generateVoiceAudioButton")?.addEventListener("click", generateVoiceAudio);
   el("refreshAudioHistoryButton")?.addEventListener("click", () => loadAudioHistory());
   bindCreateModeControls();
+}
+
+async function generateVoiceAudio() {
+  const voice = state.voiceDirection;
+  const text = String(voice.script || "").trim();
+  if (!text) {
+    buildVoiceDirection();
+    if (!voice.script) return;
+  }
+  voice.status = "generating";
+  voice.message = "";
+  voice.errorCode = null;
+  render();
+  const languageBoost = { "zh-CN": "Chinese", "en-US": "English", "ja-JP": "Japanese" }[voice.language] || "auto";
+  const speed = { slow: 0.8, natural: 1, brisk: 1.2 }[voice.pace] || 1;
+  try {
+    voice.audio = await generateAudioAsset("voice", {
+      title: text.slice(0, 72),
+      text,
+      segments: voice.segments.length ? voice.segments : voiceScriptSegments(text),
+      options: { voiceId: String(voice.voiceId || "").trim(), speed, emotion: voice.emotion, language: voice.language, languageBoost, format: "mp3" }
+    });
+    voice.status = "completed";
+    voice.message = state.locale === "zh-CN" ? "已生成并保存到本地音频资产记录。" : "Generated and saved to local audio assets.";
+  } catch (error) {
+    voice.status = "error";
+    voice.errorCode = error && error.code;
+    voice.message = error && error.message ? error.message : (state.locale === "zh-CN" ? "配音生成失败，请检查音色 ID、模型绑定和 API Key。" : "Voice generation failed. Check the voice ID, binding, and API key.");
+  }
+  render();
 }
 
 function renderVoiceDirectionWorkbench(feature, workspace) {

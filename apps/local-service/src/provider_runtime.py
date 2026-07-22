@@ -15,7 +15,11 @@ from openai_protocol_adapter import (
     sanitize_custom_headers,
     submit_video_generation as submit_protocol_video_generation,
 )
-from minimax_protocol_adapter import generate_image as generate_minimax_image
+from minimax_protocol_adapter import (
+    generate_image as generate_minimax_image,
+    generate_music as generate_minimax_music,
+    generate_voice as generate_minimax_voice,
+)
 from provider_secrets import get_provider_secret, provider_secret_ref
 
 REMOTE_PROVIDERS = {"openai", "deepseek", "openai-compatible", "minimax"}
@@ -357,6 +361,61 @@ def generate_image(provider_id: str, payload: dict[str, Any]) -> tuple[int, dict
             "exportMode": result["export"]["mode"],
         },
     }
+
+
+def _generate_minimax_audio(provider_id: str, payload: dict[str, Any], kind: str) -> tuple[int, dict[str, Any]]:
+    config, error = validate_provider_request(provider_id, payload)
+    if error:
+        status = {
+            "CONFIG_MISSING": 400,
+            "CONFIG_INVALID": 400,
+            "AUTH_INVALID_KEY": 401,
+            "BASE_URL_UNREACHABLE": 400,
+            "NETWORK_TIMEOUT": 504,
+            "RATE_LIMITED": 429,
+        }.get(error["code"], 400)
+        return status, error
+    if provider_id != "minimax":
+        return 400, error_result(provider_id, "CONFIG_INVALID", "config", f"This provider does not support live {kind} generation yet.")
+    model = str(payload.get("model") or payload.get("modelId") or request_config(payload).get("model") or "").strip()
+    started = perf_counter()
+    try:
+        result = (
+            generate_minimax_music(config, model, payload.get("prompt"), payload.get("lyrics"), payload.get("options"))
+            if kind == "music"
+            else generate_minimax_voice(config, model, payload.get("text"), payload.get("options"))
+        )
+    except AdapterError as adapter_error:
+        return adapter_error_result(provider_id, adapter_error)
+    return 200, {
+        "ok": True,
+        "providerId": provider_id,
+        "model": model,
+        "audioBytes": result["audioBytes"],
+        "format": result["format"],
+        "usage": result["usage"],
+        "traceId": result["traceId"],
+        "protocol": result["protocol"],
+        "source": "live",
+        "generatedAt": utc_now(),
+        "diagnostics": {
+            "providerId": provider_id,
+            "model": model,
+            "endpoint": urlparse(result["endpoint"]).path,
+            "durationMs": round((perf_counter() - started) * 1000),
+            "httpStatus": result["httpStatus"],
+            "format": result["format"],
+            "traceId": result["traceId"],
+        },
+    }
+
+
+def generate_music(provider_id: str, payload: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    return _generate_minimax_audio(provider_id, payload, "music")
+
+
+def generate_voice(provider_id: str, payload: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    return _generate_minimax_audio(provider_id, payload, "voice")
 
 
 def submit_video(provider_id: str, payload: dict[str, Any]) -> tuple[int, dict[str, Any]]:

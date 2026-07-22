@@ -8,7 +8,7 @@ from typing import Any
 from urllib.parse import parse_qs, urlparse
 
 from action_runtime import execute_trusted_read_only_action, host_context_payload, trusted_actions
-from audio_history import audio_history_storage_summary, get_audio_history_item, list_audio_history, save_audio_plan
+from audio_history import audio_history_storage_summary, get_audio_history_item, list_audio_history, save_audio_plan, save_generated_audio
 from command_history import get_command_record, list_command_history, record_command
 from config import ServiceConfig, load_config
 from data_store import capability_detail, capability_exists, provider_manifests
@@ -51,7 +51,9 @@ from provider_profiles import (
 )
 from provider_runtime import (
     generate_image,
+    generate_music,
     generate_text,
+    generate_voice,
     poll_video,
     provider_config_form,
     provider_error_guidance,
@@ -218,6 +220,7 @@ class KuroiiLocalServiceHandler(BaseHTTPRequestHandler):
                     "/providers/{providerId}/generate", "/providers/{providerId}/image",
                     "/ai/text/generate", "/ai/image/generate", "/ai/image/history", "/ai/image/history/{imageId}",
                     "/ai/audio/drafts", "/ai/audio/history", "/ai/audio/history/{audioId}",
+                    "/ai/music/generate", "/ai/voice/generate",
                     "/ai/video/generate", "/ai/video/tasks", "/ai/video/tasks/{taskId}",
                     "/provider-bindings/{capability}", "/hosts",
                     "/hosts/{host}", "/hosts/{host}/register", "/hosts/{host}/heartbeat",
@@ -517,6 +520,71 @@ class KuroiiLocalServiceHandler(BaseHTTPRequestHandler):
                 self._error(400, "AUDIO_PLAN_INVALID", str(error))
                 return
             self._send_json(201, {"ok": True, "item": item, "storage": audio_history_storage_summary()})
+            return
+        if path in {"/ai/music/generate", "/ai/voice/generate"}:
+            if not self._require_auth():
+                return
+            payload = self._read_json_body()
+            if payload is None:
+                return
+            capability = "music" if path == "/ai/music/generate" else "voice"
+            binding, provider_profile = resolve_capability_binding(capability)
+            if not isinstance(binding, dict):
+                self._error(409, "PROVIDER_BINDING_MISSING", f"No {capability} capability binding is configured.", [f"在 Provider Hub 绑定一个{('音乐' if capability == 'music' else '配音')}模型。"])
+                return
+            provider_id = str(binding.get("providerId", "")).strip()
+            model = str(binding.get("model", "")).strip()
+            if not provider_id or not model or not isinstance(provider_profile, dict):
+                self._error(409, "PROVIDER_PROFILE_NOT_CONFIGURED", f"The bound {capability} provider is not configured.", ["在 Provider Hub 保存平台配置后重试。"])
+                return
+            audio_options = payload.get("options") if isinstance(payload.get("options"), dict) else {}
+            request_payload = {
+                "config": provider_profile,
+                "model": model,
+                "options": audio_options,
+            }
+            if capability == "music":
+                request_payload["prompt"] = payload.get("prompt")
+                request_payload["lyrics"] = payload.get("lyrics")
+                status, body = generate_music(provider_id, request_payload)
+            else:
+                request_payload["text"] = payload.get("text")
+                status, body = generate_voice(provider_id, request_payload)
+            if status == 200:
+                binding_payload = {
+                    "capability": capability,
+                    "profileId": binding.get("profileId"),
+                    "providerId": provider_id,
+                    "model": model,
+                    "source": "provider-profile",
+                }
+                body["binding"] = binding_payload
+                body["diagnostics"]["profileId"] = binding.get("profileId")
+                try:
+                    body["artifact"] = save_generated_audio(body.pop("audioBytes"), {
+                        "kind": capability,
+                        "title": payload.get("title"),
+                        "prompt": payload.get("prompt"),
+                        "script": payload.get("text"),
+                        "segments": payload.get("segments"),
+                        "metadata": {
+                            "format": body.get("format"),
+                            "durationMs": body.get("usage", {}).get("music_duration") or body.get("usage", {}).get("audio_length"),
+                            "language": audio_options.get("language"),
+                            "voiceId": audio_options.get("voiceId"),
+                        },
+                        "binding": binding_payload,
+                        "diagnostics": body.get("diagnostics"),
+                        "providerId": provider_id,
+                        "model": model,
+                        "format": body.get("format"),
+                        "generatedAt": body.get("generatedAt"),
+                    })
+                except (TypeError, ValueError, OSError) as error:
+                    self._error(500, "AUDIO_ASSET_SAVE_FAILED", f"Generated audio could not be saved: {error}")
+                    return
+                body["storage"] = audio_history_storage_summary()
+            self._send_json(status, body)
             return
         if path == "/ai/image/generate":
             if not self._require_auth():

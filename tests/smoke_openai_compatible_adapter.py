@@ -176,6 +176,30 @@ class MockOpenAICompatibleHandler(BaseHTTPRequestHandler):
                 "metadata": {"usage": {"image_count": 1}},
             })
             return
+        if self.path == "/minimax/v1/music_generation":
+            UPSTREAM_REQUESTS.append({"path": self.path, "authorization": self.headers.get("Authorization"), "body": body})
+            if self.headers.get("Authorization") != f"Bearer {UPSTREAM_KEY}":
+                self.send_json(200, {"base_resp": {"status_code": 1004, "status_msg": "invalid key"}})
+                return
+            self.send_json(200, {
+                "base_resp": {"status_code": 0, "status_msg": "success"},
+                "data": {"audio": "49443304", "status": 2},
+                "extra_info": {"music_duration": 1200, "audio_format": "mp3"},
+                "trace_id": "music-trace",
+            })
+            return
+        if self.path == "/minimax/v1/t2a_v2":
+            UPSTREAM_REQUESTS.append({"path": self.path, "authorization": self.headers.get("Authorization"), "body": body})
+            if self.headers.get("Authorization") != f"Bearer {UPSTREAM_KEY}":
+                self.send_json(200, {"base_resp": {"status_code": 1004, "status_msg": "invalid key"}})
+                return
+            self.send_json(200, {
+                "base_resp": {"status_code": 0, "status_msg": "success"},
+                "data": {"audio": "49443304", "status": 2},
+                "extra_info": {"audio_length": 880, "audio_format": "mp3"},
+                "trace_id": "voice-trace",
+            })
+            return
         if self.path in {"/v1/images/generations", "/v1/custom/images"}:
             UPSTREAM_REQUESTS.append({
                 "path": self.path,
@@ -318,6 +342,8 @@ def main() -> int:
     legacy_path = runtime_dir / f"openai-compatible-{service_port}.legacy.json"
     image_output_dir = runtime_dir / f"image-output-{service_port}"
     image_history_path = runtime_dir / f"image-history-{service_port}.json"
+    audio_output_dir = runtime_dir / f"audio-output-{service_port}"
+    audio_history_path = runtime_dir / f"audio-history-{service_port}.json"
     env = os.environ.copy()
     env["PYTHONIOENCODING"] = "utf-8"
     env["PYTHONUTF8"] = "1"
@@ -326,6 +352,8 @@ def main() -> int:
     env["KUROII_LEGACY_SECRET_STORE_PATH"] = str(legacy_path)
     env["KUROII_IMAGE_OUTPUT_DIR"] = str(image_output_dir)
     env["KUROII_IMAGE_HISTORY_PATH"] = str(image_history_path)
+    env["KUROII_AUDIO_OUTPUT_DIR"] = str(audio_output_dir)
+    env["KUROII_AUDIO_HISTORY_PATH"] = str(audio_history_path)
     process = subprocess.Popen(
         [sys.executable, str(ROOT / "apps/local-service/src/server.py"), "--port", str(service_port), "--token", TOKEN],
         cwd=str(ROOT),
@@ -660,8 +688,12 @@ def main() -> int:
                     "baseUrl": f"{upstream_url}/minimax",
                     "apiKey": UPSTREAM_KEY,
                     "model": "image-01",
-                    "defaultCapabilities": ["image"],
-                    "models": [{"id": "image-01", "capabilities": ["image"]}],
+                    "defaultCapabilities": ["image", "music", "voice"],
+                    "models": [
+                        {"id": "image-01", "capabilities": ["image"]},
+                        {"id": "music-3.0", "capabilities": ["music"]},
+                        {"id": "speech-2.8-hd", "capabilities": ["voice"]},
+                    ],
                 },
                 "model": "image-01",
                 "bindCapabilities": ["image"],
@@ -686,6 +718,42 @@ def main() -> int:
             "response_format": "url",
             "n": 1,
         }
+        status, music_binding = request_json(
+            "POST",
+            f"{service_url}/provider-bindings/music",
+            {"profileId": "minimax", "providerId": "minimax", "model": "music-3.0", "operation": "set-default"},
+        )
+        assert status == 200 and music_binding["ok"] is True
+        status, generated_music = request_json(
+            "POST",
+            f"{service_url}/ai/music/generate",
+            {"title": "MiniMax music test", "prompt": "Gentle game opening music", "options": {"isInstrumental": True, "format": "mp3"}},
+        )
+        assert status == 200 and generated_music["ok"] is True
+        assert generated_music["artifact"]["kind"] == "music" and generated_music["artifact"]["saved"] is True
+        assert generated_music["diagnostics"]["endpoint"] == "/minimax/v1/music_generation"
+        assert "audioBytes" not in generated_music
+        assert UPSTREAM_REQUESTS[-1]["body"]["is_instrumental"] is True
+        status, generated_music_item = request_json("GET", f"{service_url}/ai/audio/history/{generated_music['artifact']['id']}")
+        assert status == 200 and generated_music_item["item"]["audioUrl"].startswith("data:audio/mpeg;base64,")
+
+        status, voice_binding = request_json(
+            "POST",
+            f"{service_url}/provider-bindings/voice",
+            {"profileId": "minimax", "providerId": "minimax", "model": "speech-2.8-hd", "operation": "set-default"},
+        )
+        assert status == 200 and voice_binding["ok"] is True
+        status, generated_voice = request_json(
+            "POST",
+            f"{service_url}/ai/voice/generate",
+            {"title": "MiniMax voice test", "text": "Welcome to the adventure.", "segments": ["Welcome to the adventure."], "options": {"voiceId": "male-qn-qingse", "format": "mp3", "language": "en-US", "languageBoost": "English"}},
+        )
+        assert status == 200 and generated_voice["ok"] is True
+        assert generated_voice["artifact"]["kind"] == "voice" and generated_voice["artifact"]["saved"] is True
+        assert generated_voice["diagnostics"]["endpoint"] == "/minimax/v1/t2a_v2"
+        assert UPSTREAM_REQUESTS[-1]["body"]["voice_setting"]["voice_id"] == "male-qn-qingse"
+        status, generated_voice_item = request_json("GET", f"{service_url}/ai/audio/history/{generated_voice['artifact']['id']}")
+        assert status == 200 and generated_voice_item["item"]["audioUrl"].startswith("data:audio/mpeg;base64,")
         status, minimax_cleanup = request_json("DELETE", f"{service_url}/ai/image/history", {"ids": [minimax_image["artifact"]["id"]]})
         assert status == 200 and minimax_cleanup["ok"] is True
 

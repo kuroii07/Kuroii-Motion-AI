@@ -8,7 +8,7 @@
     "apiKeyPage": "https://platform.minimaxi.com/user-center/basic-information/interface-key"
   },
   "compatibility": {"multimodalReady": true},
-  "knownIssues": ["Only image generation is live in this slice. Video, music, and voice models are catalog entries until their dedicated task adapters land."],
+  "knownIssues": ["Image, synchronous music, and synchronous voice generation are live. Video remains a catalog entry until its dedicated async task adapter lands."],
   "providerId": "minimax",
   "displayName": "MiniMax",
   "protocol": "minimax-native",
