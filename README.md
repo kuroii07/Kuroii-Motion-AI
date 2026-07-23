@@ -8,6 +8,8 @@ Kuroii Motion AI Suite 是面向 After Effects 与 Premiere Pro 的 AI 创作、
 
 内容生成现已将文案、图片、视频、音乐和配音拆为不同工作台。音乐与配音在未配置真实 Provider 时可生成并保存本地创作计划（提示词、蓝图、脚本分段与交付参数），但不会虚构音频、试听或下载文件；真实音频任务会在绑定对应模型后接入。
 
+2026-07-23 已完成内容生成与资源库的第一阶段视觉重构：五类生成页统一为“输入 / 生产舞台 / 上下文”的可读工作台，但文案、图片、视频、音乐与配音保留各自的交付结构；资源库改为媒体优先卡片和紧凑详情面板。此阶段不改变 Provider、生成、历史或确认付费请求的逻辑，仍需按 [`docs/CONTENT_WORKSPACE_VISUAL_REVIEW.md`](docs/CONTENT_WORKSPACE_VISUAL_REVIEW.md) 进行人工视觉验收。
+
 ## 当前阶段
 
 当前版本：`0.5.9-alpha.0`
