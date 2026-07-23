@@ -22,7 +22,9 @@ Provider Hub 已完成响应式主从流程：桌面保留配置列表与详情�
 
 2026-07-22 已新增 MiniMax 原生 Provider：它使用内置的官方模型目录而非错误调用通用 `/models`。`image-01` 与 `image-01-live` 已接入 MiniMax `/v1/image_generation`，成功图片照常落入内容生成历史；视频、音乐和配音只显示为可登记模型，尚未接入各自任务协议，因此不会被展示为已可生成。
 
-2026-07-22 已继续接通 MiniMax 音乐与配音：`music-3.0`/`music-2.6` 使用 `/v1/music_generation`，`speech-2.8-*` 等语音模型使用 `/v1/t2a_v2`。服务会请求十六进制音频、落盘到 `apps/local-service/data/generated-audio/` 并保存无密钥的历史记录；内容生成页在收到真实音频后才显示试听与下载。视频仍未接通，不能显示为可生成。
+2026-07-22 已继续接通 MiniMax 音乐与配音：`music-3.0`/`music-2.6` 使用 `/v1/music_generation`，`speech-2.8-*` 等语音模型使用 `/v1/t2a_v2`。服务会请求十六进制音频、落盘到 `apps/local-service/data/generated-audio/` 并保存无密钥的历史记录；内容生成页在收到真实音频后才显示试听与下载。
+
+2026-07-23 已接通 MiniMax 文生视频异步链路：`/v1/video_generation` 只提交任务，随后轮询 `/v1/query/video_generation`；只有任务成功、查询到文件并下载落盘至 `apps/local-service/data/generated-videos/` 后才显示为完成。视频历史保存任务 ID、文件元数据和无密钥诊断；Hailuo 2.3 / 02 的页面参数限定为实际支持的 6/10 秒、768p/1080p，其他已登记的 MiniMax T2V 模型仅显示其 6 秒、720p 选项。尚未使用真实 Key 做端到端成片验收。
 
 内容生成页现已支持“文案 / 图片”双模式。图片模式通过 Provider Hub 的 `image` 能力绑定调用 OpenAI Compatible `/images/generations`，支持尺寸、质量、背景设置、图片预览和不包含密钥的请求诊断。成功结果会自动保存到 `apps/local-service/data/generated-images/`，并可在最近生成历史中查看、下载或恢复提示词与参数再次使用。2026-07-14 已使用 `gpt-image-2` 完成真实 PNG 生成验证。
 

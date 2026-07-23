@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import threading
 from datetime import datetime, timezone
 from pathlib import Path
@@ -22,6 +23,11 @@ def utc_now() -> str:
 def video_tasks_path() -> Path:
     override = os.environ.get("KUROII_VIDEO_TASKS_PATH", "").strip()
     return Path(override) if override else workspace_root() / "apps/local-service/data/video-tasks.json"
+
+
+def video_output_dir() -> Path:
+    override = os.environ.get("KUROII_VIDEO_OUTPUT_DIR", "").strip()
+    return Path(override) if override else workspace_root() / "apps/local-service/data/generated-videos"
 
 
 def _read_tasks() -> dict[str, Any]:
@@ -51,6 +57,12 @@ def create_video_task(metadata: dict[str, Any]) -> dict[str, Any]:
         "providerTaskId": str(metadata.get("providerTaskId") or ""),
         "status": str(metadata.get("status") or "queued"),
         "videoUrl": str(metadata.get("videoUrl") or ""),
+        "fileId": str(metadata.get("fileId") or ""),
+        "fileName": str(metadata.get("fileName") or ""),
+        "relativePath": str(metadata.get("relativePath") or ""),
+        "mimeType": str(metadata.get("mimeType") or ""),
+        "bytes": max(0, int(metadata.get("bytes") or 0)),
+        "saved": bool(metadata.get("saved")),
         "prompt": str(metadata.get("prompt") or ""),
         "options": dict(metadata.get("options") or {}),
         "binding": dict(metadata.get("binding") or {}),
@@ -75,7 +87,7 @@ def get_video_task(task_id: str) -> dict[str, Any] | None:
 
 
 def update_video_task(task_id: str, changes: dict[str, Any]) -> dict[str, Any] | None:
-    allowed = {"providerTaskId", "status", "videoUrl", "diagnostics", "error"}
+    allowed = {"providerTaskId", "status", "videoUrl", "fileId", "fileName", "relativePath", "mimeType", "bytes", "saved", "diagnostics", "error"}
     with _LOCK:
         history = _read_tasks()
         for item in history["items"]:
@@ -88,6 +100,38 @@ def update_video_task(task_id: str, changes: dict[str, Any]) -> dict[str, Any] |
             _write_tasks(history)
             return dict(item)
     return None
+
+
+def _safe_file_name(value: Any, fallback: str) -> str:
+    name = re.sub(r"[^a-zA-Z0-9._-]+", "-", str(value or "").strip()).strip(".-")
+    if not name:
+        name = fallback
+    if not name.lower().endswith(".mp4"):
+        name = f"{name}.mp4"
+    return name[:120]
+
+
+def save_video_task_artifact(task_id: str, video_bytes: bytes, file_name: Any, mime_type: Any = "video/mp4") -> dict[str, Any]:
+    if not video_bytes:
+        raise ValueError("Video artifact cannot be empty.")
+    output_dir = video_output_dir().resolve()
+    output_dir.mkdir(parents=True, exist_ok=True)
+    safe_name = _safe_file_name(file_name, f"{task_id}.mp4")
+    target = (output_dir / f"{task_id}-{safe_name}").resolve()
+    try:
+        target.relative_to(output_dir)
+    except ValueError as exc:
+        raise ValueError("Video artifact path is outside the managed output folder.") from exc
+    temporary = target.with_suffix(target.suffix + ".tmp")
+    temporary.write_bytes(video_bytes)
+    temporary.replace(target)
+    return {
+        "fileName": safe_name,
+        "relativePath": str(target.relative_to(workspace_root())).replace("\\", "/"),
+        "mimeType": str(mime_type or "video/mp4"),
+        "bytes": len(video_bytes),
+        "saved": True,
+    }
 
 
 def list_video_tasks(limit: int = 24) -> list[dict[str, Any]]:

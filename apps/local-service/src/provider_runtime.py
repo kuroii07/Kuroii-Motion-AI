@@ -19,12 +19,14 @@ from minimax_protocol_adapter import (
     generate_image as generate_minimax_image,
     generate_music as generate_minimax_music,
     generate_voice as generate_minimax_voice,
+    poll_video as poll_minimax_video,
+    submit_video as submit_minimax_video,
 )
 from provider_secrets import get_provider_secret, provider_secret_ref
 
 REMOTE_PROVIDERS = {"openai", "deepseek", "openai-compatible", "minimax"}
 LIVE_MODEL_DISCOVERY_PROVIDERS = {"openai", "deepseek", "openai-compatible", "custom-base-url"}
-LIVE_VIDEO_PROVIDERS = {"openai", "deepseek", "openai-compatible"}
+LIVE_VIDEO_PROVIDERS = {"openai", "deepseek", "openai-compatible", "minimax"}
 
 
 def supports_live_video_generation(provider_id: str) -> bool:
@@ -427,7 +429,7 @@ def submit_video(provider_id: str, payload: dict[str, Any]) -> tuple[int, dict[s
     model = str(payload.get("model") or payload.get("modelId") or request_config(payload).get("model") or "").strip()
     started = perf_counter()
     try:
-        result = submit_protocol_video_generation(provider_id, config, model, payload.get("prompt"), payload.get("options"))
+        result = submit_minimax_video(config, model, payload.get("prompt"), payload.get("options")) if provider_id == "minimax" else submit_protocol_video_generation(provider_id, config, model, payload.get("prompt"), payload.get("options"))
     except AdapterError as adapter_error:
         return adapter_error_result(provider_id, adapter_error)
     return 202, {
@@ -453,10 +455,10 @@ def poll_video(provider_id: str, payload: dict[str, Any]) -> tuple[int, dict[str
         return 400, error_result(provider_id, "CONFIG_MISSING", "generation", "A provider video task ID is required.")
     started = perf_counter()
     try:
-        result = poll_protocol_video_generation(provider_id, config, provider_task_id)
+        result = poll_minimax_video(config, provider_task_id) if provider_id == "minimax" else poll_protocol_video_generation(provider_id, config, provider_task_id)
     except AdapterError as adapter_error:
         return adapter_error_result(provider_id, adapter_error)
-    return 200, {
+    response = {
         "ok": True,
         "providerId": provider_id,
         "providerTaskId": result["providerTaskId"] or provider_task_id,
@@ -465,6 +467,12 @@ def poll_video(provider_id: str, payload: dict[str, Any]) -> tuple[int, dict[str
         "protocol": result["protocol"],
         "diagnostics": {"endpoint": urlparse(result["endpoint"]).path, "durationMs": round((perf_counter() - started) * 1000), "httpStatus": result["httpStatus"]},
     }
+    for key in ("fileId", "fileName", "mimeType", "videoBytes"):
+        if key in result:
+            response[key] = result[key]
+    if result.get("fileLookupEndpoint"):
+        response["diagnostics"]["fileLookupEndpoint"] = urlparse(result["fileLookupEndpoint"]).path
+    return 200, response
 
 
 def test_connection(provider_id: str, payload: dict[str, Any]) -> tuple[int, dict[str, Any]]:

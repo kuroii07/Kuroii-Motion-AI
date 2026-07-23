@@ -3624,6 +3624,21 @@ function videoCapabilityBinding() {
   return bindings.video || defaultProviderProfile().capabilityBindings.video;
 }
 
+function videoGenerationControlOptions() {
+  const binding = state.videoReadiness.binding || videoCapabilityBinding();
+  if (binding && binding.providerId === "minimax") {
+    const hailuo = ["MiniMax-Hailuo-2.3", "MiniMax-Hailuo-02"].includes(binding.model);
+    return { aspectRatio: false, durations: hailuo ? [6, 10] : [6], resolutions: hailuo ? ["768p", "1080p"] : ["720p"] };
+  }
+  return { aspectRatio: true, durations: [5, 10, 15], resolutions: ["480p", "720p", "1080p"] };
+}
+
+function normalizeVideoGenerationSettings() {
+  const supported = videoGenerationControlOptions();
+  if (!supported.durations.includes(Number(state.videoGenerationSettings.durationSeconds))) state.videoGenerationSettings.durationSeconds = supported.durations[0];
+  if (!supported.resolutions.includes(state.videoGenerationSettings.resolution)) state.videoGenerationSettings.resolution = supported.resolutions[0];
+}
+
 function musicCapabilityBinding() {
   const bindings = (state.providerProfile && state.providerProfile.capabilityBindings) || {};
   return bindings.music || {};
@@ -4772,6 +4787,7 @@ async function loadVideoReadiness(options = {}) {
       advice: Array.isArray(payload.advice) ? payload.advice : [],
       binding: payload.binding || null
     };
+    normalizeVideoGenerationSettings();
     state.serviceOnline = true;
   } catch (error) {
     const payload = error && error.payload ? error.payload : {};
@@ -4908,7 +4924,7 @@ function bindVideoGenerationWorkspace() {
   const generation = state.videoGeneration;
   el("featurePromptInput")?.addEventListener("input", (event) => { generation.prompt = event.target.value; });
   el("videoGenerationAspectRatio")?.addEventListener("change", (event) => { state.videoGenerationSettings.aspectRatio = event.target.value; });
-  el("videoGenerationDuration")?.addEventListener("change", (event) => { state.videoGenerationSettings.durationSeconds = Number(event.target.value) || 5; });
+  el("videoGenerationDuration")?.addEventListener("change", (event) => { state.videoGenerationSettings.durationSeconds = Number(event.target.value) || videoGenerationControlOptions().durations[0]; });
   el("videoGenerationResolution")?.addEventListener("change", (event) => { state.videoGenerationSettings.resolution = event.target.value; });
   el("featureGenerateButton")?.addEventListener("click", runVideoGeneration);
   el("featureCancelButton")?.addEventListener("click", () => videoGenerationController?.abort());
@@ -5116,6 +5132,7 @@ function renderMusicDirectionWorkbench(feature, workspace) {
 function renderVideoGenerationWorkbench(feature, workspace) {
   const generation = state.videoGeneration;
   const settings = state.videoGenerationSettings;
+  const supportedSettings = videoGenerationControlOptions();
   const generating = generation.status === "generating";
   const readiness = state.videoReadiness;
   const readyLabel = readiness.status === "loading"
@@ -5133,8 +5150,8 @@ function renderVideoGenerationWorkbench(feature, workspace) {
       <div class="imageGenerationWorkbenchBody">
         <aside class="imageGenerationComposer"><div class="railHeading"><strong>${state.locale === "zh-CN" ? "镜头描述" : "Shot prompt"}</strong><span>${state.locale === "zh-CN" ? "描述主体、动作、镜头运动、节奏与风格" : "Describe subject, action, camera, pacing, and style"}</span></div>
           <textarea id="featurePromptInput" placeholder="${state.locale === "zh-CN" ? "例如：雨夜霓虹街头，一只黑猫从水洼旁走过，镜头低机位缓慢跟拍，电影感，16:9。" : "Example: A black cat walks beside a puddle on a neon rainy street; low-angle slow tracking shot, cinematic."}" spellcheck="true">${escapeHtml(generation.prompt)}</textarea>
-          <div class="imageGenerationControls"><label><span>${state.locale === "zh-CN" ? "画面比例" : "Aspect ratio"}</span><select id="videoGenerationAspectRatio">${["16:9", "9:16", "1:1", "21:9", "4:3"].map((value) => `<option value="${value}" ${settings.aspectRatio === value ? "selected" : ""}>${value}</option>`).join("")}</select></label><label><span>${state.locale === "zh-CN" ? "时长" : "Duration"}</span><select id="videoGenerationDuration">${[5, 10, 15].map((value) => `<option value="${value}" ${Number(settings.durationSeconds) === value ? "selected" : ""}>${value}s</option>`).join("")}</select></label><label><span>${state.locale === "zh-CN" ? "输出规格" : "Resolution"}</span><select id="videoGenerationResolution">${["480p", "720p", "1080p"].map((value) => `<option value="${value}" ${settings.resolution === value ? "selected" : ""}>${value}</option>`).join("")}</select></label></div>
-          <p class="imageExportNote">${state.locale === "zh-CN" ? "不同视频供应商对时长和规格的支持不同；本页会按绑定模型返回真实状态和错误。" : "Video providers differ in supported duration and resolution; this page shows the bound model's real status and errors."}</p>
+          <div class="imageGenerationControls">${supportedSettings.aspectRatio ? `<label><span>${state.locale === "zh-CN" ? "画面比例" : "Aspect ratio"}</span><select id="videoGenerationAspectRatio">${["16:9", "9:16", "1:1", "21:9", "4:3"].map((value) => `<option value="${value}" ${settings.aspectRatio === value ? "selected" : ""}>${value}</option>`).join("")}</select></label>` : ""}<label><span>${state.locale === "zh-CN" ? "时长" : "Duration"}</span><select id="videoGenerationDuration">${supportedSettings.durations.map((value) => `<option value="${value}" ${Number(settings.durationSeconds) === value ? "selected" : ""}>${value}s</option>`).join("")}</select></label><label><span>${state.locale === "zh-CN" ? "输出规格" : "Resolution"}</span><select id="videoGenerationResolution">${supportedSettings.resolutions.map((value) => `<option value="${value}" ${settings.resolution === value ? "selected" : ""}>${value}</option>`).join("")}</select></label></div>
+          <p class="imageExportNote">${state.locale === "zh-CN" ? (supportedSettings.aspectRatio ? "不同视频供应商对时长和规格的支持不同；本页会按绑定模型返回真实状态和错误。" : "MiniMax 当前文本生成视频接口不接收画面比例；这里仅显示该模型实际支持的时长和输出规格。") : (supportedSettings.aspectRatio ? "Video providers differ in supported duration and resolution; this page shows the bound model's real status and errors." : "MiniMax text-to-video does not accept an aspect ratio here; only this model's supported duration and output settings are shown.")}</p>
           <p class="imageExportNote"><span class="statusDot ${readiness.ready ? "success" : (readiness.status === "loading" ? "warning" : "muted")}"></span>${escapeHtml(readyLabel)} ${readyAdvice}<button class="imageHistoryRefresh" id="refreshVideoReadinessButton" type="button">${state.locale === "zh-CN" ? "检查" : "Check"}</button></p>
           <div class="workbenchActionBar"><button class="featurePrimaryButton" id="featureGenerateButton" type="button" ${generating || !state.providerProfileReady || !readiness.ready ? "disabled" : ""}>${generating ? (state.locale === "zh-CN" ? "生成中" : "Generating") : (state.locale === "zh-CN" ? "生成视频" : "Generate video")}</button><button class="featureSecondaryButton" id="featureCancelButton" type="button" ${generating ? "" : "hidden disabled"}>${state.locale === "zh-CN" ? "停止轮询" : "Stop polling"}</button></div>
         </aside>

@@ -4,6 +4,7 @@ import json
 import socket
 from typing import Any
 from urllib.error import HTTPError, URLError
+from urllib.parse import urlencode, urlparse
 from urllib.request import Request, urlopen
 
 from openai_protocol_adapter import (
@@ -144,6 +145,135 @@ def _post_minimax_json(config: dict[str, Any], path: str, body: dict[str, Any], 
     if error:
         raise error
     return status, payload, endpoint
+
+
+def _get_minimax_json(config: dict[str, Any], path: str, query: dict[str, str], label: str) -> tuple[int, dict[str, Any], str]:
+    endpoint = endpoint_url(str(config.get("baseUrl", "")), path, label)
+    url = f"{endpoint}?{urlencode(query)}" if query else endpoint
+    request = Request(url, method="GET", headers=normalized_headers("minimax", config))
+    try:
+        with urlopen(request, timeout=request_timeout_seconds(config)) as response:
+            status, raw = int(response.status), response.read()
+    except HTTPError as exc:
+        raise map_http_error(int(exc.code), label) from None
+    except (TimeoutError, socket.timeout):
+        raise AdapterError("NETWORK_TIMEOUT", "network", f"{label} timed out.", 504) from None
+    except (URLError, OSError) as exc:
+        if isinstance(getattr(exc, "reason", None), (TimeoutError, socket.timeout)):
+            raise AdapterError("NETWORK_TIMEOUT", "network", f"{label} timed out.", 504) from None
+        raise AdapterError("BASE_URL_UNREACHABLE", "network", f"{label} could not be reached.", 502) from None
+    if status < 200 or status >= 300:
+        raise map_http_error(status, label)
+    try:
+        payload = json.loads(raw.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        raise AdapterError("PROVIDER_RESPONSE_INVALID", "generation", f"{label} returned invalid JSON.", 502) from None
+    error = _minimax_error(payload)
+    if error:
+        raise error
+    return status, payload, url
+
+
+def _video_options(model: str, options: Any) -> tuple[int, str]:
+    opts = options if isinstance(options, dict) else {}
+    try:
+        duration = int(opts.get("durationSeconds") or 6)
+    except (TypeError, ValueError):
+        raise AdapterError("CONFIG_INVALID", "config", "MiniMax video duration must be a whole number of seconds.", 400) from None
+    requested_resolution = str(opts.get("resolution") or "768p").strip().upper()
+    resolution = {"720P": "720P", "768P": "768P", "1080P": "1080P"}.get(requested_resolution)
+    if not resolution:
+        raise AdapterError("CONFIG_INVALID", "config", "MiniMax video resolution must be 720p, 768p, or 1080p.", 400)
+    hailuo_models = {"MiniMax-Hailuo-2.3", "MiniMax-Hailuo-02"}
+    if model in hailuo_models:
+        if duration not in {6, 10}:
+            raise AdapterError("CONFIG_INVALID", "config", "This MiniMax Hailuo model supports 6 or 10 second clips.", 400)
+        if resolution not in {"768P", "1080P"}:
+            raise AdapterError("CONFIG_INVALID", "config", "This MiniMax Hailuo model supports 768p or 1080p output.", 400)
+    elif duration != 6:
+        raise AdapterError("CONFIG_INVALID", "config", "This MiniMax video model supports 6 second clips only.", 400)
+    elif resolution != "720P":
+        raise AdapterError("CONFIG_INVALID", "config", "This MiniMax video model supports 720p output only.", 400)
+    return duration, resolution
+
+
+def submit_video(config: dict[str, Any], model: str, prompt: Any, options: Any = None) -> dict[str, Any]:
+    model_id = str(model or "").strip()
+    supported_models = {"MiniMax-Hailuo-2.3", "MiniMax-Hailuo-02", "T2V-01-Director", "T2V-01"}
+    if model_id not in supported_models:
+        raise AdapterError("MODEL_NOT_FOUND", "model", "MiniMax video generation requires a supported Hailuo or T2V model.", 404)
+    prompt_text = str(prompt or "").strip()
+    if not prompt_text:
+        raise AdapterError("CONFIG_MISSING", "config", "A MiniMax video prompt is required.", 400)
+    if len(prompt_text) > 2000:
+        raise AdapterError("CONFIG_INVALID", "config", "MiniMax video prompts must be 2000 characters or fewer.", 400)
+    duration, resolution = _video_options(model_id, options)
+    opts = options if isinstance(options, dict) else {}
+    body: dict[str, Any] = {"model": model_id, "prompt": prompt_text, "duration": duration, "resolution": resolution}
+    if opts.get("promptOptimizer") is not None:
+        body["prompt_optimizer"] = bool(opts["promptOptimizer"])
+    status, payload, endpoint = _post_minimax_json(config, "/v1/video_generation", body, "MiniMax video generation")
+    task_id = str(payload.get("task_id") or "").strip()
+    if not task_id:
+        raise AdapterError("PROVIDER_RESPONSE_INVALID", "generation", "MiniMax video response contains no task ID.", 502)
+    return {"providerTaskId": task_id, "status": "queued", "videoUrl": "", "endpoint": endpoint, "httpStatus": status, "protocol": "minimax"}
+
+
+def _download_video(config: dict[str, Any], download_url: str) -> tuple[bytes, str]:
+    parsed = urlparse(download_url)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        raise AdapterError("PROVIDER_RESPONSE_INVALID", "generation", "MiniMax returned an invalid video download URL.", 502)
+    request = Request(download_url, method="GET", headers={"User-Agent": "Kuroii-Motion-AI/0.3"})
+    try:
+        with urlopen(request, timeout=request_timeout_seconds(config)) as response:
+            raw = response.read()
+            mime_type = str(response.headers.get_content_type() or "video/mp4")
+    except HTTPError as exc:
+        raise map_http_error(int(exc.code), "MiniMax video file download") from None
+    except (TimeoutError, socket.timeout):
+        raise AdapterError("NETWORK_TIMEOUT", "network", "MiniMax video file download timed out.", 504) from None
+    except (URLError, OSError) as exc:
+        if isinstance(getattr(exc, "reason", None), (TimeoutError, socket.timeout)):
+            raise AdapterError("NETWORK_TIMEOUT", "network", "MiniMax video file download timed out.", 504) from None
+        raise AdapterError("BASE_URL_UNREACHABLE", "network", "MiniMax video file could not be downloaded.", 502) from None
+    if not raw:
+        raise AdapterError("PROVIDER_RESPONSE_INVALID", "generation", "MiniMax video download is empty.", 502)
+    return raw, mime_type if mime_type.startswith("video/") else "video/mp4"
+
+
+def poll_video(config: dict[str, Any], provider_task_id: str) -> dict[str, Any]:
+    task_id = str(provider_task_id or "").strip()
+    if not task_id:
+        raise AdapterError("CONFIG_MISSING", "generation", "A MiniMax video task ID is required.", 400)
+    status, payload, endpoint = _get_minimax_json(config, "/v1/query/video_generation", {"task_id": task_id}, "MiniMax video status")
+    provider_status = str(payload.get("status") or "").strip().lower()
+    normalized_status = {
+        "preparing": "queued", "queueing": "queued", "processing": "processing",
+        "success": "succeeded", "fail": "failed", "failed": "failed",
+    }.get(provider_status)
+    if not normalized_status:
+        raise AdapterError("PROVIDER_RESPONSE_INVALID", "generation", "MiniMax returned an unknown video task status.", 502)
+    result: dict[str, Any] = {"providerTaskId": str(payload.get("task_id") or task_id), "status": normalized_status, "videoUrl": "", "endpoint": endpoint, "httpStatus": status, "protocol": "minimax"}
+    if normalized_status != "succeeded":
+        return result
+    file_id = str(payload.get("file_id") or "").strip()
+    if not file_id:
+        raise AdapterError("PROVIDER_RESPONSE_INVALID", "generation", "MiniMax completed the video task without a file ID.", 502)
+    _, file_payload, file_endpoint = _get_minimax_json(config, "/v1/files/retrieve", {"file_id": file_id}, "MiniMax video file lookup")
+    file_data = file_payload.get("file") if isinstance(file_payload.get("file"), dict) else {}
+    download_url = str(file_data.get("download_url") or "").strip()
+    if not download_url:
+        raise AdapterError("PROVIDER_RESPONSE_INVALID", "generation", "MiniMax video file lookup contains no download URL.", 502)
+    video_bytes, mime_type = _download_video(config, download_url)
+    result.update({
+        "videoUrl": download_url,
+        "fileId": file_id,
+        "fileName": str(file_data.get("filename") or f"{file_id}.mp4"),
+        "mimeType": mime_type,
+        "videoBytes": video_bytes,
+        "fileLookupEndpoint": file_endpoint,
+    })
+    return result
 
 
 def _audio_response(payload: dict[str, Any], audio_format: str, label: str) -> dict[str, Any]:

@@ -74,6 +74,20 @@ class MockOpenAICompatibleHandler(BaseHTTPRequestHandler):
             pass
 
     def do_GET(self) -> None:
+        if self.path == "/minimax/download/minimax-video.mp4":
+            data = b"\x00\x00\x00\x18ftypmp42kuroii-minimax-video"
+            self.send_response(200)
+            self.send_header("Content-Type", "video/mp4")
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+            return
+        if self.path == "/minimax/v1/query/video_generation?task_id=minimax-video-task":
+            self.send_json(200, {"base_resp": {"status_code": 0, "status_msg": "success"}, "task_id": "minimax-video-task", "status": "Success", "file_id": "minimax-video-file"})
+            return
+        if self.path == "/minimax/v1/files/retrieve?file_id=minimax-video-file":
+            self.send_json(200, {"base_resp": {"status_code": 0, "status_msg": "success"}, "file": {"file_id": "minimax-video-file", "filename": "minimax-video.mp4", "download_url": f"http://127.0.0.1:{self.server.server_port}/minimax/download/minimax-video.mp4"}})
+            return
         if self.path == "/timeout/models":
             time.sleep(1.25)
             self.send_json(200, {"data": [{"id": "late-model"}]})
@@ -199,6 +213,13 @@ class MockOpenAICompatibleHandler(BaseHTTPRequestHandler):
                 "extra_info": {"audio_length": 880, "audio_format": "mp3"},
                 "trace_id": "voice-trace",
             })
+            return
+        if self.path == "/minimax/v1/video_generation":
+            UPSTREAM_REQUESTS.append({"path": self.path, "authorization": self.headers.get("Authorization"), "body": body})
+            if self.headers.get("Authorization") != f"Bearer {UPSTREAM_KEY}":
+                self.send_json(200, {"base_resp": {"status_code": 1004, "status_msg": "invalid key"}})
+                return
+            self.send_json(200, {"base_resp": {"status_code": 0, "status_msg": "success"}, "task_id": "minimax-video-task"})
             return
         if self.path in {"/v1/images/generations", "/v1/custom/images"}:
             UPSTREAM_REQUESTS.append({
@@ -344,6 +365,8 @@ def main() -> int:
     image_history_path = runtime_dir / f"image-history-{service_port}.json"
     audio_output_dir = runtime_dir / f"audio-output-{service_port}"
     audio_history_path = runtime_dir / f"audio-history-{service_port}.json"
+    video_output_dir = runtime_dir / f"generated-videos-{service_port}"
+    video_tasks_path = runtime_dir / f"video-tasks-{service_port}.json"
     env = os.environ.copy()
     env["PYTHONIOENCODING"] = "utf-8"
     env["PYTHONUTF8"] = "1"
@@ -354,6 +377,8 @@ def main() -> int:
     env["KUROII_IMAGE_HISTORY_PATH"] = str(image_history_path)
     env["KUROII_AUDIO_OUTPUT_DIR"] = str(audio_output_dir)
     env["KUROII_AUDIO_HISTORY_PATH"] = str(audio_history_path)
+    env["KUROII_VIDEO_OUTPUT_DIR"] = str(video_output_dir)
+    env["KUROII_VIDEO_TASKS_PATH"] = str(video_tasks_path)
     process = subprocess.Popen(
         [sys.executable, str(ROOT / "apps/local-service/src/server.py"), "--port", str(service_port), "--token", TOKEN],
         cwd=str(ROOT),
@@ -688,9 +713,10 @@ def main() -> int:
                     "baseUrl": f"{upstream_url}/minimax",
                     "apiKey": UPSTREAM_KEY,
                     "model": "image-01",
-                    "defaultCapabilities": ["image", "music", "voice"],
+                    "defaultCapabilities": ["image", "video", "music", "voice"],
                     "models": [
                         {"id": "image-01", "capabilities": ["image"]},
+                        {"id": "MiniMax-Hailuo-2.3", "capabilities": ["video"]},
                         {"id": "music-3.0", "capabilities": ["music"]},
                         {"id": "speech-2.8-hd", "capabilities": ["voice"]},
                     ],
@@ -700,6 +726,7 @@ def main() -> int:
             },
         )
         assert status == 200 and minimax_profile["ok"] is True
+        minimax_profile_id = minimax_profile["profile"]["activeProfileId"]
         status, minimax_image = request_json(
             "POST",
             f"{service_url}/ai/image/generate",
@@ -718,10 +745,31 @@ def main() -> int:
             "response_format": "url",
             "n": 1,
         }
+        status, video_binding = request_json(
+            "POST",
+            f"{service_url}/provider-bindings/video",
+            {"profileId": minimax_profile_id, "providerId": "minimax", "model": "MiniMax-Hailuo-2.3", "operation": "set-default"},
+        )
+        assert status == 200 and video_binding["ok"] is True, video_binding
+        status, submitted_video = request_json(
+            "POST",
+            f"{service_url}/ai/video/generate",
+            {"prompt": "A black cat walks through a neon alley.", "options": {"durationSeconds": 6, "resolution": "768p"}},
+        )
+        assert status == 202 and submitted_video["task"]["status"] == "queued"
+        video_task_id = submitted_video["task"]["id"]
+        assert UPSTREAM_REQUESTS[-1]["path"] == "/minimax/v1/video_generation"
+        assert UPSTREAM_REQUESTS[-1]["body"] == {"model": "MiniMax-Hailuo-2.3", "prompt": "A black cat walks through a neon alley.", "duration": 6, "resolution": "768P"}
+        status, completed_video = request_json("GET", f"{service_url}/ai/video/tasks/{video_task_id}")
+        assert status == 200 and completed_video["task"]["status"] == "succeeded"
+        assert completed_video["task"]["saved"] is True and completed_video["task"]["bytes"] > 0
+        assert completed_video["task"]["fileId"] == "minimax-video-file"
+        assert (ROOT / completed_video["task"]["relativePath"]).is_file()
+        assert UPSTREAM_KEY not in video_tasks_path.read_text(encoding="utf-8")
         status, music_binding = request_json(
             "POST",
             f"{service_url}/provider-bindings/music",
-            {"profileId": "minimax", "providerId": "minimax", "model": "music-3.0", "operation": "set-default"},
+            {"profileId": minimax_profile_id, "providerId": "minimax", "model": "music-3.0", "operation": "set-default"},
         )
         assert status == 200 and music_binding["ok"] is True
         status, generated_music = request_json(
@@ -740,7 +788,7 @@ def main() -> int:
         status, voice_binding = request_json(
             "POST",
             f"{service_url}/provider-bindings/voice",
-            {"profileId": "minimax", "providerId": "minimax", "model": "speech-2.8-hd", "operation": "set-default"},
+            {"profileId": minimax_profile_id, "providerId": "minimax", "model": "speech-2.8-hd", "operation": "set-default"},
         )
         assert status == 200 and voice_binding["ok"] is True
         status, generated_voice = request_json(

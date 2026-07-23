@@ -62,7 +62,7 @@ from provider_runtime import (
     test_connection,
     submit_video,
 )
-from video_tasks import create_video_task, get_video_task, list_video_tasks, update_video_task
+from video_tasks import create_video_task, get_video_task, list_video_tasks, save_video_task_artifact, update_video_task
 from redaction import redact_payload
 
 STARTED_AT = perf_counter()
@@ -298,13 +298,24 @@ class KuroiiLocalServiceHandler(BaseHTTPRequestHandler):
                 if provider_id and isinstance(provider_profile, dict) and str(binding.get("profileId") or "") == str(provider_profile.get("profileId") or ""):
                     status, body = poll_video(provider_id, {"config": provider_profile, "providerTaskId": task["providerTaskId"]})
                     if status == 200:
-                        task = update_video_task(task_id, {
+                        video_bytes = body.pop("videoBytes", None)
+                        changes: dict[str, Any] = {
                             "providerTaskId": body.get("providerTaskId") or task["providerTaskId"],
                             "status": body.get("status") or task["status"],
                             "videoUrl": body.get("videoUrl") or task.get("videoUrl", ""),
                             "diagnostics": body.get("diagnostics") or task.get("diagnostics", {}),
                             "error": None,
-                        }) or task
+                        }
+                        if video_bytes is not None:
+                            try:
+                                changes.update(save_video_task_artifact(task_id, video_bytes, body.get("fileName"), body.get("mimeType")))
+                                changes["fileId"] = str(body.get("fileId") or "")
+                            except (OSError, ValueError) as exc:
+                                changes.update({
+                                    "status": "failed",
+                                    "error": {"code": "VIDEO_ARTIFACT_SAVE_FAILED", "message": f"Video completed remotely but could not be saved locally: {exc}"},
+                                })
+                        task = update_video_task(task_id, changes) or task
                     else:
                         task = update_video_task(task_id, {"status": "failed", "error": {"code": body.get("code", "VIDEO_POLL_FAILED"), "message": body.get("message", "Video status polling failed.")}}) or task
             self._send_json(200, {"ok": True, "task": task})
