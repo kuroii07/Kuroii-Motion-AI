@@ -165,6 +165,11 @@ def main() -> int:
         assert status == 200 and video_readiness["ready"] is False
         assert video_readiness["code"] == "PROVIDER_BINDING_MISSING"
 
+        status, capability_status = request_json("GET", f"{base_url}/provider-capabilities")
+        assert status == 200 and capability_status["ok"] is True
+        assert capability_status["byCapability"]["video"]["state"] == "action-required"
+        assert capability_status["byCapability"]["vision"]["state"] == "unsupported"
+
         status, paper = request_json("POST", f"{base_url}/provider-profiles", {
             "name": "Paper-GPT",
             "providerId": "openai-compatible",
@@ -293,6 +298,11 @@ def main() -> int:
         status, video_readiness = request_json("GET", f"{base_url}/ai/video/readiness")
         assert status == 200 and video_readiness["ready"] is True
         assert video_readiness["binding"]["model"] == "video-test"
+
+        status, capability_status = request_json("GET", f"{base_url}/provider-capabilities")
+        assert status == 200 and capability_status["ok"] is True
+        assert capability_status["byCapability"]["video"]["state"] == "connected"
+        assert capability_status["byCapability"]["video"]["binding"]["model"] == "video-test"
 
         status, selected = request_json(
             "POST", f"{base_url}/provider-profiles/{company_profile['profileId']}/select", {}

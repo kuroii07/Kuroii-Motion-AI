@@ -165,6 +165,11 @@ def main() -> int:
     assert "state.serviceOnline = Boolean(error && error.status);" in js
     assert "当前操作返回的数据不符合 OpenAI Compatible 格式" in js
     assert "/provider-profile" in js
+    assert "/provider-capabilities" in js
+    assert "loadCapabilityConnectionStatuses" in js
+    assert "capabilityConnectionLabel" in js
+    assert "可绑定待接通" in js
+    assert "providerCapabilityRuntimeStatus" in js
     assert "/provider-bindings/${encodeURIComponent(capabilityId)}" in js
     assert "providerProfileStorageKey" in js
     assert "capabilityBindings" in js
@@ -190,6 +195,7 @@ def main() -> int:
     assert "data-provider-default-capability" in js
     assert "providerAdvancedConfig" in css
     assert "providerCapabilityOptions" in css
+    assert ".providerCapabilityRuntimeStatus" in css
     assert "delete clean.apiKey" in js
     assert "delete clean.headers.Authorization" not in js
     assert "Windows DPAPI" in js

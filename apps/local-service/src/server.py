@@ -34,6 +34,7 @@ from image_history import (
     save_generated_image,
 )
 from provider_profiles import (
+    capability_connection_statuses,
     create_named_provider_profile,
     delete_named_provider_profile,
     named_provider_runtime_payload,
@@ -210,7 +211,7 @@ class KuroiiLocalServiceHandler(BaseHTTPRequestHandler):
                 "requiresSessionToken": True,
                 "routes": [
                     "/health", "/providers", "/provider-errors", "/providers/{providerId}/config",
-                    "/provider-profile", "/provider-profiles", "/provider-profiles/{profileId}/profile",
+                    "/provider-profile", "/provider-capabilities", "/provider-profiles", "/provider-profiles/{profileId}/profile",
                     "/provider-profiles/{profileId}",
                     "/provider-profiles/{profileId}/select", "/provider-profiles/{profileId}/secret",
                     "/provider-profiles/{profileId}/models", "/provider-profiles/{profileId}/test",
@@ -230,7 +231,7 @@ class KuroiiLocalServiceHandler(BaseHTTPRequestHandler):
                 "ts": now_iso(),
             })
             return
-        if (path in {"/providers", "/provider-profile", "/hosts", "/provider-errors", "/host-target", "/actions/trusted", "/commands", "/ai/image/history", "/ai/audio/history", "/ai/video/readiness", "/ai/video/tasks"} or path.startswith("/ai/image/history/") or path.startswith("/ai/audio/history/") or path.startswith("/ai/video/tasks/")) and not self._require_auth():
+        if (path in {"/providers", "/provider-profile", "/provider-capabilities", "/hosts", "/provider-errors", "/host-target", "/actions/trusted", "/commands", "/ai/image/history", "/ai/audio/history", "/ai/video/readiness", "/ai/video/tasks"} or path.startswith("/ai/image/history/") or path.startswith("/ai/audio/history/") or path.startswith("/ai/video/tasks/")) and not self._require_auth():
             return
         if path == "/providers":
             providers = provider_manifests()
@@ -241,6 +242,9 @@ class KuroiiLocalServiceHandler(BaseHTTPRequestHandler):
             return
         if path == "/provider-profile":
             self._send_json(200, {"ok": True, "profile": public_profile(read_provider_profile())})
+            return
+        if path == "/provider-capabilities":
+            self._send_json(200, capability_connection_statuses())
             return
         if path == "/ai/image/history":
             try:

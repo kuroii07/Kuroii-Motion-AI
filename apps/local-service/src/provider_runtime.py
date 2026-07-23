@@ -28,10 +28,25 @@ REMOTE_PROVIDERS = {"openai", "deepseek", "openai-compatible", "minimax"}
 LIVE_MODEL_DISCOVERY_PROVIDERS = {"openai", "deepseek", "openai-compatible", "custom-base-url"}
 LIVE_VIDEO_PROVIDERS = {"openai", "deepseek", "openai-compatible", "minimax"}
 
+# These are runtime contracts, not marketing claims.  A provider/model can be
+# registered in Provider Hub without having a task adapter behind it yet.
+LIVE_CAPABILITY_PROVIDERS = {
+    "text": set(LIVE_MODEL_DISCOVERY_PROVIDERS),
+    "image": set(LIVE_MODEL_DISCOVERY_PROVIDERS) | {"minimax"},
+    "video": set(LIVE_VIDEO_PROVIDERS),
+    "music": {"minimax"},
+    "voice": {"minimax"},
+}
+
 
 def supports_live_video_generation(provider_id: str) -> bool:
     """Return whether the current runtime can submit and poll video tasks."""
     return provider_id in LIVE_VIDEO_PROVIDERS
+
+
+def supports_live_capability(provider_id: str, capability: str) -> bool:
+    """Return whether a real generation adapter exists for this capability."""
+    return provider_id in LIVE_CAPABILITY_PROVIDERS.get(capability, set())
 
 
 PROVIDER_DISPLAY_NAMES = {

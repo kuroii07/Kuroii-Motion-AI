@@ -5619,6 +5619,42 @@ input[type="range"]::-moz-range-thumb {
   gap: 6px;
 }
 
+.providerCapabilityRuntimeStatus {
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 7px 8px;
+  border-left: 2px solid var(--warning);
+  background: color-mix(in srgb, var(--warning) 7%, var(--surface));
+}
+
+.providerCapabilityRuntimeStatus.success {
+  border-left-color: var(--success);
+  background: color-mix(in srgb, var(--success) 7%, var(--surface));
+}
+
+.providerCapabilityRuntimeStatus.error {
+  border-left-color: var(--error);
+  background: color-mix(in srgb, var(--error) 7%, var(--surface));
+}
+
+.providerCapabilityRuntimeStatus > span {
+  flex: 0 0 auto;
+  color: var(--text);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.providerCapabilityRuntimeStatus > small {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .providerCapabilityBindingItem {
   padding-top: 7px;
   border-top: 1px solid var(--line-soft);

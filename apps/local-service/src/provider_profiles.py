@@ -19,7 +19,7 @@ from provider_secrets import (
     save_provider_secret,
     secret_store_metadata,
 )
-from provider_runtime import mock_models, provider_exists, supports_live_video_generation
+from provider_runtime import mock_models, provider_exists, supports_live_capability, supports_live_video_generation
 
 
 PROFILE_STORE_PATH = "apps/local-service/data/provider-profile.json"
@@ -745,6 +745,119 @@ def resolve_capability_binding(capability: str) -> tuple[dict[str, Any] | None, 
             None,
         )
     return binding, item if isinstance(item, dict) else None
+
+
+def _public_binding(binding: dict[str, Any] | None) -> dict[str, str] | None:
+    if not isinstance(binding, dict):
+        return None
+    provider_id = str(binding.get("providerId", "")).strip()
+    model = str(binding.get("model", "")).strip()
+    if not provider_id or not model:
+        return None
+    return {
+        "profileId": str(binding.get("profileId", "")).strip(),
+        "providerId": provider_id,
+        "model": model,
+    }
+
+
+def capability_connection_statuses() -> dict[str, Any]:
+    """Return safe, configuration-only truth for every Provider Hub capability.
+
+    A configured model is only *connected* once the local runtime implements
+    that task protocol and the chosen profile, model capability and secret are
+    all valid.  This endpoint never tests a remote provider or returns a key.
+    """
+    profile = read_provider_profile()
+    items = [_capability_connection_status(profile, capability) for capability in DEFAULT_BINDINGS]
+    return {
+        "ok": True,
+        "items": items,
+        "byCapability": {item["capability"]: item for item in items},
+    }
+
+
+def _capability_connection_status(profile_data: dict[str, Any], capability: str) -> dict[str, Any]:
+    binding = profile_data.get("capabilityBindings", {}).get(capability)
+    public_binding = _public_binding(binding if isinstance(binding, dict) else None)
+    if not public_binding:
+        supported = any(supports_live_capability(provider_id, capability) for provider_id in DEFAULT_PROVIDER_NAMES)
+        return {
+            "capability": capability,
+            "state": "action-required" if supported else "unsupported",
+            "code": "PROVIDER_BINDING_MISSING" if supported else "CAPABILITY_RUNTIME_NOT_SUPPORTED",
+            "message": "No default model is bound for this capability." if supported else "No live runtime adapter exists for this capability yet.",
+            "advice": ["Add a model with this capability in Provider Hub and set it as default."] if supported else ["This capability is catalog-only until a provider adapter is implemented."],
+            "binding": None,
+        }
+
+    provider_id = public_binding["providerId"]
+    model_id = public_binding["model"]
+    if not supports_live_capability(provider_id, capability):
+        return {
+            "capability": capability,
+            "state": "unsupported",
+            "code": "CAPABILITY_PROVIDER_NOT_SUPPORTED",
+            "message": "The bound provider has no live runtime adapter for this capability.",
+            "advice": ["Choose a provider supported by this capability, or add its task adapter first."],
+            "binding": public_binding,
+        }
+
+    profile_id = public_binding["profileId"]
+    provider_profile = profile_data.get("profileInstances", {}).get(profile_id) if profile_id else None
+    if not isinstance(provider_profile, dict):
+        provider_profile = next(
+            (
+                candidate for candidate in profile_data.get("profileInstances", {}).values()
+                if isinstance(candidate, dict) and str(candidate.get("providerId", "")) == provider_id
+            ),
+            None,
+        )
+    if not isinstance(provider_profile, dict):
+        return {
+            "capability": capability,
+            "state": "action-required",
+            "code": "PROVIDER_PROFILE_NOT_CONFIGURED",
+            "message": "The bound provider profile is unavailable.",
+            "advice": ["Save the provider profile, then bind the model again."],
+            "binding": public_binding,
+        }
+    if not provider_profile.get("enabled", True):
+        return {
+            "capability": capability,
+            "state": "action-required",
+            "code": "PROVIDER_PROFILE_DISABLED",
+            "message": "The bound provider profile is disabled.",
+            "advice": ["Enable this provider profile in Provider Hub."],
+            "binding": public_binding,
+        }
+    if not profile_model_supports_capability(provider_profile, provider_id, model_id, capability):
+        return {
+            "capability": capability,
+            "state": "action-required",
+            "code": "MODEL_CAPABILITY_MISMATCH",
+            "message": "The bound model is not marked for this capability.",
+            "advice": ["Refresh or edit model capability tags, then bind a compatible model."],
+            "binding": public_binding,
+        }
+    api_key_status = get_provider_secret_status(provider_id, str(provider_profile.get("apiKeyRef", "")))
+    if not api_key_status.get("configured"):
+        return {
+            "capability": capability,
+            "state": "action-required",
+            "code": "CONFIG_MISSING",
+            "message": "The bound provider API key is not configured.",
+            "advice": ["Save the API key for the bound provider profile in Provider Hub."],
+            "binding": public_binding,
+        }
+    return {
+        "capability": capability,
+        "state": "connected",
+        "code": "CAPABILITY_READY",
+        "message": "The bound provider is ready for live requests.",
+        "advice": [],
+        "binding": public_binding,
+    }
 
 
 def video_generation_readiness() -> dict[str, Any]:

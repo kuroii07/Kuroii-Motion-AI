@@ -1928,6 +1928,7 @@ const state = {
   providerModelCapabilityFilter: "all",
   providerDeleteConfirmOpen: false,
   providerProfileReady: false,
+  capabilityConnection: { status: "idle", byCapability: {} },
   createMode: "text",
   imageGeneration: defaultImageGenerationState(),
   imageGenerationSettings: {
@@ -2271,6 +2272,44 @@ function providerCapabilityLabel(capabilityId) {
   return capability ? localText(capability.label) : capabilityId;
 }
 
+function capabilityConnectionStatus(capabilityId) {
+  return state.capabilityConnection.byCapability[capabilityId] || {
+    capability: capabilityId,
+    state: state.capabilityConnection.status === "loading" ? "loading" : "action-required",
+    code: "PROVIDER_STATUS_UNAVAILABLE",
+    message: "",
+    advice: [],
+    binding: null
+  };
+}
+
+function capabilityConnectionLabel(capabilityId) {
+  const status = capabilityConnectionStatus(capabilityId);
+  const labels = {
+    connected: state.locale === "zh-CN" ? "已接通" : "Connected",
+    "action-required": state.locale === "zh-CN" ? "可绑定待接通" : "Ready to connect",
+    unsupported: state.locale === "zh-CN" ? "未支持" : "Not supported",
+    loading: state.locale === "zh-CN" ? "检查中" : "Checking"
+  };
+  return labels[status.state] || labels["action-required"];
+}
+
+function capabilityConnectionTone(capabilityId) {
+  const stateName = capabilityConnectionStatus(capabilityId).state;
+  return stateName === "connected" ? "success" : (stateName === "unsupported" ? "error" : "warning");
+}
+
+function capabilityConnectionDetail(capabilityId, fallback) {
+  const status = capabilityConnectionStatus(capabilityId);
+  if (status.state === "connected" && status.binding) {
+    return `${providerLabel(status.binding.providerId)} · ${providerModelLabel(status.binding.providerId, status.binding.model)}`;
+  }
+  if (status.state === "unsupported") {
+    return state.locale === "zh-CN" ? "当前运行时尚未提供此能力的真实任务适配器" : "No live task adapter is available for this capability.";
+  }
+  return fallback || (state.locale === "zh-CN" ? "请在 Provider Hub 完成模型、启用状态和 API Key 配置" : "Complete model, profile, and API key setup in Provider Hub.");
+}
+
 function selectedModelCapabilities() {
   const selected = currentProviderModels().find((item) => item.id === state.providerConfig.model);
   const advertised = (selected && Array.isArray(selected.tags) ? selected.tags : []).filter((tag) => providerCapabilities.some((item) => item.id === tag));
@@ -2525,6 +2564,9 @@ function applyProviderProfile(profile, options = {}) {
   state.providerConfig.message = options.message || (state.locale === "zh-CN" ? "已读取模型平台配置。" : "Provider profile loaded.");
   state.providerConfig.lastRefresh = profile.updatedAt || state.providerConfig.lastRefresh || "-";
   writePersistedProviderProfile(state.providerProfile);
+  if (options.refreshCapabilities !== false && options.source === "service") {
+    void loadCapabilityConnectionStatuses();
+  }
 }
 
 async function loadProviderProfileFromService() {
@@ -2535,17 +2577,38 @@ async function loadProviderProfileFromService() {
     if (!response.ok) throw await serviceResponseError(response);
     const payload = await response.json();
     if (payload.ok && payload.profile) {
-      applyProviderProfile(payload.profile, { source: "service", stage: "profile-loaded" });
+      applyProviderProfile(payload.profile, { source: "service", stage: "profile-loaded", refreshCapabilities: false });
       state.serviceOnline = true;
     }
   } catch (error) {
     state.providerConfig.source = state.providerConfig.source || "localStorage";
   } finally {
     state.providerProfileReady = true;
+    await loadCapabilityConnectionStatuses({ renderAfter: false });
     render();
     void loadImageHistory();
     void loadVideoReadiness({ renderAfter: false });
   }
+}
+
+async function loadCapabilityConnectionStatuses(options = {}) {
+  state.capabilityConnection.status = "loading";
+  if (options.renderAfter !== false) render();
+  try {
+    const response = await fetch("http://127.0.0.1:17631/provider-capabilities", {
+      headers: { "X-Kuroii-Session": "dev-local-token" }
+    });
+    if (!response.ok) throw await serviceResponseError(response);
+    const payload = await response.json();
+    state.capabilityConnection = {
+      status: "ready",
+      byCapability: payload && payload.byCapability && typeof payload.byCapability === "object" ? payload.byCapability : {}
+    };
+    state.serviceOnline = true;
+  } catch (_error) {
+    state.capabilityConnection = { status: "error", byCapability: {} };
+  }
+  if (options.renderAfter !== false) render();
 }
 
 function normalizeProviderModels(models) {
@@ -4597,6 +4660,14 @@ function imageGenerationDiagnosticsHtml(generation) {
 async function runImageGeneration() {
   if (!state.providerProfileReady) return;
   const generation = state.imageGeneration;
+  const readiness = capabilityConnectionStatus("image");
+  if (readiness.state !== "connected") {
+    generation.status = "error";
+    generation.errorCode = readiness.code;
+    generation.message = `${capabilityConnectionLabel("image")}：${capabilityConnectionDetail("image")}`;
+    render();
+    return;
+  }
   syncImageGenerationExportSettings();
   const prompt = String(generation.prompt || "").trim();
   if (!prompt) {
@@ -4973,11 +5044,8 @@ function musicDirectionOutputHtml(music) {
 
 function bindMusicDirectionWorkspace() {
   const music = state.musicDirection;
-  const musicBinding = musicCapabilityBinding();
-  const musicProfile = providerProfileForBinding(musicBinding);
-  const musicConfigured = Boolean(musicProfile && musicProfile.apiKeyStatus && musicProfile.apiKeyStatus.configured);
   const musicReadiness = document.querySelector(".musicDirectionReadiness > section:first-child");
-  if (musicReadiness) musicReadiness.innerHTML = `<span class="statusDot ${musicConfigured ? "success" : "muted"}"></span><p>${musicConfigured ? (state.locale === "zh-CN" ? "音乐模型已绑定" : "Music model bound") : (state.locale === "zh-CN" ? "音乐模型尚未绑定" : "No music model bound")}</p><strong>${musicConfigured ? `${escapeHtml(providerLabel(musicBinding.providerId))} · ${escapeHtml(providerModelLabel(musicBinding.providerId, musicBinding.model))}` : (state.locale === "zh-CN" ? "当前可完成方向设计" : "Direction design is available")}</strong>`;
+  if (musicReadiness) musicReadiness.innerHTML = `<span class="statusDot ${capabilityConnectionTone("music")}"></span><p>${escapeHtml(capabilityConnectionLabel("music"))}</p><strong>${escapeHtml(capabilityConnectionDetail("music", state.locale === "zh-CN" ? "当前仍可完成音乐方向设计" : "Direction design remains available."))}</strong>`;
   el("musicDirectionBrief")?.addEventListener("input", (event) => { music.brief = event.target.value; });
   el("musicDirectionUseCase")?.addEventListener("change", (event) => { music.useCase = event.target.value; });
   el("musicDirectionMode")?.addEventListener("change", (event) => { music.mode = event.target.value; });
@@ -4989,6 +5057,14 @@ function bindMusicDirectionWorkspace() {
 
 async function generateMusicAudio() {
   const music = state.musicDirection;
+  const readiness = capabilityConnectionStatus("music");
+  if (readiness.state !== "connected") {
+    music.status = "error";
+    music.errorCode = readiness.code;
+    music.message = `${capabilityConnectionLabel("music")}：${capabilityConnectionDetail("music")}`;
+    render();
+    return;
+  }
   if (!music.prompt) {
     buildMusicDirection();
     if (!music.prompt) return;
@@ -5056,11 +5132,8 @@ function voiceDirectionOutputHtml(voice) {
 
 function bindVoiceDirectionWorkspace() {
   const voice = state.voiceDirection;
-  const voiceBinding = voiceCapabilityBinding();
-  const voiceProfile = providerProfileForBinding(voiceBinding);
-  const voiceConfigured = Boolean(voiceProfile && voiceProfile.apiKeyStatus && voiceProfile.apiKeyStatus.configured);
   const voiceReadiness = document.querySelector(".voiceDirectionDelivery > section:first-child");
-  if (voiceReadiness) voiceReadiness.innerHTML = `<span class="statusDot ${voiceConfigured ? "success" : "muted"}"></span><p>${voiceConfigured ? (state.locale === "zh-CN" ? "配音模型已绑定" : "Voice model bound") : (state.locale === "zh-CN" ? "语音模型尚未绑定" : "No voice model bound")}</p><strong>${voiceConfigured ? `${escapeHtml(providerLabel(voiceBinding.providerId))} · ${escapeHtml(providerModelLabel(voiceBinding.providerId, voiceBinding.model))}` : (state.locale === "zh-CN" ? "本页不会生成假音频" : "This page never fabricates audio")}</strong>`;
+  if (voiceReadiness) voiceReadiness.innerHTML = `<span class="statusDot ${capabilityConnectionTone("voice")}"></span><p>${escapeHtml(capabilityConnectionLabel("voice"))}</p><strong>${escapeHtml(capabilityConnectionDetail("voice", state.locale === "zh-CN" ? "本页不会生成假音频" : "This page never fabricates audio"))}</strong>`;
   const controls = document.querySelector(".voiceDirectionControls");
   if (controls && !el("voiceDirectionVoiceId")) {
     controls.insertAdjacentHTML("beforeend", `<label><span>${state.locale === "zh-CN" ? "MiniMax 音色 ID" : "MiniMax voice ID"}</span><input id="voiceDirectionVoiceId" type="text" value="${escapeHtml(voice.voiceId || "")}" placeholder="male-qn-qingse"></label>`);
@@ -5079,6 +5152,14 @@ function bindVoiceDirectionWorkspace() {
 
 async function generateVoiceAudio() {
   const voice = state.voiceDirection;
+  const readiness = capabilityConnectionStatus("voice");
+  if (readiness.state !== "connected") {
+    voice.status = "error";
+    voice.errorCode = readiness.code;
+    voice.message = `${capabilityConnectionLabel("voice")}：${capabilityConnectionDetail("voice")}`;
+    render();
+    return;
+  }
   const text = String(voice.script || "").trim();
   if (!text) {
     buildVoiceDirection();
@@ -5158,6 +5239,7 @@ function renderImageGenerationWorkbench(feature, workspace) {
   const generation = state.imageGeneration;
   const settings = state.imageGenerationSettings;
   const generating = generation.status === "generating";
+  const imageReadiness = capabilityConnectionStatus("image");
   const inspectorTab = state.imageInspectorTab === "diagnostics" ? "diagnostics" : "history";
   const imageSettingsOpen = !window.matchMedia("(max-width: 840px)").matches;
   const exportSpec = imageGenerationExportSpec(settings);
@@ -5187,8 +5269,9 @@ function renderImageGenerationWorkbench(feature, workspace) {
               <label><span>${state.locale === "zh-CN" ? "背景" : "Background"}</span><select id="imageGenerationBackground"><option value="opaque" ${settings.background === "opaque" ? "selected" : ""}>${state.locale === "zh-CN" ? "不透明" : "Opaque"}</option><option value="transparent" ${settings.background === "transparent" ? "selected" : ""}>${state.locale === "zh-CN" ? "透明" : "Transparent"}</option><option value="auto" ${settings.background === "auto" ? "selected" : ""}>Auto</option></select></label>
             </div>
           </details>
+          <p class="imageExportNote"><span class="statusDot ${capabilityConnectionTone("image")}"></span>${escapeHtml(capabilityConnectionLabel("image"))} · ${escapeHtml(capabilityConnectionDetail("image"))}</p>
           <div class="workbenchActionBar">
-            <button class="featurePrimaryButton" id="featureGenerateButton" type="button" ${generating || !state.providerProfileReady ? "disabled" : ""}>${!state.providerProfileReady ? (state.locale === "zh-CN" ? "同步配置中" : "Syncing config") : (generating ? (state.locale === "zh-CN" ? "生成中" : "Generating") : (state.locale === "zh-CN" ? "生成图片" : "Generate image"))}</button>
+            <button class="featurePrimaryButton" id="featureGenerateButton" type="button" ${generating || !state.providerProfileReady || imageReadiness.state !== "connected" ? "disabled" : ""}>${!state.providerProfileReady ? (state.locale === "zh-CN" ? "同步配置中" : "Syncing config") : (imageReadiness.state !== "connected" ? capabilityConnectionLabel("image") : (generating ? (state.locale === "zh-CN" ? "生成中" : "Generating") : (state.locale === "zh-CN" ? "生成图片" : "Generate image")))}</button>
             <button class="featureSecondaryButton" id="featureCancelButton" type="button" ${generating ? "" : "hidden disabled"}>${state.locale === "zh-CN" ? "取消" : "Cancel"}</button>
           </div>
         </aside>
@@ -5217,12 +5300,14 @@ function renderImageGenerationWorkbench(feature, workspace) {
 
 function workbenchHeaderHtml(feature, meta = "") {
   const textDrivenViews = new Set(["copilot", "create", "copy", "translate", "storyboard", "motion", "expression", "script", "analyze", "automate"]);
-  const audioPlanningMode = state.activeView === "create" && ["music", "voice"].includes(state.createMode);
   const binding = state.activeView === "create" && state.createMode === "image"
     ? imageCapabilityBinding()
     : (state.activeView === "create" && state.createMode === "video" ? videoCapabilityBinding() : textCapabilityBinding());
-  const runtimeLabel = audioPlanningMode
-    ? (state.locale === "zh-CN" ? "音频模型待接入" : "Audio model pending")
+  const activeCreateCapability = state.activeView === "create" && ["image", "video", "music", "voice"].includes(state.createMode)
+    ? state.createMode
+    : "";
+  const runtimeLabel = activeCreateCapability
+    ? `${capabilityConnectionLabel(activeCreateCapability)} · ${capabilityConnectionDetail(activeCreateCapability)}`
     : (textDrivenViews.has(state.activeView)
     ? providerModelLabel(binding.providerId, binding.model)
     : (state.serviceOnline ? "Local Service" : (state.locale === "zh-CN" ? "服务离线" : "Service offline")));
@@ -5237,7 +5322,7 @@ function workbenchHeaderHtml(feature, meta = "") {
       </div>
       <div class="workbenchHeaderMeta">
         ${meta}
-        <span class="workbenchModelState"><span class="statusDot ${state.serviceOnline ? "success" : "warning"}"></span>${escapeHtml(runtimeLabel)}</span>
+        <span class="workbenchModelState"><span class="statusDot ${activeCreateCapability ? capabilityConnectionTone(activeCreateCapability) : (state.serviceOnline ? "success" : "warning")}"></span>${escapeHtml(runtimeLabel)}</span>
       </div>
     </header>
   `;
@@ -6489,6 +6574,7 @@ function providerCapabilitiesTabHtml() {
   const modelBindings = state.providerProfile.capabilityModelBindings || {};
   const instances = state.providerProfile.profileInstances || {};
   const rows = providerCapabilities.map((capability) => {
+    const runtimeStatus = capabilityConnectionStatus(capability.id);
     const defaultBinding = bindings[capability.id] || {};
     const capabilityBindings = modelBindings[capability.id] || [];
     const boundHere = capabilityBindings.some((binding) => (
@@ -6522,10 +6608,11 @@ function providerCapabilitiesTabHtml() {
         <div class="providerCapabilityHeader">
           <div>
             <strong>${escapeHtml(localText(capability.label))}</strong>
-            <span>${capabilityBindings.length} ${state.locale === "zh-CN" ? "个模型" : "models"}</span>
+            <span>${escapeHtml(capabilityConnectionLabel(capability.id))} · ${capabilityBindings.length} ${state.locale === "zh-CN" ? "个模型" : "models"}</span>
           </div>
           <button class="providerBindingButton" type="button" data-bind-capability="${escapeHtml(capability.id)}" ${pending || !canBind || boundHere ? "disabled" : ""}>${boundHere ? (state.locale === "zh-CN" ? "已添加" : "Added") : (state.locale === "zh-CN" ? "添加绑定" : "Add binding")}</button>
         </div>
+        <div class="providerCapabilityRuntimeStatus ${escapeHtml(capabilityConnectionTone(capability.id))}"><span>${escapeHtml(capabilityConnectionLabel(capability.id))}</span><small>${escapeHtml(capabilityConnectionDetail(capability.id, runtimeStatus.message))}</small></div>
         <div class="providerCapabilityBindingList">${boundModels}</div>
       </div>
     `;
