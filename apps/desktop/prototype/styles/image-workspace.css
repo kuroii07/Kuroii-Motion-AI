@@ -239,13 +239,16 @@
 
 .musicDirectionBriefPanel {
   grid-area: brief;
+  min-height: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
   border-right: 1px solid var(--color-line-subtle);
   background: var(--color-surface-1);
 }
 
 .musicDirectionBriefPanel > textarea {
+  flex: 1 1 160px;
   min-height: 170px;
   margin: 0 var(--space-3) var(--space-3);
   padding: var(--space-3);
@@ -277,6 +280,9 @@
 }
 
 .musicDirectionAction {
+  flex: 0 0 auto;
+  display: grid;
+  gap: var(--space-2);
   margin-top: auto;
   padding: var(--space-3);
   border-top: 1px solid var(--color-line-subtle);
@@ -286,11 +292,17 @@
   width: 100%;
 }
 
+.musicDirectionAction .featureSecondaryButton {
+  width: 100%;
+}
+
 .musicDirectionStage {
   grid-area: stage;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   min-width: 0;
+  overflow-y: auto;
   padding: clamp(var(--space-5), 4vw, var(--space-8));
   background: var(--color-canvas);
 }
@@ -365,7 +377,7 @@
   display: grid;
   gap: var(--space-4);
   width: min(680px, 100%);
-  margin: auto;
+  margin: 0 auto;
 }
 
 .musicDirectionOutput section {
@@ -415,9 +427,11 @@
 
 .musicDirectionReadiness {
   grid-area: readiness;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
+  overflow-y: auto;
   padding: var(--space-4) var(--space-3);
   border-left: 1px solid var(--color-line-subtle);
   background: var(--color-surface-1);
@@ -503,13 +517,16 @@
 
 .voiceDirectionComposer {
   grid-area: composer;
+  min-height: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
   border-right: 1px solid var(--color-line-subtle);
   background: var(--color-surface-1);
 }
 
 .voiceDirectionComposer > textarea {
+  flex: 1 1 180px;
   min-height: 260px;
   margin: 0 var(--space-3) var(--space-3);
   padding: var(--space-3);
@@ -535,12 +552,19 @@
 }
 
 .voiceDirectionAction {
+  flex: 0 0 auto;
+  display: grid;
+  gap: var(--space-2);
   margin-top: auto;
   padding: var(--space-3);
   border-top: 1px solid var(--color-line-subtle);
 }
 
 .voiceDirectionAction .featurePrimaryButton {
+  width: 100%;
+}
+
+.voiceDirectionAction .featureSecondaryButton {
   width: 100%;
 }
 
@@ -675,9 +699,11 @@
 
 .voiceDirectionDelivery {
   grid-area: delivery;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
+  overflow-y: auto;
   padding: var(--space-4) var(--space-3);
   border-left: 1px solid var(--color-line-subtle);
   background: var(--color-surface-1);
