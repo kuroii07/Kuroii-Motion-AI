@@ -30,6 +30,8 @@
 }
 
 .workbenchHeader {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) auto;
   min-height: 0;
   height: 58px;
   gap: 14px;
@@ -48,7 +50,6 @@
 }
 
 .workbenchIdentity span,
-.workbenchHeaderMeta > span,
 .workbenchModelState { font-size: 11px; }
 
 .workbenchIdentity h2 {
@@ -57,8 +58,18 @@
   letter-spacing: 0;
 }
 
-.workbenchHeaderMeta { gap: 8px; }
-.workbenchHeaderMeta > span:not(.workbenchModelState) { display: none; }
+.workbenchHeaderMeta,
+.workbenchHeaderModes,
+.workbenchHeaderTools {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+
+.workbenchHeaderMeta { justify-content: flex-end; gap: 10px; }
+.workbenchHeaderModes { min-width: 0; }
+.workbenchHeaderModes > span { display: none; }
+.workbenchHeaderTools { flex: 0 0 auto; gap: 8px; }
 
 .workbenchModelState {
   min-width: 0;
@@ -72,6 +83,13 @@
   background: transparent;
   white-space: nowrap;
   text-overflow: ellipsis;
+}
+
+.assetLibraryShortcut {
+  flex: 0 0 auto;
+  min-height: 30px;
+  padding: 0 10px;
+  white-space: nowrap;
 }
 
 .createModeToggle {
@@ -164,6 +182,21 @@
 .documentBriefRail .workbenchPromptChips,
 .documentBriefRail .workbenchActionBar { margin: 0 14px 12px; }
 
+.documentBriefRail,
+.imageGenerationComposer,
+.musicDirectionBriefPanel,
+.voiceDirectionComposer {
+  display: flex;
+  flex-direction: column;
+}
+
+.documentBriefRail .workbenchActionBar,
+.imageGenerationComposer .workbenchActionBar,
+.musicDirectionAction,
+.voiceDirectionAction {
+  margin-top: auto;
+}
+
 .documentCanvas {
   grid-template-rows: 36px minmax(0, 1fr);
   background: var(--work-surface);
@@ -218,6 +251,25 @@
 
 .imageGenerationComposer .workbenchPromptChips,
 .imageGenerationComposer .workbenchActionBar { margin: 0 14px 12px; }
+
+.imageGenerationComposer .workbenchActionBar {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.videoGenerationWorkbench .imageExportNote:last-of-type {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr) auto;
+  gap: 7px;
+  align-items: start;
+  margin: 0 14px 10px;
+  padding: 9px 0;
+  border-top: 1px solid var(--line);
+  color: var(--text-2);
+  font-size: 11px;
+  line-height: 1.45;
+}
 
 .imageGenerationCanvas {
   padding: 24px;
@@ -357,6 +409,8 @@
 .voiceDirectionStage {
   min-width: 0;
   min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
   overflow: auto;
   padding: 28px;
   background: var(--work-surface);
@@ -407,6 +461,12 @@
   grid-template-columns: 1fr 1fr;
   gap: 8px;
 }
+
+.musicDirectionEmpty,
+.voiceDirectionEmpty { align-self: center; }
+.musicDirectionSheet,
+.voiceDirectionSheet,
+.voiceDirectionError { align-self: start; }
 
 .musicDirectionSheet,
 .voiceDirectionSheet,
@@ -462,6 +522,20 @@
 .voiceDirectionDelivery strong { font-size: 13px; line-height: 1.45; }
 .musicDirectionReadiness ol,
 .voiceDirectionDelivery ul { display: grid; gap: 6px; margin: 0; padding-left: 16px; color: var(--text-2); font-size: 12px; line-height: 1.45; }
+
+.musicDirectionReadiness > section:first-child,
+.voiceDirectionDelivery > section:first-child {
+  grid-template-columns: 10px minmax(0, 1fr);
+  column-gap: 8px;
+  row-gap: 3px;
+}
+
+.musicDirectionReadiness > section:first-child .statusDot,
+.voiceDirectionDelivery > section:first-child .statusDot { grid-row: 1 / span 2; }
+.musicDirectionReadiness > section:first-child p,
+.voiceDirectionDelivery > section:first-child p { grid-column: 2; }
+.musicDirectionReadiness > section:first-child strong,
+.voiceDirectionDelivery > section:first-child strong { grid-column: 2; }
 
 /* Asset library -------------------------------------------------------- */
 .libraryToolbar,
@@ -531,7 +605,7 @@
   .libraryWorkbench,
   .libraryWorkbench:has(.assetLibraryWorkbenchBody) { grid-template-rows: auto; }
 
-  .workbenchHeader { height: auto; min-height: 58px; padding: 10px 12px; }
+  .workbenchHeader { height: auto; min-height: 58px; grid-template-columns: 1fr; padding: 10px 12px; }
   .workbenchHeaderMeta { width: 100%; justify-content: flex-start; }
   .workbenchModelState { display: none; }
   .createModeToggle { max-width: 100%; overflow-x: auto; }

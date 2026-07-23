@@ -4464,10 +4464,10 @@ function openAssetLibrary(assetType = "all", assetId = "") {
 }
 
 function mountAssetLibraryShortcut(buttonId, assetType, assetId = "") {
-  const headerMeta = document.querySelector("#featureWorkspace .workbenchHeaderMeta");
-  if (!headerMeta || document.getElementById(buttonId)) return;
+  const headerTools = document.querySelector("#featureWorkspace .workbenchHeaderTools");
+  if (!headerTools || document.getElementById(buttonId)) return;
   const label = state.locale === "zh-CN" ? "查看资源库" : "View assets";
-  headerMeta.insertAdjacentHTML("beforeend", `<button class="featureSecondaryButton assetLibraryShortcut" id="${escapeHtml(buttonId)}" type="button">${label}</button>`);
+  headerTools.insertAdjacentHTML("beforeend", `<button class="featureSecondaryButton assetLibraryShortcut" id="${escapeHtml(buttonId)}" type="button">${label}</button>`);
   el(buttonId)?.addEventListener("click", () => openAssetLibrary(assetType, assetId || ""));
 }
 
@@ -5572,8 +5572,8 @@ function renderVideoGenerationWorkbench(feature, workspace) {
     ? (state.locale === "zh-CN" ? "正在检查视频模型配置…" : "Checking video model configuration…")
     : (readiness.ready
       ? (state.locale === "zh-CN" ? "视频模型已就绪，可以提交真实异步任务。" : "Video model is ready for real async task submission.")
-      : (readiness.message || (state.locale === "zh-CN" ? "尚未绑定可用的视频模型。" : "No usable video model is bound yet.")));
-  const readyAdvice = !readiness.ready && readiness.advice && readiness.advice.length
+      : (state.locale === "zh-CN" ? "尚未绑定可用的视频模型。" : (readiness.message || "No usable video model is bound yet.")));
+  const readyAdvice = state.locale !== "zh-CN" && !readiness.ready && readiness.advice && readiness.advice.length
     ? `<small>${escapeHtml(readiness.advice[0])}</small>`
     : "";
   workspace.setAttribute("aria-label", localText(feature.title));
@@ -5668,11 +5668,14 @@ function workbenchHeaderHtml(feature, meta = "") {
   const activeCreateCapability = state.activeView === "create" && ["image", "video", "music", "voice"].includes(state.createMode)
     ? state.createMode
     : "";
-  const runtimeLabel = activeCreateCapability
+  const runtimeDetail = activeCreateCapability
     ? `${capabilityConnectionLabel(activeCreateCapability)} · ${capabilityConnectionDetail(activeCreateCapability)}`
     : (textDrivenViews.has(state.activeView)
     ? providerModelLabel(binding.providerId, binding.model)
     : (state.serviceOnline ? "Local Service" : (state.locale === "zh-CN" ? "服务离线" : "Service offline")));
+  const runtimeLabel = activeCreateCapability
+    ? capabilityConnectionLabel(activeCreateCapability)
+    : runtimeDetail;
   return `
     <header class="workbenchHeader">
       <div class="workbenchIdentity">
@@ -5683,8 +5686,8 @@ function workbenchHeaderHtml(feature, meta = "") {
         </div>
       </div>
       <div class="workbenchHeaderMeta">
-        ${meta}
-        <span class="workbenchModelState"><span class="statusDot ${activeCreateCapability ? capabilityConnectionTone(activeCreateCapability) : (state.serviceOnline ? "success" : "warning")}"></span>${escapeHtml(runtimeLabel)}</span>
+        <div class="workbenchHeaderModes">${meta}</div>
+        <div class="workbenchHeaderTools">${activeCreateCapability ? "" : `<span class="workbenchModelState" title="${escapeHtml(runtimeDetail)}"><span class="statusDot ${state.serviceOnline ? "success" : "warning"}"></span>${escapeHtml(runtimeLabel)}</span>`}</div>
       </div>
     </header>
   `;
