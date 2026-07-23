@@ -257,3 +257,30 @@ def audio_history_storage_summary() -> dict[str, int]:
     with _LOCK:
         items = [entry for entry in _read_history()["items"] if isinstance(entry, dict)]
     return _storage_summary(items)
+
+
+def delete_audio_history_items(artifact_ids: list[str]) -> dict[str, Any]:
+    """Remove explicitly selected local audio records and managed files.
+
+    Callers are responsible for obtaining a user confirmation before invoking this
+    mutating operation.  Only files within the managed generated-audio folder can
+    be removed.
+    """
+    ids = {str(artifact_id).strip() for artifact_id in artifact_ids if str(artifact_id).strip()}
+    if not ids:
+        return {"deletedIds": [], "deletedCount": 0, "deletedFiles": 0, "storage": audio_history_storage_summary()}
+    with _LOCK:
+        history = _read_history()
+        items = [entry for entry in history["items"] if isinstance(entry, dict)]
+        removed = [item for item in items if str(item.get("id") or "") in ids]
+        retained = [item for item in items if str(item.get("id") or "") not in ids]
+        if removed:
+            history["items"] = retained
+            _write_history(history)
+        deleted_files = sum(1 for item in removed if _remove_managed_file(item))
+        return {
+            "deletedIds": [str(item["id"]) for item in removed if item.get("id")],
+            "deletedCount": len(removed),
+            "deletedFiles": deleted_files,
+            "storage": _storage_summary(retained),
+        }

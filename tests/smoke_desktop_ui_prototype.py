@@ -99,6 +99,12 @@ def main() -> int:
     assert ".voiceDirectionDesk" in read("apps/desktop/prototype/styles/image-workspace.css")
     assert "/ai/audio/drafts" in js
     assert "/ai/audio/history" in js
+    assert "/ai/assets" in js
+    assert "loadAssetLibrary" in js
+    assert "assetLibraryWorkbenchBody" in js
+    assert "deleteAssetLibraryItem" in js
+    assert "data-asset-library-filter" in js
+    assert ".assetLibraryDetailMedia" in css
     assert "saveAudioPlan" in js
     assert "audioHistoryHtml" in js
     assert 'id="refreshAudioHistoryButton"' in js

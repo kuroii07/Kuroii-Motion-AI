@@ -1300,9 +1300,9 @@ const featurePages = {
     icon: "book",
     eyebrow: { "zh-CN": "Library", "en-US": "Library" },
     title: { "zh-CN": "资源库", "en-US": "Library" },
-    intro: { "zh-CN": "沉淀表达式、脚本、分镜模板、动效预设和工作流模板，后续可复用到不同项目。", "en-US": "Store reusable expressions, scripts, storyboard templates, presets, and workflows." },
-    promptLabel: { "zh-CN": "资源检索", "en-US": "Library Search" },
-    prompt: { "zh-CN": "例如：查找适合游戏广告标题入场的动效预设和表达式模板。", "en-US": "Example: Find presets and expression templates for game ad title intros." },
+    intro: { "zh-CN": "汇总本机生成的图片、音乐、配音与视频资产；可按类型检索、重开预览、下载或安全删除。", "en-US": "Browse locally generated images, music, voice, and video assets; filter, preview, download, or safely delete them." },
+    promptLabel: { "zh-CN": "资产检索", "en-US": "Asset Search" },
+    prompt: { "zh-CN": "例如：查找最近生成的游戏广告配音和横版主视觉。", "en-US": "Example: Find recent game-ad voiceovers and landscape key visuals." },
     primary: { "zh-CN": "搜索资源", "en-US": "Search" },
     secondary: { "zh-CN": "新建资源", "en-US": "New Asset" },
     chips: ["表达式", "脚本", "动效预设", "工作流"],
@@ -1954,6 +1954,13 @@ const state = {
   audioHistoryStatus: "idle",
   audioHistoryStorage: null,
   audioHistoryNotice: "",
+  assetLibrary: [],
+  assetLibraryStatus: "idle",
+  assetLibraryFilter: "all",
+  assetLibraryQuery: "",
+  selectedAssetLibraryId: null,
+  assetLibraryDetail: null,
+  assetLibraryNotice: "",
   selectedImageHistoryId: null,
   selectedImageHistoryIds: [],
   imageInspectorTab: "history",
@@ -4297,7 +4304,9 @@ function safeGeneratedImageSource(value) {
 
 function safeGeneratedVideoSource(value) {
   const source = String(value || "").trim();
-  return /^https?:\/\//i.test(source) ? source : "";
+  if (/^https?:\/\//i.test(source)) return source;
+  if (/^data:video\/(mp4|webm);base64,[a-z0-9+/=]+$/i.test(source)) return source;
+  return "";
 }
 
 function imageHistoryDateLabel(value) {
@@ -4320,6 +4329,145 @@ function imageHistoryStorageLabel(bytes) {
   if (value < 1024) return `${value} B`;
   if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`;
   return `${(value / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function assetLibraryKindLabel(item) {
+  const kind = String(item && item.kind || "");
+  const labels = {
+    image: { "zh-CN": "图片", "en-US": "Image" },
+    video: { "zh-CN": "视频", "en-US": "Video" },
+    music: { "zh-CN": "音乐", "en-US": "Music" },
+    voice: { "zh-CN": "配音", "en-US": "Voice" },
+    "music-direction": { "zh-CN": "音乐方案", "en-US": "Music plan" },
+    "voice-plan": { "zh-CN": "配音方案", "en-US": "Voice plan" }
+  };
+  return localText(labels[kind] || { "zh-CN": "资产", "en-US": "Asset" });
+}
+
+function assetLibraryIcon(item) {
+  const kind = String(item && item.kind || "");
+  if (kind === "image") return "IMG";
+  if (kind === "video") return "VID";
+  if (kind === "music" || kind === "music-direction") return "MUS";
+  if (kind === "voice" || kind === "voice-plan") return "VOX";
+  return "AST";
+}
+
+function assetLibraryStatusLabel(status) {
+  const labels = {
+    ready: { "zh-CN": "可用", "en-US": "Ready" },
+    reference: { "zh-CN": "引用", "en-US": "Reference" },
+    planned: { "zh-CN": "方案", "en-US": "Planned" },
+    missing: { "zh-CN": "文件缺失", "en-US": "Missing" },
+    queued: { "zh-CN": "排队中", "en-US": "Queued" },
+    processing: { "zh-CN": "生成中", "en-US": "Processing" },
+    succeeded: { "zh-CN": "已完成", "en-US": "Completed" },
+    failed: { "zh-CN": "失败", "en-US": "Failed" }
+  };
+  return localText(labels[String(status || "").toLowerCase()] || { "zh-CN": "未知", "en-US": "Unknown" });
+}
+
+function assetLibraryFilteredItems() {
+  const filter = state.assetLibraryFilter || "all";
+  const query = String(state.assetLibraryQuery || "").trim().toLowerCase();
+  return (state.assetLibrary || []).filter((item) => {
+    if (filter !== "all" && item.assetType !== filter) return false;
+    if (!query) return true;
+    return [item.title, item.kind, item.providerId, item.model, item.fileName].join(" ").toLowerCase().includes(query);
+  });
+}
+
+async function loadAssetLibrary(options = {}) {
+  const renderAfter = options.renderAfter !== false;
+  state.assetLibraryStatus = "loading";
+  if (renderAfter) render();
+  try {
+    const response = await fetch("http://127.0.0.1:17631/ai/assets?limit=72", {
+      headers: { "X-Kuroii-Session": "dev-local-token" }
+    });
+    if (!response.ok) throw await serviceResponseError(response);
+    const payload = await response.json();
+    state.assetLibrary = Array.isArray(payload.items) ? payload.items : [];
+    if (!state.selectedAssetLibraryId || !state.assetLibrary.some((item) => item.id === state.selectedAssetLibraryId)) {
+      state.selectedAssetLibraryId = state.assetLibrary[0] ? state.assetLibrary[0].id : null;
+      state.assetLibraryDetail = null;
+    }
+    state.assetLibraryStatus = "ready";
+    state.serviceOnline = true;
+  } catch (error) {
+    state.assetLibraryStatus = "error";
+    state.assetLibraryNotice = state.locale === "zh-CN" ? "本地资源库暂不可用。" : "The local asset library is unavailable.";
+  } finally {
+    if (renderAfter) render();
+  }
+}
+
+async function loadAssetLibraryDetail(asset, options = {}) {
+  if (!asset || !asset.assetType || !asset.id) return null;
+  state.selectedAssetLibraryId = asset.id;
+  state.assetLibraryDetail = null;
+  if (options.renderAfter !== false) render();
+  try {
+    const response = await fetch(`http://127.0.0.1:17631/ai/assets/${encodeURIComponent(asset.assetType)}/${encodeURIComponent(asset.id)}`, {
+      headers: { "X-Kuroii-Session": "dev-local-token" }
+    });
+    if (!response.ok) throw await serviceResponseError(response);
+    const payload = await response.json();
+    if (!payload.ok || !payload.detail) throw new Error("Asset detail is unavailable.");
+    state.assetLibraryDetail = payload;
+    state.serviceOnline = true;
+    return payload;
+  } catch (error) {
+    state.assetLibraryNotice = state.locale === "zh-CN" ? "无法打开这条资源记录。" : "This asset record could not be opened.";
+    return null;
+  } finally {
+    if (options.renderAfter !== false) render();
+  }
+}
+
+function downloadAssetLibraryItem(detailPayload = state.assetLibraryDetail) {
+  const asset = detailPayload && detailPayload.asset;
+  const detail = detailPayload && detailPayload.detail;
+  if (!asset || !detail) return;
+  const source = asset.assetType === "image"
+    ? safeGeneratedImageSource(detail.imageUrl)
+    : asset.assetType === "audio"
+      ? String(detail.audioUrl || "").trim()
+      : safeGeneratedVideoSource(detail.videoUrl);
+  if (!source) return;
+  const link = document.createElement("a");
+  link.href = source;
+  link.download = asset.fileName || `kuroii-${asset.assetType}-${Date.now()}`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+}
+
+async function deleteAssetLibraryItem(asset) {
+  if (!asset || !asset.assetType || !asset.id) return;
+  const message = state.locale === "zh-CN"
+    ? `删除“${asset.title || assetLibraryKindLabel(asset)}”及其受管理的本地文件？此操作无法撤销。`
+    : `Delete “${asset.title || assetLibraryKindLabel(asset)}” and its managed local file? This cannot be undone.`;
+  if (!window.confirm(message)) return;
+  state.assetLibraryStatus = "loading";
+  render();
+  try {
+    const response = await fetch(`http://127.0.0.1:17631/ai/assets/${encodeURIComponent(asset.assetType)}/${encodeURIComponent(asset.id)}`, {
+      method: "DELETE",
+      headers: { "X-Kuroii-Session": "dev-local-token" }
+    });
+    if (!response.ok) throw await serviceResponseError(response);
+    const payload = await response.json();
+    if (!payload.ok) throw new Error("Asset was not deleted.");
+    state.assetLibraryNotice = state.locale === "zh-CN" ? `已删除 ${payload.deletedCount || 0} 条资源记录。` : `Deleted ${payload.deletedCount || 0} asset record(s).`;
+    state.assetLibraryDetail = null;
+    state.selectedAssetLibraryId = null;
+    await loadAssetLibrary({ renderAfter: false });
+  } catch (error) {
+    state.assetLibraryStatus = "error";
+    state.assetLibraryNotice = state.locale === "zh-CN" ? "无法删除资源记录。" : "The asset record could not be deleted.";
+  }
+  render();
 }
 
 async function loadImageHistory(options = {}) {
@@ -6042,15 +6190,98 @@ function renderAssetWorkbench(feature, workspace) {
 
 function renderLibraryWorkbench(feature, workspace) {
   workspace.setAttribute("aria-label", localText(feature.title));
-  const items = [["ƒx", "Elastic Title", "Expression"], ["JS", "Layer Audit", "Script"], ["▤", "Game Ad 15s", "Storyboard"], ["◇", "Subtitle Review", "Workflow"], ["↗", "Tech Intro", "Motion preset"], ["Aa", "CTA Variants", "Prompt"]];
+  const zh = state.locale === "zh-CN";
+  const allItems = state.assetLibrary || [];
+  const items = assetLibraryFilteredItems();
+  const selected = items.find((item) => item.id === state.selectedAssetLibraryId) || items[0] || null;
+  const detailPayload = state.assetLibraryDetail && selected && state.assetLibraryDetail.asset && state.assetLibraryDetail.asset.id === selected.id
+    ? state.assetLibraryDetail
+    : null;
+  const detail = detailPayload && detailPayload.detail;
+  const counts = {
+    all: allItems.length,
+    image: allItems.filter((item) => item.assetType === "image").length,
+    audio: allItems.filter((item) => item.assetType === "audio").length,
+    video: allItems.filter((item) => item.assetType === "video").length
+  };
+  const selectedDetailMedia = detail && selected
+    ? (selected.assetType === "image"
+      ? (safeGeneratedImageSource(detail.imageUrl) ? `<img src="${escapeHtml(safeGeneratedImageSource(detail.imageUrl))}" alt="">` : "")
+      : selected.assetType === "audio"
+        ? (detail.audioUrl ? `<audio controls src="${escapeHtml(detail.audioUrl)}"></audio>` : "")
+        : (safeGeneratedVideoSource(detail.videoUrl) ? `<video controls preload="metadata" src="${escapeHtml(safeGeneratedVideoSource(detail.videoUrl))}"></video>` : ""))
+    : "";
+  const categoryButton = (id, label) => `<button class="${state.assetLibraryFilter === id ? "selected" : ""}" type="button" data-asset-library-filter="${id}">${label}<span>${counts[id]}</span></button>`;
+  const listMarkup = state.assetLibraryStatus === "loading"
+    ? `<div class="assetLibraryEmpty"><span class="statusDot warning"></span>${zh ? "正在读取本地资源…" : "Loading local assets…"}</div>`
+    : state.assetLibraryStatus === "error"
+      ? `<div class="assetLibraryEmpty"><span class="statusDot error"></span>${zh ? "资源库暂不可用" : "Asset library unavailable"}</div>`
+      : !items.length
+        ? `<div class="assetLibraryEmpty"><span class="statusDot muted"></span>${zh ? "没有符合条件的生成资产" : "No generated assets match this view"}</div>`
+        : items.map((item) => `
+          <button class="libraryItem assetLibraryItem ${selected && selected.id === item.id ? "selected" : ""}" type="button" data-asset-library-open="${escapeHtml(item.id)}">
+            <span class="libraryItemPreview assetLibraryPreview"><b>${escapeHtml(assetLibraryIcon(item))}</b><small>${escapeHtml(assetLibraryStatusLabel(item.status))}</small></span>
+            <strong>${escapeHtml(item.title || assetLibraryKindLabel(item))}</strong>
+            <small>${escapeHtml(assetLibraryKindLabel(item))} · ${escapeHtml(imageHistoryDateLabel(item.createdAt))}</small>
+            <i>${escapeHtml(item.model || item.providerId || "Local")}</i>
+          </button>
+        `).join("");
+  const detailMarkup = !selected
+    ? `<div class="assetLibraryEmpty"><span class="statusDot muted"></span>${zh ? "从左侧筛选中选择一条资产。" : "Select an asset from the list."}</div>`
+    : `
+      <header><span>${escapeHtml(assetLibraryIcon(selected))}</span><div><strong>${escapeHtml(selected.title || assetLibraryKindLabel(selected))}</strong><small>${escapeHtml(assetLibraryKindLabel(selected))} · ${escapeHtml(assetLibraryStatusLabel(selected.status))}</small></div></header>
+      <div class="assetLibraryDetailMedia ${selectedDetailMedia ? "ready" : "empty"}">${selectedDetailMedia || `<span>${zh ? (selected.saved ? "点击打开以载入预览" : "该资源没有本地可预览文件") : (selected.saved ? "Open to load preview" : "No local preview file for this asset")}</span>`}</div>
+      <dl>
+        <div><dt>${zh ? "模型" : "Model"}</dt><dd>${escapeHtml(selected.model || "-")}</dd></div>
+        <div><dt>${zh ? "来源" : "Provider"}</dt><dd>${escapeHtml(selected.providerId || "Local")}</dd></div>
+        <div><dt>${zh ? "文件" : "File"}</dt><dd>${escapeHtml(selected.fileName || "-")}</dd></div>
+        <div><dt>${zh ? "大小" : "Size"}</dt><dd>${escapeHtml(imageHistoryStorageLabel(selected.bytes))}</dd></div>
+      </dl>
+      <div class="assetLibraryActions">
+        <button class="featureSecondaryButton" type="button" data-asset-library-preview="${escapeHtml(selected.id)}">${detailPayload ? (zh ? "刷新预览" : "Refresh preview") : (zh ? "打开预览" : "Open preview")}</button>
+        <button class="featureSecondaryButton" type="button" data-asset-library-download="${escapeHtml(selected.id)}" ${selected.saved && detailPayload ? "" : "disabled"}>${zh ? "下载" : "Download"}</button>
+        <button class="featureSecondaryButton dangerButton" type="button" data-asset-library-delete="${escapeHtml(selected.id)}">${zh ? "删除" : "Delete"}</button>
+      </div>
+    `;
   workspace.innerHTML = `
     <section class="taskWorkbench libraryWorkbench">
-      ${workbenchHeaderHtml(feature, `<button class="featurePrimaryButton" type="button">${state.locale === "zh-CN" ? "新建资源" : "New resource"}</button>`)}
-      <div class="libraryToolbar"><input placeholder="${state.locale === "zh-CN" ? "搜索表达式、脚本、模板和工作流" : "Search expressions, scripts, templates, and workflows"}"><button class="selected" type="button">${state.locale === "zh-CN" ? "全部" : "All"}</button><button type="button">Expression</button><button type="button">Script</button><button type="button">Preset</button><select><option>${state.locale === "zh-CN" ? "最近更新" : "Recently updated"}</option></select></div>
-      <div class="libraryWorkbenchBody"><aside class="libraryCategoryPane"><button class="selected" type="button" data-workbench-select>${state.locale === "zh-CN" ? "所有资源" : "All items"}<span>64</span></button><button type="button" data-workbench-select>${state.locale === "zh-CN" ? "收藏" : "Favorites"}<span>8</span></button><button type="button" data-workbench-select>${state.locale === "zh-CN" ? "我的资源" : "My items"}<span>23</span></button><hr><button type="button" data-workbench-select>After Effects<span>31</span></button><button type="button" data-workbench-select>Premiere Pro<span>18</span></button><button type="button" data-workbench-select>Cross-host<span>15</span></button></aside><main class="libraryItemGrid">${items.map(([icon, name, type], index) => `<button class="libraryItem ${index === 0 ? "selected" : ""}" type="button" data-workbench-select><span class="libraryItemPreview">${icon}</span><strong>${name}</strong><small>${type}</small><i>☆</i></button>`).join("")}</main><aside class="libraryDetailPane"><header><span>ƒx</span><div><strong>Elastic Title</strong><small>Expression · v1.4</small></div></header><p>${state.locale === "zh-CN" ? "用于标题入场和回弹的可调表达式，包含 Duration、Overshoot 和 Delay 控制器。" : "Adjustable expression for title entrances with duration, overshoot, and delay controls."}</p><div class="libraryCodePreview">value + velocityAtTime(time - .1) * 0.2</div><dl><div><dt>Host</dt><dd>After Effects</dd></div><div><dt>Updated</dt><dd>Today 14:32</dd></div><div><dt>Tags</dt><dd>Title · Bounce</dd></div></dl><button class="featurePrimaryButton" type="button">${state.locale === "zh-CN" ? "应用到项目" : "Apply to project"}</button></aside></div>
+      ${workbenchHeaderHtml(feature, `<button class="featureSecondaryButton" id="refreshAssetLibraryButton" type="button">${zh ? "刷新资源" : "Refresh assets"}</button>`)}
+      <div class="libraryToolbar assetLibraryToolbar"><input id="assetLibraryQuery" value="${escapeHtml(state.assetLibraryQuery)}" placeholder="${zh ? "搜索图片、音乐、配音或视频资产" : "Search images, music, voice, or video assets"}"><span>${zh ? `${items.length} 条结果` : `${items.length} results`}</span></div>
+      ${state.assetLibraryNotice ? `<div class="assetLibraryNotice">${escapeHtml(state.assetLibraryNotice)}</div>` : ""}
+      <div class="libraryWorkbenchBody assetLibraryWorkbenchBody"><aside class="libraryCategoryPane"><header>${zh ? "资产类型" : "Asset type"}</header>${categoryButton("all", zh ? "全部资产" : "All assets")}${categoryButton("image", zh ? "图片" : "Images")}${categoryButton("audio", zh ? "音频" : "Audio")}${categoryButton("video", zh ? "视频" : "Video")}</aside><main class="libraryItemGrid assetLibraryGrid">${listMarkup}</main><aside class="libraryDetailPane assetLibraryDetailPane">${detailMarkup}</aside></div>
     </section>
   `;
-  bindStaticWorkbenchInteractions();
+  document.querySelector("#refreshAssetLibraryButton")?.addEventListener("click", () => void loadAssetLibrary());
+  document.querySelector("#assetLibraryQuery")?.addEventListener("input", (event) => {
+    state.assetLibraryQuery = event.target.value;
+    renderLibraryWorkbench(feature, workspace);
+    el("assetLibraryQuery")?.focus();
+  });
+  document.querySelectorAll("[data-asset-library-filter]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.assetLibraryFilter = button.dataset.assetLibraryFilter || "all";
+      state.assetLibraryDetail = null;
+      renderLibraryWorkbench(feature, workspace);
+    });
+  });
+  document.querySelectorAll("[data-asset-library-open], [data-asset-library-preview]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const item = (state.assetLibrary || []).find((candidate) => candidate.id === button.dataset.assetLibraryOpen || candidate.id === button.dataset.assetLibraryPreview);
+      if (item) void loadAssetLibraryDetail(item);
+    });
+  });
+  document.querySelectorAll("[data-asset-library-download]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const item = (state.assetLibrary || []).find((candidate) => candidate.id === button.dataset.assetLibraryDownload);
+      if (item && state.assetLibraryDetail?.asset?.id === item.id) downloadAssetLibraryItem();
+    });
+  });
+  document.querySelectorAll("[data-asset-library-delete]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const item = (state.assetLibrary || []).find((candidate) => candidate.id === button.dataset.assetLibraryDelete);
+      if (item) void deleteAssetLibraryItem(item);
+    });
+  });
 }
 
 function renderHistoryWorkbench(feature, workspace) {
@@ -6097,7 +6328,10 @@ function renderFeatureWorkspace() {
     case "analyze": renderAnalysisWorkbench(feature, workspace); return;
     case "automate": renderAutomationWorkbench(feature, workspace); return;
     case "assets": renderAssetWorkbench(feature, workspace); return;
-    case "library": renderLibraryWorkbench(feature, workspace); return;
+    case "library":
+      renderLibraryWorkbench(feature, workspace);
+      if (state.assetLibraryStatus === "idle") void loadAssetLibrary();
+      return;
     case "history": renderHistoryWorkbench(feature, workspace); return;
     default: workspace.innerHTML = "";
   }

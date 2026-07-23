@@ -8,6 +8,7 @@ from typing import Any
 from urllib.parse import parse_qs, urlparse
 
 from action_runtime import execute_trusted_read_only_action, host_context_payload, trusted_actions
+from asset_library import ASSET_TYPES, delete_asset, get_asset, list_assets
 from audio_history import audio_history_storage_summary, get_audio_history_item, list_audio_history, save_audio_plan, save_generated_audio
 from command_history import get_command_record, list_command_history, record_command
 from config import ServiceConfig, load_config
@@ -223,6 +224,7 @@ class KuroiiLocalServiceHandler(BaseHTTPRequestHandler):
                     "/ai/audio/drafts", "/ai/audio/history", "/ai/audio/history/{audioId}",
                     "/ai/music/generate", "/ai/voice/generate",
                     "/ai/video/generate", "/ai/video/tasks", "/ai/video/tasks/{taskId}",
+                    "/ai/assets", "/ai/assets/{assetType}/{assetId}",
                     "/provider-bindings/{capability}", "/hosts",
                     "/hosts/{host}", "/hosts/{host}/register", "/hosts/{host}/heartbeat",
                     "/hosts/{host}/status", "/hosts/{host}/capabilities", "/hosts/{host}/context",
@@ -231,7 +233,7 @@ class KuroiiLocalServiceHandler(BaseHTTPRequestHandler):
                 "ts": now_iso(),
             })
             return
-        if (path in {"/providers", "/provider-profile", "/provider-capabilities", "/hosts", "/provider-errors", "/host-target", "/actions/trusted", "/commands", "/ai/image/history", "/ai/audio/history", "/ai/video/readiness", "/ai/video/tasks"} or path.startswith("/ai/image/history/") or path.startswith("/ai/audio/history/") or path.startswith("/ai/video/tasks/")) and not self._require_auth():
+        if (path in {"/providers", "/provider-profile", "/provider-capabilities", "/hosts", "/provider-errors", "/host-target", "/actions/trusted", "/commands", "/ai/image/history", "/ai/audio/history", "/ai/video/readiness", "/ai/video/tasks", "/ai/assets"} or path.startswith("/ai/image/history/") or path.startswith("/ai/audio/history/") or path.startswith("/ai/video/tasks/") or path.startswith("/ai/assets/")) and not self._require_auth():
             return
         if path == "/providers":
             providers = provider_manifests()
@@ -245,6 +247,29 @@ class KuroiiLocalServiceHandler(BaseHTTPRequestHandler):
             return
         if path == "/provider-capabilities":
             self._send_json(200, capability_connection_statuses())
+            return
+        if path == "/ai/assets":
+            try:
+                limit = int(self._query().get("limit", "60"))
+            except ValueError:
+                limit = 60
+            asset_type = self._query().get("type", "all").strip().lower()
+            if asset_type not in ASSET_TYPES | {"all"}:
+                self._error(400, "ASSET_TYPE_INVALID", "type must be image, audio, video, or all.")
+                return
+            items = list_assets(limit, asset_type)
+            self._send_json(200, {"ok": True, "items": items, "count": len(items), "type": asset_type})
+            return
+        if path.startswith("/ai/assets/"):
+            parts = [part for part in path.split("/") if part]
+            if len(parts) != 4 or parts[2] not in ASSET_TYPES:
+                self._error(404, "ASSET_NOT_FOUND", f"Asset route not found: {path}")
+                return
+            asset = get_asset(parts[2], parts[3])
+            if not asset:
+                self._error(404, "ASSET_NOT_FOUND", f"Asset not found: {parts[3]}")
+                return
+            self._send_json(200, {"ok": True, **asset})
             return
         if path == "/ai/image/history":
             try:
@@ -784,6 +809,19 @@ class KuroiiLocalServiceHandler(BaseHTTPRequestHandler):
 
     def do_DELETE(self) -> None:
         path = urlparse(self.path).path
+        if path.startswith("/ai/assets/"):
+            if not self._require_auth():
+                return
+            parts = [part for part in path.split("/") if part]
+            if len(parts) != 4 or parts[2] not in ASSET_TYPES:
+                self._error(404, "ASSET_NOT_FOUND", f"Asset route not found: {path}")
+                return
+            result = delete_asset(parts[2], parts[3])
+            if not result or not result.get("deletedCount"):
+                self._error(404, "ASSET_NOT_FOUND", f"Asset not found: {parts[3]}")
+                return
+            self._send_json(200, {"ok": True, **result})
+            return
         if path == "/ai/image/history" or path.startswith("/ai/image/history/"):
             if not self._require_auth():
                 return

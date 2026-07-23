@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import json
 import os
 import re
@@ -48,6 +49,29 @@ def _write_tasks(payload: dict[str, Any]) -> None:
     temporary = path.with_suffix(path.suffix + ".tmp")
     temporary.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     temporary.replace(path)
+
+
+def _managed_file_path(task: dict[str, Any]) -> Path | None:
+    if not task.get("saved") or not task.get("relativePath"):
+        return None
+    output_dir = video_output_dir().resolve()
+    try:
+        file_path = (workspace_root() / str(task["relativePath"])).resolve()
+        file_path.relative_to(output_dir)
+    except (OSError, ValueError):
+        return None
+    return file_path
+
+
+def _remove_managed_file(task: dict[str, Any]) -> bool:
+    file_path = _managed_file_path(task)
+    if not file_path or not file_path.is_file():
+        return False
+    try:
+        file_path.unlink()
+    except OSError:
+        return False
+    return True
 
 
 def create_video_task(metadata: dict[str, Any]) -> dict[str, Any]:
@@ -138,3 +162,38 @@ def list_video_tasks(limit: int = 24) -> list[dict[str, Any]]:
     safe_limit = min(100, max(1, int(limit)))
     with _LOCK:
         return [dict(item) for item in _read_tasks()["items"][:safe_limit] if isinstance(item, dict)]
+
+
+def get_video_task_artifact(task_id: str) -> dict[str, Any] | None:
+    task = get_video_task(task_id)
+    if not task:
+        return None
+    file_path = _managed_file_path(task)
+    if not file_path:
+        return task
+    if not file_path.is_file():
+        task["saved"] = False
+        return task
+    encoded = base64.b64encode(file_path.read_bytes()).decode("ascii")
+    task["videoUrl"] = f"data:{task.get('mimeType') or 'video/mp4'};base64,{encoded}"
+    return task
+
+
+def delete_video_tasks(task_ids: list[str]) -> dict[str, Any]:
+    """Remove selected local task records and their managed video artifacts."""
+    ids = {str(task_id).strip() for task_id in task_ids if str(task_id).strip()}
+    if not ids:
+        return {"deletedIds": [], "deletedCount": 0, "deletedFiles": 0}
+    with _LOCK:
+        history = _read_tasks()
+        items = [entry for entry in history["items"] if isinstance(entry, dict)]
+        removed = [item for item in items if str(item.get("id") or "") in ids]
+        retained = [item for item in items if str(item.get("id") or "") not in ids]
+        if removed:
+            history["items"] = retained
+            _write_tasks(history)
+        return {
+            "deletedIds": [str(item["id"]) for item in removed if item.get("id")],
+            "deletedCount": len(removed),
+            "deletedFiles": sum(1 for item in removed if _remove_managed_file(item)),
+        }
