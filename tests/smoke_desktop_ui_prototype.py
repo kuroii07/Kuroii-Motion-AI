@@ -112,6 +112,12 @@ def main() -> int:
     assert "/ai/assets" in js
     assert "loadAssetLibrary" in js
     assert "assetLibraryWorkbenchBody" in js
+    assert "assetLibraryRegenerationPlan" in js
+    assert "requestAssetLibraryRegeneration" in js
+    assert "confirmAssetLibraryRegeneration" in js
+    assert "data-asset-library-regenerate" in js
+    assert "assetLibraryRegenerateDialog" in js
+    assert "Confirm & generate" in js
     assert "deleteAssetLibraryItem" in js
     assert "data-asset-library-filter" in js
     assert "openAssetLibrary" in js
@@ -123,6 +129,8 @@ def main() -> int:
     assert '"openVoiceAssetLibraryButton"' in js
     assert '"openVideoAssetLibraryButton"' in js
     assert ".assetLibraryDetailMedia" in css
+    assert ".assetLibraryRegenerateBackdrop" in css
+    assert ".assetLibraryRegenerateDialog" in css
     assert "saveAudioPlan" in js
     assert "audioHistoryHtml" in js
     assert 'id="refreshAudioHistoryButton"' in js

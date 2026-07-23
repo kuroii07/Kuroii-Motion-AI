@@ -1970,6 +1970,7 @@ const state = {
   selectedAssetLibraryId: null,
   assetLibraryDetail: null,
   assetLibraryPendingSelection: null,
+  assetLibraryRegenerationConfirm: null,
   assetLibraryNotice: "",
   selectedImageHistoryId: null,
   selectedImageHistoryIds: [],
@@ -4530,10 +4531,91 @@ function restoreAssetLibraryItem(detailPayload = state.assetLibraryDetail) {
   render();
 }
 
+function assetLibraryRegenerationCapability(detailPayload = state.assetLibraryDetail) {
+  const asset = detailPayload && detailPayload.asset;
+  if (!asset) return "";
+  if (asset.assetType === "image") return "image";
+  if (asset.assetType === "video") return "video";
+  return asset.kind === "music" || asset.kind === "music-direction" ? "music" : "voice";
+}
+
+function assetLibraryRegenerationBinding(capabilityId) {
+  const status = capabilityConnectionStatus(capabilityId);
+  if (status.binding) return status.binding;
+  const fallback = {
+    image: imageCapabilityBinding(),
+    video: videoCapabilityBinding(),
+    music: musicCapabilityBinding(),
+    voice: voiceCapabilityBinding()
+  };
+  return fallback[capabilityId] || {};
+}
+
+function assetLibraryRegenerationPlan(detailPayload = state.assetLibraryDetail) {
+  const capability = assetLibraryRegenerationCapability(detailPayload);
+  const readiness = capability ? capabilityConnectionStatus(capability) : null;
+  const binding = capability ? assetLibraryRegenerationBinding(capability) : {};
+  const routes = {
+    image: "/ai/image/generate",
+    video: "/ai/video/generate",
+    music: "/ai/music/generate",
+    voice: "/ai/voice/generate"
+  };
+  return {
+    capability,
+    readiness,
+    binding,
+    route: routes[capability] || "",
+    ready: Boolean(
+      readiness
+      && readiness.state === "connected"
+      && (capability !== "video" || state.videoReadiness.ready)
+    ),
+    title: detailPayload && detailPayload.asset ? detailPayload.asset.title || assetLibraryKindLabel(detailPayload.asset) : ""
+  };
+}
+
+function requestAssetLibraryRegeneration(detailPayload = state.assetLibraryDetail) {
+  const asset = detailPayload && detailPayload.asset;
+  if (!asset || !detailPayload.detail) return;
+  state.assetLibraryRegenerationConfirm = { assetType: asset.assetType, id: asset.id };
+  const plan = assetLibraryRegenerationPlan(detailPayload);
+  if (state.capabilityConnection.status === "idle") void loadCapabilityConnectionStatuses();
+  if (plan.capability === "video" && state.videoReadiness.status === "idle") void loadVideoReadiness();
+  requestFocus("assetLibraryRegenerateDialog");
+  render();
+}
+
+function cancelAssetLibraryRegeneration() {
+  state.assetLibraryRegenerationConfirm = null;
+  render();
+}
+
+function confirmAssetLibraryRegeneration() {
+  const confirmation = state.assetLibraryRegenerationConfirm;
+  const detailPayload = state.assetLibraryDetail;
+  const asset = detailPayload && detailPayload.asset;
+  if (!confirmation || !asset || asset.id !== confirmation.id || asset.assetType !== confirmation.assetType) {
+    cancelAssetLibraryRegeneration();
+    return;
+  }
+  const plan = assetLibraryRegenerationPlan(detailPayload);
+  if (!plan.ready) return;
+  state.assetLibraryRegenerationConfirm = null;
+  restoreAssetLibraryItem(detailPayload);
+  window.requestAnimationFrame(() => {
+    if (plan.capability === "image") void runImageGeneration();
+    else if (plan.capability === "video") void runVideoGeneration();
+    else if (plan.capability === "music") void generateMusicAudio();
+    else if (plan.capability === "voice") void generateVoiceAudio();
+  });
+}
+
 async function loadAssetLibraryDetail(asset, options = {}) {
   if (!asset || !asset.assetType || !asset.id) return null;
   state.selectedAssetLibraryId = asset.id;
   state.assetLibraryDetail = null;
+  state.assetLibraryRegenerationConfirm = null;
   if (options.renderAfter !== false) render();
   try {
     const response = await fetch(`http://127.0.0.1:17631/ai/assets/${encodeURIComponent(asset.assetType)}/${encodeURIComponent(asset.id)}`, {
@@ -6330,6 +6412,13 @@ function renderLibraryWorkbench(feature, workspace) {
     ? state.assetLibraryDetail
     : null;
   const detail = detailPayload && detailPayload.detail;
+  const regenerationPlan = detailPayload ? assetLibraryRegenerationPlan(detailPayload) : null;
+  const regenerationConfirmation = state.assetLibraryRegenerationConfirm
+    && detailPayload
+    && state.assetLibraryRegenerationConfirm.id === detailPayload.asset.id
+    && state.assetLibraryRegenerationConfirm.assetType === detailPayload.asset.assetType
+    ? regenerationPlan
+    : null;
   const counts = {
     all: allItems.length,
     image: allItems.filter((item) => item.assetType === "image").length,
@@ -6373,6 +6462,7 @@ function renderLibraryWorkbench(feature, workspace) {
         <button class="featureSecondaryButton" type="button" data-asset-library-preview="${escapeHtml(selected.id)}">${detailPayload ? (zh ? "刷新预览" : "Refresh preview") : (zh ? "打开预览" : "Open preview")}</button>
         <button class="featureSecondaryButton" type="button" data-asset-library-download="${escapeHtml(selected.id)}" ${selected.saved && detailPayload ? "" : "disabled"}>${zh ? "下载" : "Download"}</button>
         <button class="featureSecondaryButton" type="button" data-asset-library-restore="${escapeHtml(selected.id)}" ${detailPayload ? "" : "disabled"}>${zh ? "恢复到创作页" : "Restore to create"}</button>
+        <button class="featurePrimaryButton assetLibraryRegenerateButton" type="button" data-asset-library-regenerate="${escapeHtml(selected.id)}" ${detailPayload ? "" : "disabled"}>${zh ? "恢复并再次生成" : "Restore & generate"}</button>
         <button class="featureSecondaryButton dangerButton" type="button" data-asset-library-delete="${escapeHtml(selected.id)}">${zh ? "删除" : "Delete"}</button>
       </div>
     `;
@@ -6383,6 +6473,21 @@ function renderLibraryWorkbench(feature, workspace) {
       ${state.assetLibraryNotice ? `<div class="assetLibraryNotice">${escapeHtml(state.assetLibraryNotice)}</div>` : ""}
       <div class="libraryWorkbenchBody assetLibraryWorkbenchBody"><aside class="libraryCategoryPane"><header>${zh ? "资产类型" : "Asset type"}</header>${categoryButton("all", zh ? "全部资产" : "All assets")}${categoryButton("image", zh ? "图片" : "Images")}${categoryButton("audio", zh ? "音频" : "Audio")}${categoryButton("video", zh ? "视频" : "Video")}</aside><main class="libraryItemGrid assetLibraryGrid">${listMarkup}</main><aside class="libraryDetailPane assetLibraryDetailPane">${detailMarkup}</aside></div>
     </section>
+    ${regenerationConfirmation ? `
+      <div class="assetLibraryRegenerateBackdrop" role="presentation">
+        <section class="assetLibraryRegenerateDialog" id="assetLibraryRegenerateDialog" role="dialog" aria-modal="true" aria-labelledby="assetLibraryRegenerateTitle" tabindex="-1">
+          <div><p>${zh ? "新的生成请求" : "New generation request"}</p><h3 id="assetLibraryRegenerateTitle">${zh ? "恢复并再次生成？" : "Restore and generate again?"}</h3><span>${escapeHtml(regenerationConfirmation.title)}</span></div>
+          <dl>
+            <div><dt>${zh ? "能力" : "Capability"}</dt><dd>${escapeHtml(providerCapabilityLabel(regenerationConfirmation.capability))}</dd></div>
+            <div><dt>Provider</dt><dd>${escapeHtml(providerLabel(regenerationConfirmation.binding.providerId))}</dd></div>
+            <div><dt>Model</dt><dd>${escapeHtml(providerModelLabel(regenerationConfirmation.binding.providerId, regenerationConfirmation.binding.model))}</dd></div>
+            <div><dt>${zh ? "请求接口" : "Request route"}</dt><dd><code>${escapeHtml(regenerationConfirmation.route)}</code></dd></div>
+          </dl>
+          <div class="assetLibraryRegenerateWarning"><strong>${zh ? "确认后将提交新的真实生成请求，可能消耗你的 Provider 配额或产生费用。" : "Confirming submits a new live generation request that may consume provider quota or incur charges."}</strong><span>${regenerationConfirmation.ready ? (zh ? "仅恢复本地参数；不会复用旧结果。" : "Only local parameters are restored; the old result is not reused.") : `${escapeHtml(capabilityConnectionLabel(regenerationConfirmation.capability))}：${escapeHtml(capabilityConnectionDetail(regenerationConfirmation.capability))}`}</span></div>
+          <div class="assetLibraryRegenerateActions"><button class="featureSecondaryButton" id="cancelAssetLibraryRegenerateButton" type="button">${zh ? "取消" : "Cancel"}</button><button class="featurePrimaryButton" id="confirmAssetLibraryRegenerateButton" type="button" ${regenerationConfirmation.ready ? "" : "disabled"}>${zh ? "确认并生成" : "Confirm & generate"}</button></div>
+        </section>
+      </div>
+    ` : ""}
   `;
   document.querySelector("#refreshAssetLibraryButton")?.addEventListener("click", () => void loadAssetLibrary());
   document.querySelector("#assetLibraryQuery")?.addEventListener("input", (event) => {
@@ -6394,6 +6499,7 @@ function renderLibraryWorkbench(feature, workspace) {
     button.addEventListener("click", () => {
       state.assetLibraryFilter = button.dataset.assetLibraryFilter || "all";
       state.assetLibraryDetail = null;
+      state.assetLibraryRegenerationConfirm = null;
       renderLibraryWorkbench(feature, workspace);
     });
   });
@@ -6414,6 +6520,20 @@ function renderLibraryWorkbench(feature, workspace) {
       const item = (state.assetLibrary || []).find((candidate) => candidate.id === button.dataset.assetLibraryRestore);
       if (item && state.assetLibraryDetail?.asset?.id === item.id) restoreAssetLibraryItem();
     });
+  });
+  document.querySelectorAll("[data-asset-library-regenerate]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const item = (state.assetLibrary || []).find((candidate) => candidate.id === button.dataset.assetLibraryRegenerate);
+      if (item && state.assetLibraryDetail?.asset?.id === item.id) requestAssetLibraryRegeneration();
+    });
+  });
+  el("cancelAssetLibraryRegenerateButton")?.addEventListener("click", cancelAssetLibraryRegeneration);
+  el("confirmAssetLibraryRegenerateButton")?.addEventListener("click", confirmAssetLibraryRegeneration);
+  el("assetLibraryRegenerateDialog")?.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") cancelAssetLibraryRegeneration();
+  });
+  document.querySelector(".assetLibraryRegenerateBackdrop")?.addEventListener("click", (event) => {
+    if (event.target === event.currentTarget) cancelAssetLibraryRegeneration();
   });
   document.querySelectorAll("[data-asset-library-delete]").forEach((button) => {
     button.addEventListener("click", () => {
