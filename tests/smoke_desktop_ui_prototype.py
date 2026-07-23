@@ -104,6 +104,14 @@ def main() -> int:
     assert "assetLibraryWorkbenchBody" in js
     assert "deleteAssetLibraryItem" in js
     assert "data-asset-library-filter" in js
+    assert "openAssetLibrary" in js
+    assert "mountAssetLibraryShortcut" in js
+    assert "restoreAssetLibraryItem" in js
+    assert "data-asset-library-restore" in js
+    assert '"openImageAssetLibraryButton"' in js
+    assert '"openMusicAssetLibraryButton"' in js
+    assert '"openVoiceAssetLibraryButton"' in js
+    assert '"openVideoAssetLibraryButton"' in js
     assert ".assetLibraryDetailMedia" in css
     assert "saveAudioPlan" in js
     assert "audioHistoryHtml" in js

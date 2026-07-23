@@ -1960,6 +1960,7 @@ const state = {
   assetLibraryQuery: "",
   selectedAssetLibraryId: null,
   assetLibraryDetail: null,
+  assetLibraryPendingSelection: null,
   assetLibraryNotice: "",
   selectedImageHistoryId: null,
   selectedImageHistoryIds: [],
@@ -4388,10 +4389,16 @@ async function loadAssetLibrary(options = {}) {
     if (!response.ok) throw await serviceResponseError(response);
     const payload = await response.json();
     state.assetLibrary = Array.isArray(payload.items) ? payload.items : [];
-    if (!state.selectedAssetLibraryId || !state.assetLibrary.some((item) => item.id === state.selectedAssetLibraryId)) {
+    const pendingSelection = state.assetLibraryPendingSelection;
+    const pendingAsset = pendingSelection && state.assetLibrary.find((item) => item.assetType === pendingSelection.assetType && item.id === pendingSelection.id);
+    if (pendingAsset) {
+      state.selectedAssetLibraryId = pendingAsset.id;
+      state.assetLibraryDetail = null;
+    } else if (!state.selectedAssetLibraryId || !state.assetLibrary.some((item) => item.id === state.selectedAssetLibraryId)) {
       state.selectedAssetLibraryId = state.assetLibrary[0] ? state.assetLibrary[0].id : null;
       state.assetLibraryDetail = null;
     }
+    state.assetLibraryPendingSelection = null;
     state.assetLibraryStatus = "ready";
     state.serviceOnline = true;
   } catch (error) {
@@ -4400,6 +4407,85 @@ async function loadAssetLibrary(options = {}) {
   } finally {
     if (renderAfter) render();
   }
+}
+
+function openAssetLibrary(assetType = "all", assetId = "") {
+  state.assetLibraryFilter = ["image", "audio", "video"].includes(assetType) ? assetType : "all";
+  state.assetLibraryQuery = "";
+  state.assetLibraryPendingSelection = assetId ? { assetType, id: assetId } : null;
+  state.assetLibraryDetail = null;
+  setActiveView("library");
+  el("commandWorkspace").scrollTop = 0;
+  render();
+  void loadAssetLibrary({ renderAfter: true });
+}
+
+function mountAssetLibraryShortcut(buttonId, assetType, assetId = "") {
+  const headerMeta = document.querySelector("#featureWorkspace .workbenchHeaderMeta");
+  if (!headerMeta || document.getElementById(buttonId)) return;
+  const label = state.locale === "zh-CN" ? "查看资源库" : "View assets";
+  headerMeta.insertAdjacentHTML("beforeend", `<button class="featureSecondaryButton assetLibraryShortcut" id="${escapeHtml(buttonId)}" type="button">${label}</button>`);
+  el(buttonId)?.addEventListener("click", () => openAssetLibrary(assetType, assetId || ""));
+}
+
+function restoreAssetLibraryItem(detailPayload = state.assetLibraryDetail) {
+  const asset = detailPayload && detailPayload.asset;
+  const detail = detailPayload && detailPayload.detail;
+  if (!asset || !detail) return;
+  if (asset.assetType === "image") {
+    applyImageHistoryItem(detail, { focusPrompt: true });
+    state.createMode = "image";
+  } else if (asset.assetType === "video") {
+    state.videoGenerationSettings = { ...state.videoGenerationSettings, ...(detail.options || {}) };
+    normalizeVideoGenerationSettings();
+    state.videoGeneration = {
+      ...defaultVideoGenerationState(),
+      prompt: detail.prompt || "",
+      status: detail.status === "succeeded" ? "success" : (detail.status === "failed" ? "error" : "idle"),
+      task: detail,
+      binding: detail.binding || videoCapabilityBinding(),
+      diagnostics: detail.diagnostics || null,
+      errorCode: detail.error && detail.error.code ? detail.error.code : null,
+      message: detail.error && detail.error.message ? detail.error.message : ""
+    };
+    state.selectedVideoTaskId = detail.id || null;
+    state.createMode = "video";
+    requestFocus("featurePromptInput");
+  } else if (asset.kind === "music" || asset.kind === "music-direction") {
+    const metadata = detail.metadata || {};
+    state.musicDirection = {
+      ...defaultMusicDirectionState(),
+      brief: detail.title || detail.prompt || "",
+      useCase: metadata.useCase || "video",
+      mode: metadata.mode || "instrumental",
+      prompt: detail.prompt || "",
+      blueprint: detail.blueprint || "",
+      status: detail.hasAudio ? "completed" : (detail.prompt ? "ready" : "idle"),
+      audio: detail.hasAudio ? detail : null
+    };
+    state.createMode = "music";
+    requestFocus("musicDirectionBrief");
+  } else {
+    const metadata = detail.metadata || {};
+    const script = detail.script || detail.prompt || "";
+    state.voiceDirection = {
+      ...defaultVoiceDirectionState(),
+      script,
+      segments: Array.isArray(detail.segments) && detail.segments.length ? detail.segments : voiceScriptSegments(script),
+      language: metadata.language || "zh-CN",
+      voice: metadata.voice || "narrator",
+      voiceId: metadata.voiceId || "",
+      pace: metadata.pace || "natural",
+      emotion: metadata.emotion || "confident",
+      status: detail.hasAudio ? "completed" : (script ? "ready" : "idle"),
+      audio: detail.hasAudio ? detail : null
+    };
+    state.createMode = "voice";
+    requestFocus("voiceDirectionScript");
+  }
+  setActiveView("create");
+  el("commandWorkspace").scrollTop = 0;
+  render();
 }
 
 async function loadAssetLibraryDetail(asset, options = {}) {
@@ -5341,6 +5427,7 @@ function renderVoiceDirectionWorkbench(feature, workspace) {
   workspace.setAttribute("aria-label", localText(feature.title));
   workspace.innerHTML = `<section class="taskWorkbench voiceDirectionWorkbench">${workbenchHeaderHtml(feature, `${createModeToggleHtml()}<span>${state.locale === "zh-CN" ? "配音脚本台" : "Voice script desk"}</span>`)}<div class="voiceDirectionDesk"><aside class="voiceDirectionComposer"><div class="railHeading"><strong>${state.locale === "zh-CN" ? "脚本" : "Script"}</strong><span>${state.locale === "zh-CN" ? "可逐行输入，也可直接粘贴完整口播" : "Enter line by line or paste the full voiceover"}</span></div><textarea id="voiceDirectionScript" placeholder="${state.locale === "zh-CN" ? "例如：欢迎来到喵喵冒险团。\n现在，和我们一起踏上新的旅程。" : "Example: Welcome to the Meow Adventure Guild.\nNow, begin a new journey with us."}">${escapeHtml(voice.script)}</textarea><div class="voiceDirectionControls"><label><span>${state.locale === "zh-CN" ? "语言" : "Language"}</span><select id="voiceDirectionLanguage"><option value="zh-CN" ${voice.language === "zh-CN" ? "selected" : ""}>中文</option><option value="en-US" ${voice.language === "en-US" ? "selected" : ""}>English</option><option value="ja-JP" ${voice.language === "ja-JP" ? "selected" : ""}>日本語</option></select></label><label><span>${state.locale === "zh-CN" ? "角色 / 音色方向" : "Role / voice direction"}</span><select id="voiceDirectionVoice"><option value="narrator" ${voice.voice === "narrator" ? "selected" : ""}>${state.locale === "zh-CN" ? "沉稳旁白" : "Grounded narrator"}</option><option value="explainer" ${voice.voice === "explainer" ? "selected" : ""}>${state.locale === "zh-CN" ? "明快讲解" : "Bright explainer"}</option><option value="character" ${voice.voice === "character" ? "selected" : ""}>${state.locale === "zh-CN" ? "角色对白" : "Character dialogue"}</option></select></label></div><div class="voiceDirectionAction"><button class="featurePrimaryButton" id="buildVoiceDirectionButton" type="button">${state.locale === "zh-CN" ? "拆分配音清单" : "Build voice list"}</button><button class="featureSecondaryButton" id="generateVoiceAudioButton" type="button" ${voice.status === "generating" ? "disabled" : ""}>${voice.status === "generating" ? (state.locale === "zh-CN" ? "生成中…" : "Generating…") : (state.locale === "zh-CN" ? "生成配音" : "Generate voice")}</button></div></aside><main class="voiceDirectionStage" aria-live="polite"><div class="voiceDirectionStageHeading"><div><p>${state.locale === "zh-CN" ? "交付节奏" : "Delivery rhythm"}</p><h3>${state.locale === "zh-CN" ? "先审台词，再生成声音" : "Review lines before generating voice"}</h3></div><div class="voiceDirectionInlineControls"><label><span>${state.locale === "zh-CN" ? "语速" : "Pace"}</span><select id="voiceDirectionPace"><option value="slow" ${voice.pace === "slow" ? "selected" : ""}>${state.locale === "zh-CN" ? "舒缓" : "Calm"}</option><option value="natural" ${voice.pace === "natural" ? "selected" : ""}>${state.locale === "zh-CN" ? "自然" : "Natural"}</option><option value="brisk" ${voice.pace === "brisk" ? "selected" : ""}>${state.locale === "zh-CN" ? "明快" : "Brisk"}</option></select></label><label><span>${state.locale === "zh-CN" ? "情绪" : "Emotion"}</span><select id="voiceDirectionEmotion"><option value="confident" ${voice.emotion === "confident" ? "selected" : ""}>${state.locale === "zh-CN" ? "坚定" : "Confident"}</option><option value="warm" ${voice.emotion === "warm" ? "selected" : ""}>${state.locale === "zh-CN" ? "温暖" : "Warm"}</option><option value="energetic" ${voice.emotion === "energetic" ? "selected" : ""}>${state.locale === "zh-CN" ? "有活力" : "Energetic"}</option></select></label></div></div>${voiceDirectionOutputHtml(voice)}</main><aside class="voiceDirectionDelivery"><section><span class="statusDot muted"></span><p>${state.locale === "zh-CN" ? "语音模型尚未绑定" : "No voice model bound"}</p><strong>${state.locale === "zh-CN" ? "本页不会生成假音频" : "This page never fabricates audio"}</strong></section><section class="audioPlanningHistory"><div class="railHeading"><strong>${state.locale === "zh-CN" ? "本地资产记录" : "Local asset history"}</strong><button class="imageHistoryRefresh" id="refreshAudioHistoryButton" type="button">${state.locale === "zh-CN" ? "刷新" : "Refresh"}</button></div>${audioHistoryHtml("voice-plan")}</section><div><p class="voiceDirectionEyebrow">${state.locale === "zh-CN" ? "交付预设" : "Delivery preset"}</p><ul><li>${state.locale === "zh-CN" ? "按段试听与重试" : "Preview and retry by segment"}</li><li>${state.locale === "zh-CN" ? "导出 WAV / MP3" : "Export WAV / MP3"}</li><li>${state.locale === "zh-CN" ? "保留模型与来源元数据" : "Retain model and source metadata"}</li></ul></div></aside></div></section>`;
   bindVoiceDirectionWorkspace();
+  mountAssetLibraryShortcut("openVoiceAssetLibraryButton", "audio", voice.audio && voice.audio.id);
 }
 
 function renderMusicDirectionWorkbench(feature, workspace) {
@@ -5348,6 +5435,7 @@ function renderMusicDirectionWorkbench(feature, workspace) {
   workspace.setAttribute("aria-label", localText(feature.title));
   workspace.innerHTML = `<section class="taskWorkbench musicDirectionWorkbench">${workbenchHeaderHtml(feature, `${createModeToggleHtml()}<span>${state.locale === "zh-CN" ? "音乐方向台" : "Music direction desk"}</span>`)}<div class="musicDirectionDesk"><aside class="musicDirectionBriefPanel"><div class="railHeading"><strong>${state.locale === "zh-CN" ? "声音意图" : "Sound intent"}</strong><span>${state.locale === "zh-CN" ? "说明画面、受众、情绪与要强化的瞬间" : "Describe the visual, audience, emotion, and moments to amplify"}</span></div><textarea id="musicDirectionBrief" placeholder="${state.locale === "zh-CN" ? "例如：奇幻 RPG 猫咪冒险的开场，轻快探索感，镜头从村庄推进到远方城堡。" : "Example: An opening for a fantasy RPG cat adventure, playful exploration, moving from village to distant castle."}">${escapeHtml(music.brief)}</textarea><div class="musicDirectionControls"><label><span>${state.locale === "zh-CN" ? "使用场景" : "Use case"}</span><select id="musicDirectionUseCase"><option value="video" ${music.useCase === "video" ? "selected" : ""}>${state.locale === "zh-CN" ? "视频 / UA 配乐" : "Video / UA"}</option><option value="music" ${music.useCase === "music" ? "selected" : ""}>${state.locale === "zh-CN" ? "音乐先行探索" : "Music-first exploration"}</option></select></label><label><span>${state.locale === "zh-CN" ? "作品模式" : "Mode"}</span><select id="musicDirectionMode"><option value="instrumental" ${music.mode === "instrumental" ? "selected" : ""}>${state.locale === "zh-CN" ? "纯音乐" : "Instrumental"}</option><option value="song" ${music.mode === "song" ? "selected" : ""}>${state.locale === "zh-CN" ? "歌曲" : "Song"}</option></select></label></div><p class="musicDirectionHint">${state.locale === "zh-CN" ? "未明确要求时，不在提示词中擅自限制时长或按秒划分结构。" : "No duration or second-by-second structure is inferred unless explicitly requested."}</p><div class="musicDirectionAction"><button class="featurePrimaryButton" id="buildMusicDirectionButton" type="button">${state.locale === "zh-CN" ? "生成音乐方向" : "Build music direction"}</button><button class="featureSecondaryButton" id="generateMusicAudioButton" type="button" ${music.status === "generating" ? "disabled" : ""}>${music.status === "generating" ? (state.locale === "zh-CN" ? "生成中…" : "Generating…") : (state.locale === "zh-CN" ? "生成音乐" : "Generate music")}</button></div></aside><main class="musicDirectionStage" aria-live="polite"><div class="musicDirectionStageHeading"><div><p>${state.locale === "zh-CN" ? "声音叙事" : "Sound narrative"}</p><h3>${state.locale === "zh-CN" ? "让节奏服务镜头" : "Make rhythm serve the shot"}</h3></div><span>${music.mode === "instrumental" ? (state.locale === "zh-CN" ? "纯音乐" : "Instrumental") : (state.locale === "zh-CN" ? "歌曲方向" : "Song direction")}</span></div>${musicDirectionOutputHtml(music)}</main><aside class="musicDirectionReadiness"><section><span class="statusDot muted"></span><p>${state.locale === "zh-CN" ? "音乐模型尚未绑定" : "No music model bound"}</p><strong>${state.locale === "zh-CN" ? "当前可完成方向设计" : "Direction design is available"}</strong></section><section class="audioPlanningHistory"><div class="railHeading"><strong>${state.locale === "zh-CN" ? "本地资产记录" : "Local asset history"}</strong><button class="imageHistoryRefresh" id="refreshAudioHistoryButton" type="button">${state.locale === "zh-CN" ? "刷新" : "Refresh"}</button></div>${audioHistoryHtml("music-direction")}</section><div><p class="musicDirectionEyebrow">${state.locale === "zh-CN" ? "下一步" : "Next"}</p><ol><li>${state.locale === "zh-CN" ? "在 Provider 中登记支持音乐的模型" : "Register a music-capable model in Provider"}</li><li>${state.locale === "zh-CN" ? "绑定后再开放生成与试听" : "Enable generation and listening after binding"}</li></ol></div></aside></div></section>`;
   bindMusicDirectionWorkspace();
+  mountAssetLibraryShortcut("openMusicAssetLibraryButton", "audio", music.audio && music.audio.id);
 }
 
 function renderVideoGenerationWorkbench(feature, workspace) {
@@ -5381,6 +5469,7 @@ function renderVideoGenerationWorkbench(feature, workspace) {
       </div>
     </section>`;
   bindVideoGenerationWorkspace();
+  mountAssetLibraryShortcut("openVideoAssetLibraryButton", "video", generation.task && generation.task.id);
 }
 
 function renderImageGenerationWorkbench(feature, workspace) {
@@ -5439,6 +5528,7 @@ function renderImageGenerationWorkbench(feature, workspace) {
     </section>
   `;
   bindImageGenerationWorkspace();
+  mountAssetLibraryShortcut("openImageAssetLibraryButton", "image", generation.artifact && generation.artifact.id);
   const legacySizeControl = el("imageGenerationSize");
   legacySizeControl?.closest("label")?.remove();
   const settingsSummary = workspace.querySelector(".imageGenerationSettingsDisclosure summary span");
@@ -6240,6 +6330,7 @@ function renderLibraryWorkbench(feature, workspace) {
       <div class="assetLibraryActions">
         <button class="featureSecondaryButton" type="button" data-asset-library-preview="${escapeHtml(selected.id)}">${detailPayload ? (zh ? "刷新预览" : "Refresh preview") : (zh ? "打开预览" : "Open preview")}</button>
         <button class="featureSecondaryButton" type="button" data-asset-library-download="${escapeHtml(selected.id)}" ${selected.saved && detailPayload ? "" : "disabled"}>${zh ? "下载" : "Download"}</button>
+        <button class="featureSecondaryButton" type="button" data-asset-library-restore="${escapeHtml(selected.id)}" ${detailPayload ? "" : "disabled"}>${zh ? "恢复到创作页" : "Restore to create"}</button>
         <button class="featureSecondaryButton dangerButton" type="button" data-asset-library-delete="${escapeHtml(selected.id)}">${zh ? "删除" : "Delete"}</button>
       </div>
     `;
@@ -6274,6 +6365,12 @@ function renderLibraryWorkbench(feature, workspace) {
     button.addEventListener("click", () => {
       const item = (state.assetLibrary || []).find((candidate) => candidate.id === button.dataset.assetLibraryDownload);
       if (item && state.assetLibraryDetail?.asset?.id === item.id) downloadAssetLibraryItem();
+    });
+  });
+  document.querySelectorAll("[data-asset-library-restore]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const item = (state.assetLibrary || []).find((candidate) => candidate.id === button.dataset.assetLibraryRestore);
+      if (item && state.assetLibraryDetail?.asset?.id === item.id) restoreAssetLibraryItem();
     });
   });
   document.querySelectorAll("[data-asset-library-delete]").forEach((button) => {
