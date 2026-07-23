@@ -134,16 +134,26 @@ const providerCapabilities = [
 const providerCatalog = [
   { id: "openai", label: "OpenAI", protocol: "OpenAI", baseUrl: "https://api.openai.com/v1", auth: "API Key", categories: ["text", "vision", "image"], status: "ready", guide: "OpenAI 官方模型与 OpenAI Compatible 任务路由入口" },
   { id: "deepseek", label: "DeepSeek", protocol: "OpenAI Compatible", baseUrl: "https://api.deepseek.com/v1", auth: "API Key", categories: ["text"], status: "ready", guide: "中文、代码与推理任务的低成本语言模型接入" },
-  { id: "minimax", label: "MiniMax", protocol: "MiniMax Native", baseUrl: "https://api.minimaxi.com", auth: "API Key", categories: ["text", "image", "video", "voice", "music"], status: "needs-config", guide: "MiniMax 专用协议：图片已接通；视频、音乐与配音模型可绑定，等待各自任务适配器接入" },
+  { id: "minimax", label: "MiniMax", protocol: "MiniMax Native", baseUrl: "https://api.minimaxi.com", auth: "API Key", categories: ["text", "image", "video", "voice", "music"], status: "needs-config", guide: "MiniMax 专用协议：图片、视频、音乐与配音均使用各自的原生任务适配器" },
   { id: "openai-compatible", label: "OpenAI Compatible", protocol: "Custom", baseUrl: "https://example.com/v1", auth: "API Key", categories: ["text", "vision", "image"], status: "needs-config", guide: "适配第三方聚合平台或私有 OpenAI Compatible 服务" },
-  { id: "custom-base-url", label: "Custom Base URL", protocol: "Custom", baseUrl: "https://example.com/v1", auth: "API Key", categories: ["text", "vision", "image", "video", "voice"], status: "needs-config", guide: "保留给自定义平台、企业网关和授权 API" },
+  { id: "custom-base-url", label: "Custom Base URL", protocol: "Custom", baseUrl: "https://example.com/v1", auth: "API Key", categories: ["text", "vision", "image"], status: "needs-config", guide: "保留给自定义平台、企业网关和授权 API" },
   { id: "ollama", label: "Ollama Local", protocol: "Local", baseUrl: "http://127.0.0.1:11434/v1", auth: "None", categories: ["text", "local"], status: "local", guide: "本地优先与隐私优先任务" },
   { id: "lm-studio", label: "LM Studio", protocol: "Local", baseUrl: "http://127.0.0.1:1234/v1", auth: "None", categories: ["text", "vision", "local"], status: "local", guide: "本地模型工作台与离线调试" },
-  { id: "future-video", label: "Video Providers", protocol: "Async Task", baseUrl: "https://api.example-video.com/v1", auth: "API Key", categories: ["video"], status: "planned", guide: "预留给视频生成、submit / poll / cancel / download 异步任务" },
-  { id: "future-voice", label: "Voice Providers", protocol: "Async / Realtime", baseUrl: "https://api.example-voice.com/v1", auth: "API Key", categories: ["voice", "speech", "music", "sfx"], status: "planned", guide: "预留给 TTS、STT、音乐和音效模型" }
+  { id: "future-video", label: "Video Providers", protocol: "Async Task", baseUrl: "https://api.example-video.com/v1", auth: "API Key", categories: ["video"], status: "planned", configurable: false, guide: "预留给视频生成、submit / poll / cancel / download 异步任务" },
+  { id: "future-voice", label: "Voice Providers", protocol: "Async / Realtime", baseUrl: "https://api.example-voice.com/v1", auth: "API Key", categories: ["voice", "speech", "music", "sfx"], status: "planned", configurable: false, guide: "预留给 TTS、STT、音乐和音效模型" }
 ];
 
 const providerServiceIds = ["openai", "deepseek", "minimax", "openai-compatible", "custom-base-url", "ollama", "lm-studio"];
+
+const providerContractCapabilities = {
+  openai: ["text", "image", "video"],
+  deepseek: ["text"],
+  minimax: ["text", "image", "video", "voice", "music"],
+  "openai-compatible": ["text", "image", "video"],
+  "custom-base-url": ["text", "image"],
+  ollama: [],
+  "lm-studio": []
+};
 
 const providerModelCatalog = {
   openai: [
@@ -172,8 +182,7 @@ const providerModelCatalog = {
   ],
   "custom-base-url": [
     { id: "custom-chat", label: "Custom Chat", tags: ["text"] },
-    { id: "custom-image", label: "Custom Image", tags: ["image"] },
-    { id: "custom-video", label: "Custom Video", tags: ["video"] }
+    { id: "custom-image", label: "Custom Image", tags: ["image"] }
   ],
   ollama: [
     { id: "llama3.1", label: "Llama 3.1", tags: ["local"] },
@@ -2360,7 +2369,7 @@ function addManualProviderModel() {
 
 function currentModelCanBindCapability(capabilityId) {
   const capabilities = selectedModelCapabilities();
-  return capabilities.includes(capabilityId);
+  return providerSupportsCapabilityContract(capabilityId) && capabilities.includes(capabilityId);
 }
 
 function providerStatusLabel() {
@@ -2395,6 +2404,32 @@ function isLocalProvider(provider = currentProvider()) {
 
 function providerHasServiceRoute(provider = currentProvider()) {
   return providerServiceIds.includes(provider.id);
+}
+
+function providerCanBeConfigured(provider = currentProvider()) {
+  return providerHasServiceRoute(provider) && provider.configurable !== false;
+}
+
+function providerSupportsCapabilityContract(capabilityId, provider = currentProvider()) {
+  return (providerContractCapabilities[provider.id] || []).includes(capabilityId);
+}
+
+function showProviderNotWiredFeedback(action = "configure") {
+  const provider = currentProvider();
+  const actionText = {
+    configure: state.locale === "zh-CN" ? "配置、保存 Key 和连接测试" : "configuration, key saving, and connection tests",
+    bind: state.locale === "zh-CN" ? "模型绑定" : "model binding"
+  }[action] || action;
+  state.providerConfig.status = "error";
+  state.providerConfig.errorCode = "PROVIDER_NOT_WIRED";
+  state.providerConfig.source = "local";
+  state.providerConfig.stage = "planned-provider";
+  state.providerConfig.message = state.locale === "zh-CN"
+    ? `${provider.label} 是产品路线占位项，尚未接入真实 Adapter，不能执行${actionText}。`
+    : `${provider.label} is a roadmap placeholder without a live adapter; ${actionText} are unavailable.`;
+  state.providerConfig.advice = [state.locale === "zh-CN"
+    ? "请改选已接通的平台；接入新供应商需要专用 Adapter、模型目录和任务协议。"
+    : "Select a wired provider. A new provider needs a dedicated adapter, model catalog, and task contract."];
 }
 
 function isValidUrl(value) {
@@ -2666,12 +2701,8 @@ async function refreshProviderModels() {
   if (providerOperationPending()) return;
   syncProviderFormState();
   const pendingApiKey = state.providerConfig.apiKeyDraft;
-  if (!providerHasServiceRoute()) {
-    state.providerConfig.status = "error";
-    state.providerConfig.errorCode = "PROVIDER_NOT_WIRED";
-    state.providerConfig.source = "local";
-    state.providerConfig.stage = "planned-provider";
-    state.providerConfig.message = state.locale === "zh-CN" ? "该平台是预留入口，等待真实 Adapter 接入。" : "This provider is a planned adapter placeholder.";
+  if (!providerCanBeConfigured()) {
+    showProviderNotWiredFeedback();
     render();
     return;
   }
@@ -2727,6 +2758,11 @@ async function refreshProviderModels() {
 async function saveProviderApiKey() {
   if (providerOperationPending()) return;
   syncProviderFormState();
+  if (!providerCanBeConfigured()) {
+    showProviderNotWiredFeedback();
+    render();
+    return;
+  }
   const apiKey = String(state.providerConfig.apiKeyDraft || "").trim();
   if (!apiKey) {
     state.providerConfig.apiKeySaveState = "error";
@@ -2787,12 +2823,8 @@ async function saveProviderApiKey() {
 async function testProviderConnection() {
   if (providerOperationPending()) return;
   syncProviderFormState();
-  if (!providerHasServiceRoute()) {
-    state.providerConfig.status = "error";
-    state.providerConfig.errorCode = "PROVIDER_NOT_WIRED";
-    state.providerConfig.source = "local";
-    state.providerConfig.stage = "planned-provider";
-    state.providerConfig.message = state.locale === "zh-CN" ? "该平台是预留入口，暂不执行连接测试。" : "This provider is planned; connection test is not wired yet.";
+  if (!providerCanBeConfigured()) {
+    showProviderNotWiredFeedback();
     render();
     return;
   }
@@ -2893,6 +2925,11 @@ function saveProviderProfileLocal(source = "localStorage") {
 async function saveProviderSettings() {
   if (providerOperationPending()) return;
   syncProviderFormState();
+  if (!providerCanBeConfigured()) {
+    showProviderNotWiredFeedback();
+    render();
+    return;
+  }
   const errorCode = validateProviderConfig();
   if (errorCode) {
     state.providerConfig.status = "error";
@@ -2946,6 +2983,11 @@ async function saveProviderSettings() {
 
 async function bindCurrentModelToCapability(capabilityId) {
   syncProviderFormState();
+  if (!providerCanBeConfigured()) {
+    showProviderNotWiredFeedback("bind");
+    render();
+    return;
+  }
   if (!currentModelCanBindCapability(capabilityId)) {
     state.providerConfig.status = "error";
     state.providerConfig.errorCode = "MODEL_NOT_FOUND";
@@ -3019,7 +3061,7 @@ function removeCapabilityModelBinding(capabilityId, profileId, model, providerId
 async function createProviderProfile() {
   const sequence = Object.keys(state.providerProfile.profileInstances || {}).length + 1;
   const name = state.locale === "zh-CN" ? `新配置 ${sequence}` : `New profile ${sequence}`;
-  const providerId = state.providerConfig.providerId || "openai-compatible";
+  const providerId = providerCanBeConfigured() ? state.providerConfig.providerId : "openai-compatible";
   const provider = providerCatalog.find((item) => item.id === providerId) || providerCatalog[0];
   try {
     const response = await fetch("http://127.0.0.1:17631/provider-profiles", {
@@ -6750,12 +6792,121 @@ function providerProfileListHtml() {
   }).join("");
 }
 
+function providerIntegrationGuideHtml(provider) {
+  const zh = state.locale === "zh-CN";
+  const modelListPath = state.providerConfig.modelsPath || "/models";
+  const chatPath = state.providerConfig.chatPath || "/chat/completions";
+  const imagesPath = state.providerConfig.imagesPath || "/images/generations";
+  const videoPath = state.providerConfig.videoPath || "/videos/generations";
+  const videoStatusPath = state.providerConfig.videoStatusPath || "/videos/generations/{taskId}";
+  const rows = [];
+  let summary = "";
+  let tone = "ready";
+
+  if (!providerCanBeConfigured(provider)) {
+    tone = "planned";
+    summary = zh
+      ? "这是产品路线占位项，不是可填写的供应商配置。"
+      : "This is a roadmap placeholder, not a configurable provider.";
+    rows.push(
+      { label: zh ? "接入方式" : "Integration", path: zh ? "专用 Adapter" : "Dedicated adapter", detail: zh ? "需要新增 Provider Manifest、密钥策略、模型目录与服务端任务适配器。" : "Requires a provider manifest, secret policy, model catalog, and server task adapter." },
+      { label: zh ? "视频任务" : "Video task", path: "submit → poll → file download", detail: zh ? "异步视频至少需要提交、状态轮询、取消（如平台支持）和成片下载的完整协议。" : "Async video needs submit, status polling, optional cancellation, and final file download." },
+      { label: zh ? "音频任务" : "Audio task", path: "generate / stream → local asset", detail: zh ? "音乐、配音和音效需按供应商实际回包解析，再落盘为本地资产；不能复用语言模型接口。" : "Music, voice, and SFX need provider-specific response parsing and local asset storage; language endpoints cannot be reused." }
+    );
+  } else if (provider.id === "minimax") {
+    summary = zh
+      ? "MiniMax 使用原生任务协议；模型来自内置目录，不会把生成接口当作 /models。"
+      : "MiniMax uses native task contracts and an internal catalog; generation endpoints are never treated as /models.";
+    rows.push(
+      { label: zh ? "模型发现" : "Model discovery", path: "catalog", detail: zh ? "内置目录按已支持模型族更新；不填写也不请求 /models。" : "Uses the supported-model catalog; it never calls /models." },
+      { label: zh ? "图片" : "Image", path: "POST /v1/image_generation", detail: zh ? "绑定 image-01 / image-01-live 等图片模型。" : "Bind an image model such as image-01 or image-01-live." },
+      { label: zh ? "音乐" : "Music", path: "POST /v1/music_generation", detail: zh ? "只绑定音乐模型；真实音频回包才会保存为本地资产。" : "Bind a music model only; only real audio responses are saved locally." },
+      { label: zh ? "配音" : "Voice", path: "POST /v1/t2a_v2", detail: zh ? "需要有效 voice_id，语言模型不能替代音色模型。" : "Requires a valid voice_id; a language model cannot substitute for a voice model." },
+      { label: zh ? "视频" : "Video", path: "POST /v1/video_generation → GET /v1/query/video_generation → GET /v1/files/retrieve", detail: zh ? "异步任务必须完成轮询并下载到本地，才会显示为成片。" : "The async task must be polled and downloaded locally before it is shown as a completed video." }
+    );
+  } else if (provider.id === "openai-compatible") {
+    summary = zh
+      ? "聚合/中转平台必须分别提供模型列表与任务端点，并返回当前适配器能够解析的 OpenAI Compatible JSON。"
+      : "Aggregators must expose separate model discovery and task endpoints, returning OpenAI Compatible JSON that this adapter can parse.";
+    rows.push(
+      { label: zh ? "模型发现" : "Model discovery", path: `GET ${modelListPath}`, detail: zh ? "必须返回模型数组；生成接口不能作为模型列表接口。" : "Must return a model array; a generation endpoint is not a model-list endpoint." },
+      { label: zh ? "文本" : "Text", path: `POST ${chatPath}`, detail: zh ? "要求 Chat Completions 请求和响应结构。" : "Requires Chat Completions request and response shapes." },
+      { label: zh ? "图片" : "Image", path: `POST ${imagesPath}`, detail: zh ? "需要 OpenAI Images 类型回包，并为图片模型标记 image 能力。" : "Needs an OpenAI Images-style response and an image capability tag on the model." },
+      { label: zh ? "视频" : "Video", path: `POST ${videoPath} → GET ${videoStatusPath}`, detail: zh ? "仅在平台返回可轮询 task id、状态和可下载文件时可绑定 video。" : "Bind video only when the provider returns a pollable task id, status, and downloadable file." }
+    );
+  } else if (provider.id === "custom-base-url") {
+    summary = zh
+      ? "自定义平台目前按 OpenAI Compatible 的模型发现、文本和图片契约接入；视频、音乐和配音需要专用 Adapter。"
+      : "Custom Base URL currently follows OpenAI Compatible contracts for discovery, text, and image; video, music, and voice need dedicated adapters.";
+    rows.push(
+      { label: zh ? "模型发现" : "Model discovery", path: `GET ${modelListPath}`, detail: zh ? "必须返回模型数组，不接受生成接口。" : "Must return a model array, not a generation response." },
+      { label: zh ? "文本" : "Text", path: "POST /chat/completions", detail: zh ? "模型需要标记 text / vision 能力。" : "Models must be tagged text or vision." },
+      { label: zh ? "图片" : "Image", path: "POST /images/generations", detail: zh ? "模型需要标记 image 能力并返回可保存的图片数据。" : "Models must be tagged image and return savable image data." },
+      { label: zh ? "未接通" : "Not wired", path: zh ? "视频 / 音乐 / 配音" : "Video / music / voice", detail: zh ? "这些任务不能仅靠 Base URL 和能力标签启用。" : "These tasks cannot be enabled by Base URL and capability tags alone." }
+    );
+  } else if (provider.id === "deepseek") {
+    summary = zh
+      ? "当前内置目录仅将 DeepSeek 用于语言任务；不要把可返回的语言模型误标为图片、视频或音频模型。"
+      : "The current catalog uses DeepSeek for text tasks only; do not tag a language model as image, video, or audio.";
+    rows.push(
+      { label: zh ? "模型发现" : "Model discovery", path: "GET /models", detail: zh ? "刷新后按实际模型列表选择。" : "Choose from the refreshed live model list." },
+      { label: zh ? "文本" : "Text", path: "POST /chat/completions", detail: zh ? "要求 Chat Completions 兼容结构。" : "Requires a Chat Completions-compatible shape." },
+      { label: zh ? "未接通" : "Not wired", path: zh ? "图片 / 视频 / 音乐 / 配音" : "Image / video / music / voice", detail: zh ? "当前 Provider 目录和任务适配器未声明这些能力。" : "The current provider catalog and task adapter do not declare these capabilities." }
+    );
+  } else if (provider.id === "ollama" || provider.id === "lm-studio") {
+    summary = zh
+      ? "本地平台用于本机模型发现与调试；当前没有内容生成任务 Adapter，因此不能把本地模型绑定为可生成能力。"
+      : "Local providers are for on-device discovery and debugging; no content-generation task adapter is currently wired, so local models cannot bind generation capabilities.";
+    rows.push(
+      { label: zh ? "本地地址" : "Local endpoint", path: provider.baseUrl, detail: zh ? "仅连接受控的本机服务，不需要远程 API Key。" : "Connects to a controlled local service and needs no remote API key." },
+      { label: zh ? "运行时状态" : "Runtime state", path: zh ? "仅目录 / 调试" : "Catalog / debug only", detail: zh ? "须先实现本地模型的文本、图片或视频专用任务 Adapter，才会开放能力绑定。" : "A dedicated local text, image, or video task adapter is required before capability binding opens." }
+    );
+  } else {
+    summary = zh
+      ? "该平台使用 OpenAI 任务兼容层；模型、能力标签和返回结构必须与选择的任务一致。"
+      : "This provider uses the OpenAI task compatibility layer; model tags and responses must match the selected task.";
+    rows.push(
+      { label: zh ? "模型发现" : "Model discovery", path: "GET /models", detail: zh ? "返回模型数组后再选择默认模型。" : "Return a model array before choosing a default model." },
+      { label: zh ? "文本" : "Text", path: "POST /chat/completions", detail: zh ? "要求 Chat Completions 结构。" : "Requires a Chat Completions shape." },
+      { label: zh ? "图片" : "Image", path: "POST /images/generations", detail: zh ? "需要图片生成回包；语言模型不能绑定 image。" : "Requires an image-generation response; language models cannot bind image." },
+      { label: zh ? "视频" : "Video", path: "submit → poll → download", detail: zh ? "仅为符合异步任务契约的平台开放。" : "Available only to providers that satisfy the async task contract." }
+    );
+  }
+
+  return `
+    <section class="providerIntegrationGuide ${tone === "planned" ? "planned" : ""}" aria-label="${zh ? "Provider 接入要求" : "Provider integration requirements"}">
+      <div class="providerIntegrationGuideHeading"><div><strong>${zh ? "接入要求" : "Integration requirements"}</strong><span>${escapeHtml(provider.protocol)} · ${escapeHtml(provider.guide || "")}</span></div><span class="providerIntegrationGuideState ${tone}">${tone === "planned" ? (zh ? "不可配置" : "Not configurable") : (zh ? "按协议接入" : "Contract guided")}</span></div>
+      <p>${escapeHtml(summary)}</p>
+      <ul class="providerIntegrationTaskList">${rows.map((row) => `<li><div><strong>${escapeHtml(row.label)}</strong><code>${escapeHtml(row.path)}</code></div><span>${escapeHtml(row.detail)}</span></li>`).join("")}</ul>
+    </section>
+  `;
+}
+
 function providerConnectionTabHtml(provider, providerOptions) {
   const isOpenAI = provider.id === "openai";
   const isCompatible = provider.id === "openai-compatible";
   const supportsModelDiscoveryEndpoint = ["openai-compatible", "custom-base-url"].includes(provider.id);
   const pending = providerOperationPending();
   const disabled = pending ? "disabled" : "";
+  if (!providerCanBeConfigured(provider)) {
+    return `
+      <div class="providerForm providerConnectionForm providerPlaceholderConnection">
+        <div class="providerFormGrid">
+          <label class="providerWideField">
+            <span>${state.locale === "zh-CN" ? "平台类型" : "Provider type"}</span>
+            <select id="providerSelect" ${disabled}>${providerOptions}</select>
+            <small>${state.locale === "zh-CN" ? "可切换到已接通的平台继续创建或编辑配置。" : "Switch to a wired provider to create or edit a configuration."}</small>
+          </label>
+        </div>
+        ${providerIntegrationGuideHtml(provider)}
+        <section class="providerPlaceholderPanel">
+          <strong>${state.locale === "zh-CN" ? "此占位项不会保存 Base URL、API Key、模型或能力绑定。" : "This placeholder never saves a Base URL, API key, model, or capability binding."}</strong>
+          <span>${state.locale === "zh-CN" ? "等专用 Adapter 完成后，才会开放对应平台的连接字段和真实连接测试。" : "Connection fields and live tests open only after its dedicated adapter is implemented."}</span>
+        </section>
+        ${providerHubFeedbackHtml()}
+      </div>
+    `;
+  }
   const refreshing = state.providerConfig.status === "refreshing";
   const testing = state.providerConfig.status === "testing";
   const saving = state.providerConfig.status === "saving";
@@ -6794,6 +6945,7 @@ function providerConnectionTabHtml(provider, providerOptions) {
   }).join("") : `<div class="providerModelEmpty">${models.length ? (state.locale === "zh-CN" ? "该分类下没有模型。" : "No models in this category.") : (state.locale === "zh-CN" ? "保存 URL 和 Key 后刷新模型。" : "Save the URL and key, then refresh models.")}</div>`;
   return `
     <div class="providerForm providerConnectionForm">
+      ${providerIntegrationGuideHtml(provider)}
       <div class="providerFormGrid">
         <label>
           <span>${state.locale === "zh-CN" ? "配置名称" : "Profile name"}</span>
@@ -6911,7 +7063,7 @@ function providerCapabilitiesTabHtml() {
     const boundHere = capabilityBindings.some((binding) => (
       binding.profileId === state.providerConfig.profileId && binding.model === state.providerConfig.model
     ));
-    const canBind = Boolean(state.providerConfig.model) && currentModelCanBindCapability(capability.id);
+    const canBind = providerCanBeConfigured() && Boolean(state.providerConfig.model) && currentModelCanBindCapability(capability.id);
     const boundModels = capabilityBindings.length ? capabilityBindings.map((binding) => {
       const isDefault = binding.profileId === defaultBinding.profileId
         && binding.providerId === defaultBinding.providerId

@@ -14,19 +14,21 @@ Kuroii Motion AI Suite 是面向 After Effects 与 Premiere Pro 的 AI 创作、
 
 2026-07-14 已开始实施 Kuroii Professional Studio 视觉重构第一阶段：Desktop 原型新增分层 Design Token / Base / Components / Shell / Home 样式入口，首页已按选定 Command Workspace 视觉稿补齐 Motion Command、活动/工作流/快捷入口图标、五列宿主摘要、健康分数、Pro 区与桌面常驻命令栏。侧栏改为分组导航，窄屏使用抽屉；主题支持 Dark、Light、Follow System 并通过 `kuroii.motionai.themeMode.v1` 持久化。首页阶段设计 QA 为 `94/100`。
 
-Provider Hub 已完成响应式主从流程：桌面保留配置列表与详情双栏；`<=840px` 默认只显示配置列表，选择后进入独立详情，可返回列表且不丢失未保存草稿。连接页的保存与测试操作在窄屏详情底部 Sticky 显示，API Key DPAPI、复制/粘贴/删除、模型刷新和多能力绑定协议保持不变。
+Provider Hub 已完成响应式主从流程：桌面保留配置列表与详情双栏；`<=840px` 默认只显示配置列表，选择后进入独立详情，可返回列表且不丢失未保存草稿。连接页的保存与测试操作在窄屏详情底部 Sticky 显示，API Key DPAPI、复制/粘贴/删除、模型刷新和多能力绑定协议保持不变。每个平台会展示模型发现与任务协议要求；`future-*` 仅作为不可配置路线占位项，不能填写 Key 或误绑定模型。
 
 图片生成工作区已改为桌面参数栏 + 预览画布 + Inspector 三栏。右侧 History 与 Diagnostics 使用单一 Tab，不再同时挤占空间；请求失败和空 Prompt 会自动切到 Diagnostics。`<=840px` 按预览、Prompt、快捷提示、折叠生成设置、生成按钮、Inspector 的顺序排列，模式切换头部固定在 Topbar 下方，避免移动端控件被遮挡。
 
 模型平台已升级为 Provider Hub V2：支持同一 Provider 类型创建多条可命名配置，使用固定高度主从布局管理连接、模型和能力绑定；API Key 按 `profileId` 通过 Windows DPAPI 独立加密保存，真实刷新或测试失败不再回退成 Mock 成功。
 
-2026-07-22 已新增 MiniMax 原生 Provider：它使用内置的官方模型目录而非错误调用通用 `/models`。`image-01` 与 `image-01-live` 已接入 MiniMax `/v1/image_generation`，成功图片照常落入内容生成历史；视频、音乐和配音只显示为可登记模型，尚未接入各自任务协议，因此不会被展示为已可生成。
+2026-07-22 已新增 MiniMax 原生 Provider：它使用内置的官方模型目录而非错误调用通用 `/models`。`image-01` 与 `image-01-live` 已接入 MiniMax `/v1/image_generation`；音乐 `/v1/music_generation`、配音 `/v1/t2a_v2` 和视频提交/轮询/文件查询链路也已接入，只有实际生成并落盘的产物才会显示为可用。
 
 2026-07-22 已继续接通 MiniMax 音乐与配音：`music-3.0`/`music-2.6` 使用 `/v1/music_generation`，`speech-2.8-*` 等语音模型使用 `/v1/t2a_v2`。服务会请求十六进制音频、落盘到 `apps/local-service/data/generated-audio/` 并保存无密钥的历史记录；内容生成页在收到真实音频后才显示试听与下载。
 
 2026-07-23 已接通 MiniMax 文生视频异步链路：`/v1/video_generation` 只提交任务，随后轮询 `/v1/query/video_generation`；只有任务成功、查询到文件并下载落盘至 `apps/local-service/data/generated-videos/` 后才显示为完成。视频历史保存任务 ID、文件元数据和无密钥诊断；Hailuo 2.3 / 02 的页面参数限定为实际支持的 6/10 秒、768p/1080p，其他已登记的 MiniMax T2V 模型仅显示其 6 秒、720p 选项。尚未使用真实 Key 做端到端成片验收。
 
 内容生成页现已支持“文案 / 图片”双模式。图片模式通过 Provider Hub 的 `image` 能力绑定调用 OpenAI Compatible `/images/generations`，支持尺寸、质量、背景设置、图片预览和不包含密钥的请求诊断。成功结果会自动保存到 `apps/local-service/data/generated-images/`，并可在最近生成历史中查看、下载或恢复提示词与参数再次使用。2026-07-14 已使用 `gpt-image-2` 完成真实 PNG 生成验证。
+
+图片、音乐、配音和视频的本地记录已汇入资源库，可按类型筛选、预览、下载或删除；从资源库可恢复到对应创作页继续编辑，但不会自动再次发起可能计费的生成请求。
 
 Desktop 原型已增加 Kuroii 原生控件皮肤：深浅色主题分别控制滚动条、输入、复选/单选和滑块；单选下拉使用保留原始 `select` 值与事件的自绘浮层，避免回退到 Windows 原生菜单外观。
 

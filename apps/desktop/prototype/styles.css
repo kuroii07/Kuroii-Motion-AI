@@ -5504,6 +5504,127 @@ input[type="range"]::-moz-range-thumb {
   white-space: nowrap;
 }
 
+.providerIntegrationGuide,
+.providerPlaceholderPanel {
+  min-width: 0;
+  display: grid;
+  gap: 10px;
+  padding: 11px;
+  border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--line));
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--accent) 5%, var(--surface-2));
+}
+
+.providerIntegrationGuide.planned,
+.providerPlaceholderPanel {
+  border-color: color-mix(in srgb, var(--warning) 52%, var(--line));
+  background: color-mix(in srgb, var(--warning) 7%, var(--surface-2));
+}
+
+.providerIntegrationGuideHeading {
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.providerIntegrationGuideHeading > div {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.providerIntegrationGuideHeading strong,
+.providerPlaceholderPanel strong {
+  color: var(--text);
+  font-size: 12px;
+}
+
+.providerIntegrationGuideHeading span,
+.providerIntegrationGuide > p,
+.providerPlaceholderPanel span {
+  margin: 0;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.providerIntegrationGuideState {
+  flex: 0 0 auto;
+  min-height: 22px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 7px;
+  border: 1px solid color-mix(in srgb, var(--accent) 48%, var(--line));
+  border-radius: var(--radius);
+  color: var(--accent) !important;
+  background: var(--surface);
+  font-size: 10px !important;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.providerIntegrationGuideState.planned {
+  border-color: color-mix(in srgb, var(--warning) 60%, var(--line));
+  color: var(--warning) !important;
+}
+
+.providerIntegrationTaskList {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.providerIntegrationTaskList li {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+  padding: 8px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+}
+
+.providerIntegrationTaskList li > div {
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.providerIntegrationTaskList strong {
+  flex: 0 0 auto;
+  color: var(--text);
+  font-size: 10px;
+}
+
+.providerIntegrationTaskList code {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--accent);
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Consolas, monospace);
+  font-size: 9px;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.providerIntegrationTaskList li > span {
+  color: var(--text-2);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.providerPlaceholderConnection {
+  align-content: start;
+}
+
 .providerSectionHeading {
   min-width: 0;
   display: flex;
@@ -8014,6 +8135,21 @@ input[type="range"]::-moz-range-thumb {
   .providerFormActions {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .providerIntegrationGuideHeading,
+  .providerIntegrationTaskList li > div {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .providerIntegrationTaskList {
+    grid-template-columns: 1fr;
+  }
+
+  .providerIntegrationTaskList code {
+    max-width: 100%;
+    text-align: left;
   }
 }
 

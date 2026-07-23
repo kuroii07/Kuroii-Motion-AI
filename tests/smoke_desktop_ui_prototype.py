@@ -63,6 +63,16 @@ def main() -> int:
     assert "providerConfig" in js
     assert '["provider-hub", "provider", "nav.providerHub"]' in js
     assert "renderProviderHubWorkspace" in js
+    assert "providerCanBeConfigured" in js
+    assert "providerSupportsCapabilityContract" in js
+    assert "showProviderNotWiredFeedback" in js
+    assert "providerIntegrationGuideHtml" in js
+    assert "providerPlaceholderConnection" in js
+    assert "Not configurable" in js
+    assert "Generation endpoints cannot refresh models" in js
+    assert 'configurable: false' in js
+    assert "/v1/query/video_generation" in js
+    assert "/v1/files/retrieve" in js
     assert "renderSystemSettingsWorkspace" in js
     assert 'id="refreshModelsButton"' in js
     assert "testProviderConnection" in js
@@ -210,6 +220,8 @@ def main() -> int:
     assert "providerAdvancedConfig" in css
     assert "providerCapabilityOptions" in css
     assert ".providerCapabilityRuntimeStatus" in css
+    assert ".providerIntegrationGuide" in css
+    assert ".providerIntegrationTaskList" in css
     assert "delete clean.apiKey" in js
     assert "delete clean.headers.Authorization" not in js
     assert "Windows DPAPI" in js
