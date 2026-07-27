@@ -202,6 +202,12 @@
   background: var(--work-surface);
 }
 
+/* The text creation view uses the same clean centre canvas as image/video;
+ * the A/B/C ruler is retained for the dedicated copy editor only. */
+.contentDocumentWorkbench .documentCanvas:not(:has(.documentRuler)) {
+  grid-template-rows: minmax(0, 1fr);
+}
+
 .documentRuler {
   padding: 0 14px;
   font-size: 11px;
@@ -336,6 +342,20 @@
 .imageInspectorTabs button { min-height: 38px; font-size: 12px; }
 .imageInspectorPanel { min-height: 0; }
 
+.creationInspectorSectionHeader {
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+}
+
+.creationInspectorSectionHeader strong { font-size: 12px; }
+.creationInspectorSectionHeader .imageHistoryRefresh { min-height: 28px; }
+
 /* One neutral empty state, shared by document, image and video. */
 .textGenerationEmpty,
 .musicDirectionEmpty,
@@ -459,10 +479,10 @@
 .voiceDirectionStage {
   min-width: 0;
   min-height: 0;
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  display: flex;
+  flex-direction: column;
   overflow: auto;
-  padding: 28px;
+  padding: 24px;
   background: var(--work-surface);
 }
 
@@ -513,10 +533,15 @@
 }
 
 .musicDirectionEmpty,
-.voiceDirectionEmpty { align-self: center; }
+.voiceDirectionEmpty { align-self: center; margin: auto; }
 .musicDirectionSheet,
 .voiceDirectionSheet,
 .voiceDirectionError { align-self: start; }
+
+.musicDirectionOutput {
+  width: min(780px, 100%);
+  margin: 0 auto;
+}
 
 .musicDirectionSheet,
 .voiceDirectionSheet,
@@ -586,6 +611,43 @@
 .voiceDirectionDelivery > section:first-child p { grid-column: 2; }
 .musicDirectionReadiness > section:first-child strong,
 .voiceDirectionDelivery > section:first-child strong { grid-column: 2; }
+
+/* All four non-image creation pages use the image inspector's compact model
+ * status footprint.  Right rails may contain different task data, but the
+ * provider/model information always starts at the same position. */
+.musicDirectionReadiness > .creationInspectorStatus,
+.voiceDirectionDelivery > .creationInspectorStatus {
+  grid-template-columns: 10px minmax(0, 1fr);
+  gap: 8px;
+  padding: 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.musicDirectionReadiness > .creationInspectorStatus > div,
+.voiceDirectionDelivery > .creationInspectorStatus > div {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.musicDirectionReadiness > .creationInspectorStatus span:not(.statusDot),
+.voiceDirectionDelivery > .creationInspectorStatus span:not(.statusDot) { color: var(--muted); font-size: 11px; }
+
+.musicDirectionReadiness > .creationInspectorStatus strong,
+.voiceDirectionDelivery > .creationInspectorStatus strong {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.musicDirectionReadiness .creationInspectorSectionHeader,
+.voiceDirectionDelivery .creationInspectorSectionHeader {
+  padding: 0 14px;
+  border-bottom: 1px solid var(--line);
+}
 
 /* Asset library -------------------------------------------------------- */
 .libraryToolbar,
