@@ -3,9 +3,9 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from audio_history import delete_audio_history_items, get_audio_history_item, list_audio_history
-from image_history import delete_image_history_items, get_image_history_item, list_image_history
-from video_tasks import delete_video_tasks, get_video_task_artifact, list_video_tasks
+from audio_history import delete_audio_history_items, get_audio_history_item, get_audio_history_media_file, list_audio_history
+from image_history import delete_image_history_items, get_image_history_item, get_image_history_media_file, list_image_history
+from video_tasks import delete_video_tasks, get_video_task_artifact, get_video_task_media_file, list_video_tasks
 
 
 ASSET_TYPES = {"image", "audio", "video"}
@@ -95,16 +95,31 @@ def list_assets(limit: int = 60, asset_type: str = "all") -> list[dict[str, Any]
 def get_asset(asset_type: str, asset_id: str) -> dict[str, Any] | None:
     normalized_type = str(asset_type or "").lower()
     if normalized_type == "image":
-        item = get_image_history_item(asset_id)
+        item = get_image_history_item(asset_id, include_data_url=False)
     elif normalized_type == "audio":
-        item = get_audio_history_item(asset_id)
+        item = get_audio_history_item(asset_id, include_data_url=False)
     elif normalized_type == "video":
-        item = get_video_task_artifact(asset_id)
+        item = get_video_task_artifact(asset_id, include_data_url=False)
     else:
         return None
     if not item:
         return None
-    return {"asset": {"image": _image_asset, "audio": _audio_asset, "video": _video_asset}[normalized_type](item), "detail": item}
+    # The asset detail route is metadata-only.  Do not leak legacy provider URLs
+    # or data URLs from individual history stores into renderer JSON.
+    detail = {key: value for key, value in item.items() if key not in {"imageUrl", "audioUrl", "videoUrl"}}
+    return {"asset": {"image": _image_asset, "audio": _audio_asset, "video": _video_asset}[normalized_type](item), "detail": detail}
+
+
+def get_asset_media(asset_type: str, asset_id: str) -> tuple[Any, str] | None:
+    """Resolve a managed media file for streaming, never for JSON embedding."""
+    normalized_type = str(asset_type or "").lower()
+    if normalized_type == "image":
+        return get_image_history_media_file(asset_id)
+    if normalized_type == "audio":
+        return get_audio_history_media_file(asset_id)
+    if normalized_type == "video":
+        return get_video_task_media_file(asset_id)
+    return None
 
 
 def delete_asset(asset_type: str, asset_id: str) -> dict[str, Any] | None:

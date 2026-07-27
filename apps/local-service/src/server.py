@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from time import perf_counter
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
 from action_runtime import execute_trusted_read_only_action, host_context_payload, trusted_actions
-from asset_library import ASSET_TYPES, delete_asset, get_asset, list_assets
+from asset_library import ASSET_TYPES, delete_asset, get_asset, get_asset_media, list_assets
 from audio_history import audio_history_storage_summary, get_audio_history_item, list_audio_history, save_audio_plan, save_generated_audio
 from command_history import get_command_record, list_command_history, record_command
 from config import ServiceConfig, load_config
@@ -104,6 +105,25 @@ class KuroiiLocalServiceHandler(BaseHTTPRequestHandler):
         self._send_cors_headers()
         self.end_headers()
         self.wfile.write(data)
+
+    def _send_media_file(self, file_path: Any, mime_type: str) -> None:
+        """Stream a verified local asset without materializing it as a data URL."""
+        try:
+            size = file_path.stat().st_size
+        except OSError:
+            self._error(404, "ASSET_MEDIA_NOT_FOUND", "The local media file is unavailable.")
+            return
+        self.send_response(200)
+        self.send_header("Content-Type", str(mime_type or "application/octet-stream"))
+        self.send_header("Content-Length", str(size))
+        self.send_header("Cache-Control", "private, max-age=60")
+        self._send_cors_headers()
+        self.end_headers()
+        try:
+            with file_path.open("rb") as source:
+                shutil.copyfileobj(source, self.wfile, length=64 * 1024)
+        except (BrokenPipeError, ConnectionResetError, OSError):
+            return
 
     def _send_command_result(self, status: int, command: dict[str, Any] | None, payload: dict[str, Any]) -> None:
         record_command(command, payload, status)
@@ -224,7 +244,7 @@ class KuroiiLocalServiceHandler(BaseHTTPRequestHandler):
                     "/ai/audio/drafts", "/ai/audio/history", "/ai/audio/history/{audioId}",
                     "/ai/music/generate", "/ai/voice/generate",
                     "/ai/video/generate", "/ai/video/tasks", "/ai/video/tasks/{taskId}",
-                    "/ai/assets", "/ai/assets/{assetType}/{assetId}",
+                    "/ai/assets", "/ai/assets/{assetType}/{assetId}", "/ai/assets/{assetType}/{assetId}/media",
                     "/provider-bindings/{capability}", "/hosts",
                     "/hosts/{host}", "/hosts/{host}/register", "/hosts/{host}/heartbeat",
                     "/hosts/{host}/status", "/hosts/{host}/capabilities", "/hosts/{host}/context",
@@ -262,8 +282,15 @@ class KuroiiLocalServiceHandler(BaseHTTPRequestHandler):
             return
         if path.startswith("/ai/assets/"):
             parts = [part for part in path.split("/") if part]
-            if len(parts) != 4 or parts[2] not in ASSET_TYPES:
+            if len(parts) not in {4, 5} or parts[2] not in ASSET_TYPES or (len(parts) == 5 and parts[4] != "media"):
                 self._error(404, "ASSET_NOT_FOUND", f"Asset route not found: {path}")
+                return
+            if len(parts) == 5:
+                media = get_asset_media(parts[2], parts[3])
+                if not media:
+                    self._error(404, "ASSET_MEDIA_NOT_FOUND", f"Local media is unavailable for: {parts[3]}")
+                    return
+                self._send_media_file(*media)
                 return
             asset = get_asset(parts[2], parts[3])
             if not asset:

@@ -164,7 +164,7 @@ def list_video_tasks(limit: int = 24) -> list[dict[str, Any]]:
         return [dict(item) for item in _read_tasks()["items"][:safe_limit] if isinstance(item, dict)]
 
 
-def get_video_task_artifact(task_id: str) -> dict[str, Any] | None:
+def get_video_task_artifact(task_id: str, include_data_url: bool = True) -> dict[str, Any] | None:
     task = get_video_task(task_id)
     if not task:
         return None
@@ -174,9 +174,21 @@ def get_video_task_artifact(task_id: str) -> dict[str, Any] | None:
     if not file_path.is_file():
         task["saved"] = False
         return task
-    encoded = base64.b64encode(file_path.read_bytes()).decode("ascii")
-    task["videoUrl"] = f"data:{task.get('mimeType') or 'video/mp4'};base64,{encoded}"
+    if include_data_url:
+        encoded = base64.b64encode(file_path.read_bytes()).decode("ascii")
+        task["videoUrl"] = f"data:{task.get('mimeType') or 'video/mp4'};base64,{encoded}"
     return task
+
+
+def get_video_task_media_file(task_id: str) -> tuple[Path, str] | None:
+    """Return a verified managed video file without Base64 encoding it."""
+    task = get_video_task(task_id)
+    if not task:
+        return None
+    file_path = _managed_file_path(task)
+    if not file_path or not file_path.is_file():
+        return None
+    return file_path, str(task.get("mimeType") or "video/mp4")
 
 
 def delete_video_tasks(task_ids: list[str]) -> dict[str, Any]:

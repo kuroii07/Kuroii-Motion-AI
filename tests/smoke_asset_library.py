@@ -4,15 +4,20 @@ import base64
 import os
 import sys
 import tempfile
+import threading
+import json
 from pathlib import Path
+from urllib.request import Request, urlopen
 
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "apps" / "local-service" / "src"))
 
-from asset_library import delete_asset, get_asset, list_assets  # noqa: E402
+from asset_library import delete_asset, get_asset, get_asset_media, list_assets  # noqa: E402
 from audio_history import save_audio_plan, save_generated_audio  # noqa: E402
 from image_history import save_generated_image  # noqa: E402
+from config import ServiceConfig  # noqa: E402
+from server import create_server  # noqa: E402
 from video_tasks import create_video_task, save_video_task_artifact, update_video_task  # noqa: E402
 
 
@@ -50,11 +55,42 @@ def main() -> None:
             assert len(list_assets(20, "audio")) == 2
 
             image_detail = get_asset("image", image["id"])
-            assert image_detail and image_detail["detail"]["imageUrl"].startswith("data:image/png;base64,")
+            assert image_detail and "imageUrl" not in image_detail["detail"]
             audio_detail = get_asset("audio", audio["id"])
-            assert audio_detail and audio_detail["detail"]["audioUrl"].startswith("data:audio/mpeg;base64,")
+            assert audio_detail and "audioUrl" not in audio_detail["detail"]
             video_detail = get_asset("video", task["id"])
-            assert video_detail and video_detail["detail"]["videoUrl"].startswith("data:video/mp4;base64,")
+            assert video_detail and "videoUrl" not in video_detail["detail"]
+
+            image_media = get_asset_media("image", image["id"])
+            audio_media = get_asset_media("audio", audio["id"])
+            video_media = get_asset_media("video", task["id"])
+            assert image_media and image_media[0].read_bytes() == b"png-data" and image_media[1] == "image/png"
+            assert audio_media and audio_media[0].read_bytes() == b"mp3-data" and audio_media[1] == "audio/mpeg"
+            assert video_media and video_media[0].read_bytes() == b"mp4-data" and video_media[1] == "video/mp4"
+
+            service = create_server(ServiceConfig(port=0, session_token="asset-library-test"))
+            service_thread = threading.Thread(target=service.serve_forever, daemon=True)
+            service_thread.start()
+            try:
+                port = service.server_address[1]
+                detail_request = Request(
+                    f"http://127.0.0.1:{port}/ai/assets/image/{image['id']}",
+                    headers={"X-Kuroii-Session": "asset-library-test"},
+                )
+                with urlopen(detail_request, timeout=5) as response:
+                    payload = json.loads(response.read().decode("utf-8"))
+                assert payload["ok"] and "imageUrl" not in payload["detail"]
+                media_request = Request(
+                    f"http://127.0.0.1:{port}/ai/assets/image/{image['id']}/media",
+                    headers={"X-Kuroii-Session": "asset-library-test"},
+                )
+                with urlopen(media_request, timeout=5) as response:
+                    assert response.headers.get_content_type() == "image/png"
+                    assert response.read() == b"png-data"
+            finally:
+                service.shutdown()
+                service.server_close()
+                service_thread.join(timeout=5)
 
             removed_audio = delete_asset("audio", audio["id"])
             assert removed_audio and removed_audio["deletedCount"] == 1 and removed_audio["deletedFiles"] == 1

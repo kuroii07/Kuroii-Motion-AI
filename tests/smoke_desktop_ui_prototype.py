@@ -111,6 +111,10 @@ def main() -> int:
     assert "/ai/audio/history" in js
     assert "/ai/assets" in js
     assert "loadAssetLibrary" in js
+    assert "loadAssetLibraryMedia" in js
+    assert "/ai/assets/${encodeURIComponent(asset.assetType)}/${encodeURIComponent(asset.id)}/media" in js
+    assert "URL.createObjectURL" in js
+    assert "URL.revokeObjectURL" in js
     asset_preview_helper = js.split("function assetLibraryPreviewHtml", 1)[1].split("function assetLibraryDetailMetadataHtml", 1)[0]
     assert "detailPayload" not in asset_preview_helper
     assert "safeGeneratedImageSource" not in asset_preview_helper

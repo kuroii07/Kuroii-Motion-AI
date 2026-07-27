@@ -205,7 +205,7 @@ def cleanup_missing_image_history_files() -> dict[str, Any]:
         }
 
 
-def get_image_history_item(artifact_id: str) -> dict[str, Any] | None:
+def get_image_history_item(artifact_id: str, include_data_url: bool = True) -> dict[str, Any] | None:
     with _LOCK:
         item = next((entry for entry in _read_history()["items"] if isinstance(entry, dict) and entry.get("id") == artifact_id), None)
     if not item:
@@ -218,8 +218,21 @@ def get_image_history_item(artifact_id: str) -> dict[str, Any] | None:
         if not file_path.is_file():
             result["saved"] = False
             return result
-        encoded = base64.b64encode(file_path.read_bytes()).decode("ascii")
-        result["imageUrl"] = f"data:{item.get('mimeType') or 'image/png'};base64,{encoded}"
-    elif item.get("sourceUrl"):
+        if include_data_url:
+            encoded = base64.b64encode(file_path.read_bytes()).decode("ascii")
+            result["imageUrl"] = f"data:{item.get('mimeType') or 'image/png'};base64,{encoded}"
+    elif include_data_url and item.get("sourceUrl"):
         result["imageUrl"] = item["sourceUrl"]
     return result
+
+
+def get_image_history_media_file(artifact_id: str) -> tuple[Path, str] | None:
+    """Return a verified managed image file without reading it into memory."""
+    with _LOCK:
+        item = next((entry for entry in _read_history()["items"] if isinstance(entry, dict) and entry.get("id") == artifact_id), None)
+    if not item:
+        return None
+    file_path = _managed_file_path(item)
+    if not file_path or not file_path.is_file():
+        return None
+    return file_path, str(item.get("mimeType") or "image/png")

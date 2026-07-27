@@ -235,7 +235,7 @@ def list_audio_history(limit: int = 24) -> list[dict[str, Any]]:
     return [_public_item(item) for item in items if isinstance(item, dict)]
 
 
-def get_audio_history_item(artifact_id: str) -> dict[str, Any] | None:
+def get_audio_history_item(artifact_id: str, include_data_url: bool = True) -> dict[str, Any] | None:
     with _LOCK:
         item = next((entry for entry in _read_history()["items"] if isinstance(entry, dict) and entry.get("id") == artifact_id), None)
     if not item:
@@ -248,9 +248,22 @@ def get_audio_history_item(artifact_id: str) -> dict[str, Any] | None:
         if not file_path.is_file():
             result["saved"] = False
             return result
-        encoded = base64.b64encode(file_path.read_bytes()).decode("ascii")
-        result["audioUrl"] = f"data:{item.get('mimeType') or 'audio/mpeg'};base64,{encoded}"
+        if include_data_url:
+            encoded = base64.b64encode(file_path.read_bytes()).decode("ascii")
+            result["audioUrl"] = f"data:{item.get('mimeType') or 'audio/mpeg'};base64,{encoded}"
     return result
+
+
+def get_audio_history_media_file(artifact_id: str) -> tuple[Path, str] | None:
+    """Return a verified managed audio file without Base64 encoding it."""
+    with _LOCK:
+        item = next((entry for entry in _read_history()["items"] if isinstance(entry, dict) and entry.get("id") == artifact_id), None)
+    if not item:
+        return None
+    file_path = _managed_file_path(item)
+    if not file_path or not file_path.is_file():
+        return None
+    return file_path, str(item.get("mimeType") or "audio/mpeg")
 
 
 def audio_history_storage_summary() -> dict[str, int]:

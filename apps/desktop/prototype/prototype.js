@@ -1969,6 +1969,7 @@ const state = {
   assetLibraryQuery: "",
   selectedAssetLibraryId: null,
   assetLibraryDetail: null,
+  assetLibraryMedia: null,
   assetLibraryPendingSelection: null,
   assetLibraryRegenerationConfirm: null,
   assetLibraryNotice: "",
@@ -4423,6 +4424,48 @@ function assetLibraryPreviewHtml(item) {
   return `<b>${escapeHtml(assetLibraryIcon(item))}</b><span class="assetLibraryPreviewType">${escapeHtml(typeLabel)}</span><small>${escapeHtml(statusLabel)}</small>`;
 }
 
+function assetLibraryMediaKey(asset) {
+  return asset && asset.assetType && asset.id ? `${asset.assetType}:${asset.id}` : "";
+}
+
+function clearAssetLibraryMedia() {
+  const current = state.assetLibraryMedia;
+  if (current && current.url && typeof URL !== "undefined") URL.revokeObjectURL(current.url);
+  state.assetLibraryMedia = null;
+}
+
+function assetLibraryMediaState(asset) {
+  const key = assetLibraryMediaKey(asset);
+  return key && state.assetLibraryMedia && state.assetLibraryMedia.key === key ? state.assetLibraryMedia : null;
+}
+
+async function loadAssetLibraryMedia(asset) {
+  const key = assetLibraryMediaKey(asset);
+  if (!key || !asset.saved) return null;
+  clearAssetLibraryMedia();
+  state.assetLibraryMedia = { key, status: "loading", url: "", error: "" };
+  render();
+  try {
+    const response = await fetch(`http://127.0.0.1:17631/ai/assets/${encodeURIComponent(asset.assetType)}/${encodeURIComponent(asset.id)}/media`, {
+      headers: { "X-Kuroii-Session": "dev-local-token" }
+    });
+    if (!response.ok) throw await serviceResponseError(response);
+    const blob = await response.blob();
+    if (state.selectedAssetLibraryId !== asset.id || !state.assetLibraryMedia || state.assetLibraryMedia.key !== key) return null;
+    const url = URL.createObjectURL(blob);
+    const existing = state.assetLibraryMedia;
+    if (existing && existing.url && existing.url !== url) URL.revokeObjectURL(existing.url);
+    state.assetLibraryMedia = { key, status: "ready", url, error: "" };
+    state.serviceOnline = true;
+    return state.assetLibraryMedia;
+  } catch (error) {
+    if (state.selectedAssetLibraryId === asset.id && state.assetLibraryMedia && state.assetLibraryMedia.key === key) state.assetLibraryMedia = { key, status: "error", url: "", error: String(error && error.message ? error.message : error) };
+    return null;
+  } finally {
+    if (state.selectedAssetLibraryId === asset.id && state.assetLibraryMedia && state.assetLibraryMedia.key === key) render();
+  }
+}
+
 function assetLibraryDetailMetadataHtml(asset, zh) {
   const rows = [
     [zh ? "模型" : "Model", asset.model || "-"],
@@ -4459,9 +4502,11 @@ async function loadAssetLibrary(options = {}) {
     if (pendingAsset) {
       state.selectedAssetLibraryId = pendingAsset.id;
       state.assetLibraryDetail = null;
+      clearAssetLibraryMedia();
     } else if (!state.selectedAssetLibraryId || !state.assetLibrary.some((item) => item.id === state.selectedAssetLibraryId)) {
       state.selectedAssetLibraryId = state.assetLibrary[0] ? state.assetLibrary[0].id : null;
       state.assetLibraryDetail = null;
+      clearAssetLibraryMedia();
     }
     state.assetLibraryPendingSelection = null;
     state.assetLibraryStatus = "ready";
@@ -4479,6 +4524,7 @@ function openAssetLibrary(assetType = "all", assetId = "") {
   state.assetLibraryQuery = "";
   state.assetLibraryPendingSelection = assetId ? { assetType, id: assetId } : null;
   state.assetLibraryDetail = null;
+  clearAssetLibraryMedia();
   setActiveView("library");
   el("commandWorkspace").scrollTop = 0;
   render();
@@ -4637,6 +4683,7 @@ async function loadAssetLibraryDetail(asset, options = {}) {
   if (!asset || !asset.assetType || !asset.id) return null;
   state.selectedAssetLibraryId = asset.id;
   state.assetLibraryDetail = null;
+  clearAssetLibraryMedia();
   state.assetLibraryRegenerationConfirm = null;
   if (options.renderAfter !== false) render();
   try {
@@ -4648,6 +4695,7 @@ async function loadAssetLibraryDetail(asset, options = {}) {
     if (!payload.ok || !payload.detail) throw new Error("Asset detail is unavailable.");
     state.assetLibraryDetail = payload;
     state.serviceOnline = true;
+    if (payload.asset && payload.asset.saved) void loadAssetLibraryMedia(payload.asset);
     return payload;
   } catch (error) {
     state.assetLibraryNotice = state.locale === "zh-CN" ? "无法打开这条资源记录。" : "This asset record could not be opened.";
@@ -4657,22 +4705,26 @@ async function loadAssetLibraryDetail(asset, options = {}) {
   }
 }
 
-function downloadAssetLibraryItem(detailPayload = state.assetLibraryDetail) {
+async function downloadAssetLibraryItem(detailPayload = state.assetLibraryDetail) {
   const asset = detailPayload && detailPayload.asset;
-  const detail = detailPayload && detailPayload.detail;
-  if (!asset || !detail) return;
-  const source = asset.assetType === "image"
-    ? safeGeneratedImageSource(detail.imageUrl)
-    : asset.assetType === "audio"
-      ? String(detail.audioUrl || "").trim()
-      : safeGeneratedVideoSource(detail.videoUrl);
-  if (!source) return;
-  const link = document.createElement("a");
-  link.href = source;
-  link.download = asset.fileName || `kuroii-${asset.assetType}-${Date.now()}`;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
+  if (!asset || !asset.saved) return;
+  try {
+    const response = await fetch(`http://127.0.0.1:17631/ai/assets/${encodeURIComponent(asset.assetType)}/${encodeURIComponent(asset.id)}/media`, {
+      headers: { "X-Kuroii-Session": "dev-local-token" }
+    });
+    if (!response.ok) throw await serviceResponseError(response);
+    const source = URL.createObjectURL(await response.blob());
+    const link = document.createElement("a");
+    link.href = source;
+    link.download = asset.fileName || `kuroii-${asset.assetType}-${Date.now()}`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(source), 1000);
+  } catch (error) {
+    state.assetLibraryNotice = state.locale === "zh-CN" ? "下载本地媒体文件失败。" : "The local media file could not be downloaded.";
+    render();
+  }
 }
 
 async function deleteAssetLibraryItem(asset) {
@@ -4693,6 +4745,7 @@ async function deleteAssetLibraryItem(asset) {
     if (!payload.ok) throw new Error("Asset was not deleted.");
     state.assetLibraryNotice = state.locale === "zh-CN" ? `已删除 ${payload.deletedCount || 0} 条资源记录。` : `Deleted ${payload.deletedCount || 0} asset record(s).`;
     state.assetLibraryDetail = null;
+    clearAssetLibraryMedia();
     state.selectedAssetLibraryId = null;
     await loadAssetLibrary({ renderAfter: false });
   } catch (error) {
@@ -6476,13 +6529,19 @@ function renderLibraryWorkbench(feature, workspace) {
     audio: allItems.filter((item) => item.assetType === "audio").length,
     video: allItems.filter((item) => item.assetType === "video").length
   };
-  const selectedDetailMedia = detail && selected
+  const mediaState = assetLibraryMediaState(selected);
+  const selectedDetailMedia = mediaState && mediaState.status === "ready" && mediaState.url
     ? (selected.assetType === "image"
-      ? (safeGeneratedImageSource(detail.imageUrl) ? `<img src="${escapeHtml(safeGeneratedImageSource(detail.imageUrl))}" alt="">` : "")
+      ? `<img src="${escapeHtml(mediaState.url)}" alt="">`
       : selected.assetType === "audio"
-        ? (detail.audioUrl ? `<audio controls src="${escapeHtml(detail.audioUrl)}"></audio>` : "")
-        : (safeGeneratedVideoSource(detail.videoUrl) ? `<video controls preload="metadata" src="${escapeHtml(safeGeneratedVideoSource(detail.videoUrl))}"></video>` : ""))
+        ? `<audio controls preload="metadata" src="${escapeHtml(mediaState.url)}"></audio>`
+        : `<video controls preload="metadata" src="${escapeHtml(mediaState.url)}"></video>`)
     : "";
+  const selectedMediaEmptyLabel = mediaState && mediaState.status === "loading"
+    ? (zh ? "正在读取本地媒体文件…" : "Loading local media…")
+    : mediaState && mediaState.status === "error"
+      ? (zh ? "本地媒体文件无法打开" : "The local media file could not be opened")
+      : (zh ? (selected && selected.saved ? "点击打开以载入预览" : "该资源没有本地可预览文件") : (selected && selected.saved ? "Open to load preview" : "No local preview file for this asset"));
   const categoryButton = (id, label) => `<button class="${state.assetLibraryFilter === id ? "selected" : ""}" type="button" data-asset-library-filter="${id}">${label}<span>${counts[id]}</span></button>`;
   const listMarkup = state.assetLibraryStatus === "loading"
     ? `<div class="assetLibraryEmpty"><span class="statusDot warning"></span>${zh ? "正在读取本地资源…" : "Loading local assets…"}</div>`
@@ -6500,7 +6559,7 @@ function renderLibraryWorkbench(feature, workspace) {
     ? `<div class="assetLibraryEmpty"><span class="statusDot muted"></span>${zh ? "从左侧筛选中选择一条资产。" : "Select an asset from the list."}</div>`
     : `
       <header><span>${escapeHtml(assetLibraryIcon(selected))}</span><div><strong>${escapeHtml(selected.title || assetLibraryKindLabel(selected))}</strong><small>${escapeHtml(assetLibraryKindLabel(selected))} · ${escapeHtml(assetLibraryStatusLabel(selected.status))}</small></div></header>
-      <div class="assetLibraryDetailMedia ${selectedDetailMedia ? "ready" : "empty"}">${selectedDetailMedia || `<span>${zh ? (selected.saved ? "点击打开以载入预览" : "该资源没有本地可预览文件") : (selected.saved ? "Open to load preview" : "No local preview file for this asset")}</span>`}</div>
+      <div class="assetLibraryDetailMedia ${selectedDetailMedia ? "ready" : "empty"}">${selectedDetailMedia || `<span>${selectedMediaEmptyLabel}</span>`}</div>
       ${assetLibraryDetailMetadataHtml(selected, zh)}
       <div class="assetLibraryDetailFile"><span>${zh ? "本地文件" : "Local file"}</span><strong title="${escapeHtml(selected.fileName || "-")}">${escapeHtml(selected.fileName || "-")}</strong></div>
       <div class="assetLibraryActions">
@@ -6544,6 +6603,7 @@ function renderLibraryWorkbench(feature, workspace) {
     button.addEventListener("click", () => {
       state.assetLibraryFilter = button.dataset.assetLibraryFilter || "all";
       state.assetLibraryDetail = null;
+      clearAssetLibraryMedia();
       state.assetLibraryRegenerationConfirm = null;
       renderLibraryWorkbench(feature, workspace);
     });
