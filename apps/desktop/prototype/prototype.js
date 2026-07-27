@@ -1973,6 +1973,9 @@ const state = {
   assetLibraryDrawerOpen: false,
   assetLibraryContextMenu: null,
   assetLibraryLightbox: null,
+  assetLibraryLightboxFit: true,
+  assetLibraryLightboxZoom: 1,
+  assetLibraryLightboxNaturalSize: null,
   assetLibraryPendingSelection: null,
   assetLibraryRegenerationConfirm: null,
   assetLibraryNotice: "",
@@ -4538,6 +4541,9 @@ function openAssetLibrary(assetType = "all", assetId = "") {
   state.assetLibraryDrawerOpen = false;
   state.assetLibraryContextMenu = null;
   state.assetLibraryLightbox = null;
+  state.assetLibraryLightboxFit = true;
+  state.assetLibraryLightboxZoom = 1;
+  state.assetLibraryLightboxNaturalSize = null;
   clearAssetLibraryMedia();
   setActiveView("library");
   el("commandWorkspace").scrollTop = 0;
@@ -4567,11 +4573,29 @@ function openAssetLibraryLightbox(asset) {
   if (!asset || asset.assetType !== "image" || !asset.saved) return;
   state.assetLibraryLightbox = { assetType: asset.assetType, id: asset.id };
   state.assetLibraryContextMenu = null;
+  state.assetLibraryLightboxFit = true;
+  state.assetLibraryLightboxZoom = 1;
+  state.assetLibraryLightboxNaturalSize = null;
   render();
 }
 
 function closeAssetLibraryLightbox() {
   state.assetLibraryLightbox = null;
+  state.assetLibraryLightboxFit = true;
+  state.assetLibraryLightboxZoom = 1;
+  state.assetLibraryLightboxNaturalSize = null;
+  render();
+}
+
+function setAssetLibraryLightboxZoom(zoom) {
+  state.assetLibraryLightboxFit = false;
+  state.assetLibraryLightboxZoom = Math.min(3, Math.max(0.25, Number(zoom.toFixed(2))));
+  render();
+}
+
+function fitAssetLibraryLightbox() {
+  state.assetLibraryLightboxFit = true;
+  state.assetLibraryLightboxZoom = 1;
   render();
 }
 
@@ -4785,6 +4809,9 @@ async function deleteAssetLibraryItem(asset) {
     state.assetLibraryDrawerOpen = false;
     state.assetLibraryContextMenu = null;
     state.assetLibraryLightbox = null;
+    state.assetLibraryLightboxFit = true;
+    state.assetLibraryLightboxZoom = 1;
+    state.assetLibraryLightboxNaturalSize = null;
     clearAssetLibraryMedia();
     state.selectedAssetLibraryId = null;
     await loadAssetLibrary({ renderAfter: false });
@@ -6587,6 +6614,12 @@ function renderLibraryWorkbench(feature, workspace) {
   const contextItem = contextMenu && allItems.find((item) => item.assetType === contextMenu.assetType && item.id === contextMenu.id);
   const lightboxState = state.assetLibraryLightbox;
   const lightboxItem = lightboxState && allItems.find((item) => item.assetType === lightboxState.assetType && item.id === lightboxState.id);
+  const lightboxFit = state.assetLibraryLightboxFit !== false;
+  const lightboxNaturalSize = state.assetLibraryLightboxNaturalSize;
+  const lightboxZoom = state.assetLibraryLightboxZoom || 1;
+  const lightboxManualStyle = !lightboxFit && lightboxNaturalSize
+    ? ` style="width:${Math.round(lightboxNaturalSize.width * lightboxZoom)}px;height:${Math.round(lightboxNaturalSize.height * lightboxZoom)}px"`
+    : "";
   const categoryButton = (id, label) => `<button class="${state.assetLibraryFilter === id ? "selected" : ""}" type="button" data-asset-library-filter="${id}">${label}<span>${counts[id]}</span></button>`;
   const listMarkup = state.assetLibraryStatus === "loading"
     ? `<div class="assetLibraryEmpty"><span class="statusDot warning"></span>${zh ? "正在读取本地资源…" : "Loading local assets…"}</div>`
@@ -6632,7 +6665,7 @@ function renderLibraryWorkbench(feature, workspace) {
       ${state.assetLibraryNotice ? `<div class="assetLibraryNotice">${escapeHtml(state.assetLibraryNotice)}</div>` : ""}
       <div class="libraryWorkbenchBody assetLibraryWorkbenchBody"><aside class="libraryCategoryPane"><header>${zh ? "资产类型" : "Asset type"}</header>${categoryButton("all", zh ? "全部资产" : "All assets")}${categoryButton("image", zh ? "图片" : "Images")}${categoryButton("audio", zh ? "音频" : "Audio")}${categoryButton("video", zh ? "视频" : "Video")}</aside><main class="libraryItemGrid assetLibraryGrid">${listMarkup}</main>${contextItem ? `<button class="assetLibraryMenuBackdrop" type="button" data-asset-library-menu-close aria-label="${zh ? "关闭资源操作菜单" : "Close asset actions"}"></button>` : ""}${drawerOpen ? `<button class="assetLibraryDrawerBackdrop" type="button" data-asset-library-close aria-label="${zh ? "关闭详情" : "Close details"}"></button>` : ""}<aside class="libraryDetailPane assetLibraryDetailPane ${drawerOpen ? "open" : ""}" aria-hidden="${drawerOpen ? "false" : "true"}">${drawerOpen ? detailMarkup : ""}</aside></div>
     </section>
-    ${lightboxItem ? `<div class="assetLibraryLightbox" role="dialog" aria-modal="true" aria-label="${zh ? "图片全屏预览" : "Image fullscreen preview"}"><button class="assetLibraryLightboxBackdrop" type="button" data-asset-library-lightbox-close aria-label="${zh ? "关闭全屏预览" : "Close fullscreen preview"}"></button><section class="assetLibraryLightboxFrame"><header><div><span>${zh ? "图片预览" : "Image preview"}</span><strong>${escapeHtml(lightboxItem.title || assetLibraryKindLabel(lightboxItem))}</strong></div><button class="assetLibraryDrawerClose" type="button" data-asset-library-lightbox-close aria-label="${zh ? "关闭全屏预览" : "Close fullscreen preview"}">×</button></header><div class="assetLibraryLightboxCanvas"><img src="${escapeHtml(assetLibraryMediaUrl(lightboxItem))}" alt="${escapeHtml(lightboxItem.title || "")}"></div></section></div>` : ""}
+    ${lightboxItem ? `<div class="assetLibraryLightbox" role="dialog" aria-modal="true" aria-label="${zh ? "图片全屏预览" : "Image fullscreen preview"}"><button class="assetLibraryLightboxBackdrop" type="button" data-asset-library-lightbox-close aria-label="${zh ? "关闭全屏预览" : "Close fullscreen preview"}"></button><section class="assetLibraryLightboxFrame"><header><div class="assetLibraryLightboxIdentity"><span>${zh ? "图片预览" : "Image preview"}</span><strong>${escapeHtml(lightboxItem.title || assetLibraryKindLabel(lightboxItem))}</strong></div><div class="assetLibraryLightboxTools" aria-label="${zh ? "预览缩放" : "Preview zoom"}"><button type="button" data-asset-library-lightbox-zoom="-0.25" aria-label="${zh ? "缩小" : "Zoom out"}">−</button><button class="${lightboxFit ? "active" : ""}" type="button" data-asset-library-lightbox-fit>${lightboxFit ? (zh ? "适应窗口" : "Fit") : `${Math.round(lightboxZoom * 100)}%`}</button><button type="button" data-asset-library-lightbox-zoom="0.25" aria-label="${zh ? "放大" : "Zoom in"}">+</button></div><button class="assetLibraryDrawerClose" type="button" data-asset-library-lightbox-close aria-label="${zh ? "关闭全屏预览" : "Close fullscreen preview"}">×</button></header><div class="assetLibraryLightboxCanvas ${lightboxFit ? "fit" : "manual"}"><img id="assetLibraryLightboxImage"${lightboxManualStyle} src="${escapeHtml(assetLibraryMediaUrl(lightboxItem))}" alt="${escapeHtml(lightboxItem.title || "")}"></div></section></div>` : ""}
     ${regenerationConfirmation ? `
       <div class="assetLibraryRegenerateBackdrop" role="presentation">
         <section class="assetLibraryRegenerateDialog" id="assetLibraryRegenerateDialog" role="dialog" aria-modal="true" aria-labelledby="assetLibraryRegenerateTitle" tabindex="-1">
@@ -6703,6 +6736,24 @@ function renderLibraryWorkbench(feature, workspace) {
   });
   document.querySelectorAll("[data-asset-library-lightbox-close]").forEach((button) => {
     button.addEventListener("click", closeAssetLibraryLightbox);
+  });
+  document.querySelectorAll("[data-asset-library-lightbox-zoom]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const delta = Number(button.dataset.assetLibraryLightboxZoom || 0);
+      setAssetLibraryLightboxZoom((state.assetLibraryLightboxZoom || 1) + delta);
+    });
+  });
+  document.querySelectorAll("[data-asset-library-lightbox-fit]").forEach((button) => {
+    button.addEventListener("click", fitAssetLibraryLightbox);
+  });
+  document.querySelector("#assetLibraryLightboxImage")?.addEventListener("load", (event) => {
+    const image = event.currentTarget;
+    const nextSize = { width: image.naturalWidth, height: image.naturalHeight };
+    const currentSize = state.assetLibraryLightboxNaturalSize;
+    if (nextSize.width && nextSize.height && (!currentSize || currentSize.width !== nextSize.width || currentSize.height !== nextSize.height)) {
+      state.assetLibraryLightboxNaturalSize = nextSize;
+      if (!state.assetLibraryLightboxFit) render();
+    }
   });
   document.querySelectorAll("[data-asset-library-close]").forEach((button) => {
     button.addEventListener("click", closeAssetLibraryDrawer);

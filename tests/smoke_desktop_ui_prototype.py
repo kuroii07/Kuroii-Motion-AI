@@ -120,10 +120,15 @@ def main() -> int:
     assert "assetLibraryContextMenu" in js
     assert "assetLibraryLightbox" in js
     assert "openAssetLibraryLightbox" in js
+    assert "setAssetLibraryLightboxZoom" in js
+    assert "fitAssetLibraryLightbox" in js
+    assert "assetLibraryLightboxNaturalSize" in js
     assert "data-asset-library-fullscreen" in js
     assert "data-asset-library-menu" in js
     assert "data-asset-library-menu-detail" in js
     assert "data-asset-library-lightbox-close" in js
+    assert "data-asset-library-lightbox-zoom" in js
+    assert "data-asset-library-lightbox-fit" in js
     assert "assetLibraryDetailPromptHtml" in js
     assert 'query.set("thumbnail", "1")' in js
     assert "/ai/assets/${encodeURIComponent(asset.assetType)}/${encodeURIComponent(asset.id)}/media" in js
@@ -156,6 +161,9 @@ def main() -> int:
     assert ".assetLibraryContextMenu" in creation_css
     assert ".assetLibraryLightbox" in creation_css
     assert ".assetLibraryLightboxCanvas" in creation_css
+    assert ".assetLibraryLightboxCanvas.fit" in creation_css
+    assert ".assetLibraryLightboxCanvas.manual" in creation_css
+    assert ".assetLibraryLightboxTools" in creation_css
     assert ".assetLibraryDetailPrompt" in creation_css
     assert ".assetLibraryRegenerateBackdrop" in css
     assert ".assetLibraryRegenerateDialog" in css
