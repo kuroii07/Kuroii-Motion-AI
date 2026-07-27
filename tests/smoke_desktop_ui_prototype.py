@@ -113,6 +113,7 @@ def main() -> int:
     assert "loadAssetLibrary" in js
     assert "loadAssetLibraryMedia" in js
     assert "/ai/assets/${encodeURIComponent(asset.assetType)}/${encodeURIComponent(asset.id)}/media" in js
+    assert "?session=${encodeURIComponent(\"dev-local-token\")}" in js
     assert "URL.createObjectURL" in js
     assert "URL.revokeObjectURL" in js
     asset_preview_helper = js.split("function assetLibraryPreviewHtml", 1)[1].split("function assetLibraryDetailMetadataHtml", 1)[0]

@@ -4430,7 +4430,7 @@ function assetLibraryMediaKey(asset) {
 
 function clearAssetLibraryMedia() {
   const current = state.assetLibraryMedia;
-  if (current && current.url && typeof URL !== "undefined") URL.revokeObjectURL(current.url);
+  if (current && current.url && current.url.startsWith("blob:") && typeof URL !== "undefined") URL.revokeObjectURL(current.url);
   state.assetLibraryMedia = null;
 }
 
@@ -4439,31 +4439,23 @@ function assetLibraryMediaState(asset) {
   return key && state.assetLibraryMedia && state.assetLibraryMedia.key === key ? state.assetLibraryMedia : null;
 }
 
-async function loadAssetLibraryMedia(asset) {
+function loadAssetLibraryMedia(asset) {
   const key = assetLibraryMediaKey(asset);
   if (!key || !asset.saved) return null;
   clearAssetLibraryMedia();
   state.assetLibraryMedia = { key, status: "loading", url: "", error: "" };
   render();
-  try {
-    const response = await fetch(`http://127.0.0.1:17631/ai/assets/${encodeURIComponent(asset.assetType)}/${encodeURIComponent(asset.id)}/media`, {
-      headers: { "X-Kuroii-Session": "dev-local-token" }
-    });
-    if (!response.ok) throw await serviceResponseError(response);
-    const blob = await response.blob();
-    if (state.selectedAssetLibraryId !== asset.id || !state.assetLibraryMedia || state.assetLibraryMedia.key !== key) return null;
-    const url = URL.createObjectURL(blob);
-    const existing = state.assetLibraryMedia;
-    if (existing && existing.url && existing.url !== url) URL.revokeObjectURL(existing.url);
+  // The embedded desktop browser can fail to paint Blob object URLs after a
+  // successful fetch.  Hand the media element the authenticated stream URL so
+  // decoding stays in the native media pipeline instead of renderer JS.
+  window.requestAnimationFrame(() => {
+    if (state.selectedAssetLibraryId !== asset.id || !state.assetLibraryMedia || state.assetLibraryMedia.key !== key) return;
+    const url = `http://127.0.0.1:17631/ai/assets/${encodeURIComponent(asset.assetType)}/${encodeURIComponent(asset.id)}/media?session=${encodeURIComponent("dev-local-token")}`;
     state.assetLibraryMedia = { key, status: "ready", url, error: "" };
     state.serviceOnline = true;
-    return state.assetLibraryMedia;
-  } catch (error) {
-    if (state.selectedAssetLibraryId === asset.id && state.assetLibraryMedia && state.assetLibraryMedia.key === key) state.assetLibraryMedia = { key, status: "error", url: "", error: String(error && error.message ? error.message : error) };
-    return null;
-  } finally {
-    if (state.selectedAssetLibraryId === asset.id && state.assetLibraryMedia && state.assetLibraryMedia.key === key) render();
-  }
+    render();
+  });
+  return state.assetLibraryMedia;
 }
 
 function assetLibraryDetailMetadataHtml(asset, zh) {

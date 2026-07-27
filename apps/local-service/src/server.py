@@ -144,6 +144,16 @@ class KuroiiLocalServiceHandler(BaseHTTPRequestHandler):
         auth = self.headers.get("Authorization", "")
         return token == self.config.session_token or auth == f"Bearer {self.config.session_token}"
 
+    def _media_url_authorized(self) -> bool:
+        """Allow only a local media element to carry the session in its URL.
+
+        HTML media elements cannot attach our session header.  This exception is
+        deliberately limited to the dedicated asset media route; JSON and all
+        other service routes remain header-authenticated.
+        """
+        query_token = self._query().get("session", "")
+        return self._origin_allowed() and query_token == self.config.session_token
+
     def _require_auth(self) -> bool:
         if not self._origin_allowed():
             self._error(403, "ORIGIN_FORBIDDEN", "Only localhost origins are allowed.", ["检查调用来源是否为 localhost。"])
@@ -253,7 +263,15 @@ class KuroiiLocalServiceHandler(BaseHTTPRequestHandler):
                 "ts": now_iso(),
             })
             return
-        if (path in {"/providers", "/provider-profile", "/provider-capabilities", "/hosts", "/provider-errors", "/host-target", "/actions/trusted", "/commands", "/ai/image/history", "/ai/audio/history", "/ai/video/readiness", "/ai/video/tasks", "/ai/assets"} or path.startswith("/ai/image/history/") or path.startswith("/ai/audio/history/") or path.startswith("/ai/video/tasks/") or path.startswith("/ai/assets/")) and not self._require_auth():
+        requires_auth = (
+            path in {"/providers", "/provider-profile", "/provider-capabilities", "/hosts", "/provider-errors", "/host-target", "/actions/trusted", "/commands", "/ai/image/history", "/ai/audio/history", "/ai/video/readiness", "/ai/video/tasks", "/ai/assets"}
+            or path.startswith("/ai/image/history/")
+            or path.startswith("/ai/audio/history/")
+            or path.startswith("/ai/video/tasks/")
+            or path.startswith("/ai/assets/")
+        )
+        is_asset_media_route = path.startswith("/ai/assets/") and path.endswith("/media")
+        if requires_auth and not (is_asset_media_route and self._media_url_authorized()) and not self._require_auth():
             return
         if path == "/providers":
             providers = provider_manifests()

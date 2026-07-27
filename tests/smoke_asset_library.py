@@ -87,6 +87,12 @@ def main() -> None:
                 with urlopen(media_request, timeout=5) as response:
                     assert response.headers.get_content_type() == "image/png"
                     assert response.read() == b"png-data"
+                direct_media_request = Request(
+                    f"http://127.0.0.1:{port}/ai/assets/image/{image['id']}/media?session=asset-library-test",
+                )
+                with urlopen(direct_media_request, timeout=5) as response:
+                    assert response.headers.get_content_type() == "image/png"
+                    assert response.read() == b"png-data"
             finally:
                 service.shutdown()
                 service.server_close()
