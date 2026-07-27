@@ -249,14 +249,32 @@
 .imageGenerationControls label { gap: 5px; font-size: 11px; }
 .imageGenerationControls select { min-height: var(--creation-control-height); border-radius: 7px; font-size: 13px; }
 
+.imageGenerationSettingsDisclosure {
+  margin: 0 14px 12px;
+  border-color: var(--line);
+}
+
+.imageGenerationSettingsDisclosure summary {
+  min-height: 36px;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.imageGenerationSettingsDisclosure summary span { font-size: 11px; font-weight: 500; }
+
 .imageGenerationComposer .workbenchPromptChips,
 .imageGenerationComposer .workbenchActionBar { margin: 0 14px 12px; }
 
 .imageGenerationComposer .workbenchActionBar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   margin-top: auto;
   padding-top: 12px;
   border-top: 1px solid var(--line);
 }
+
+.imageGenerationComposer .workbenchActionBar .featurePrimaryButton { width: 100%; }
 
 .videoGenerationWorkbench .imageExportNote:last-of-type {
   display: grid;
@@ -285,6 +303,38 @@
 .imageGenerationDiagnostics > div { padding: 9px 0; }
 .imageGenerationDiagnostics span { font-size: 10px; }
 .imageGenerationDiagnostics strong { font-size: 12px; line-height: 1.45; }
+
+/* Image standard page: provider status belongs to the inspector, never to
+ * both the page header and the parameter rail. */
+.imageGenerationInspector {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.creationInspectorStatus {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+  padding: 14px;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+}
+
+.creationInspectorStatus .statusDot { margin-top: 4px; }
+.creationInspectorStatus div { min-width: 0; display: grid; gap: 3px; }
+.creationInspectorStatus span:not(.statusDot) { color: var(--muted); font-size: 11px; }
+.creationInspectorStatus strong { overflow: hidden; color: var(--text); font-size: 12px; line-height: 1.4; text-overflow: ellipsis; white-space: nowrap; }
+
+.imageInspectorTabs {
+  min-height: 38px;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+}
+
+.imageInspectorTabs button { min-height: 38px; font-size: 12px; }
+.imageInspectorPanel { min-height: 0; }
 
 /* One neutral empty state, shared by document, image and video. */
 .textGenerationEmpty,

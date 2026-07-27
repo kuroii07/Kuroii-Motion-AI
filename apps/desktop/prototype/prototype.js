@@ -5630,7 +5630,6 @@ function renderImageGenerationWorkbench(feature, workspace) {
               <label><span>${state.locale === "zh-CN" ? "背景" : "Background"}</span><select id="imageGenerationBackground"><option value="opaque" ${settings.background === "opaque" ? "selected" : ""}>${state.locale === "zh-CN" ? "不透明" : "Opaque"}</option><option value="transparent" ${settings.background === "transparent" ? "selected" : ""}>${state.locale === "zh-CN" ? "透明" : "Transparent"}</option><option value="auto" ${settings.background === "auto" ? "selected" : ""}>Auto</option></select></label>
             </div>
           </details>
-          <p class="imageExportNote"><span class="statusDot ${capabilityConnectionTone("image")}"></span>${escapeHtml(capabilityConnectionLabel("image"))} · ${escapeHtml(capabilityConnectionDetail("image"))}</p>
           <div class="workbenchActionBar">
             <button class="featurePrimaryButton" id="featureGenerateButton" type="button" ${generating || !state.providerProfileReady || imageReadiness.state !== "connected" ? "disabled" : ""}>${!state.providerProfileReady ? (state.locale === "zh-CN" ? "同步配置中" : "Syncing config") : (imageReadiness.state !== "connected" ? capabilityConnectionLabel("image") : (generating ? (state.locale === "zh-CN" ? "生成中" : "Generating") : (state.locale === "zh-CN" ? "生成图片" : "Generate image")))}</button>
             <button class="featureSecondaryButton" id="featureCancelButton" type="button" ${generating ? "" : "hidden disabled"}>${state.locale === "zh-CN" ? "取消" : "Cancel"}</button>
@@ -5638,6 +5637,10 @@ function renderImageGenerationWorkbench(feature, workspace) {
         </aside>
         <main class="imageGenerationCanvas" aria-live="polite">${imageGenerationOutputHtml(generation)}</main>
         <aside class="imageGenerationInspector">
+          <section class="creationInspectorStatus" aria-label="${state.locale === "zh-CN" ? "图片模型状态" : "Image model status"}">
+            <span class="statusDot ${capabilityConnectionTone("image")}"></span>
+            <div><span>${state.locale === "zh-CN" ? "图片模型" : "Image model"}</span><strong>${escapeHtml(capabilityConnectionDetail("image"))}</strong></div>
+          </section>
           <nav class="imageInspectorTabs" aria-label="${state.locale === "zh-CN" ? "图片检查器" : "Image inspector"}">
             <button type="button" data-image-inspector-tab="history" class="${inspectorTab === "history" ? "active" : ""}" aria-selected="${inspectorTab === "history" ? "true" : "false"}">${state.locale === "zh-CN" ? "历史" : "History"}</button>
             <button type="button" data-image-inspector-tab="diagnostics" class="${inspectorTab === "diagnostics" ? "active" : ""}" aria-selected="${inspectorTab === "diagnostics" ? "true" : "false"}">${state.locale === "zh-CN" ? "诊断" : "Diagnostics"}</button>
