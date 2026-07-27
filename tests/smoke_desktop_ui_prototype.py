@@ -26,6 +26,7 @@ def balanced_css_braces(css: str) -> bool:
 def main() -> int:
     index = read("apps/desktop/prototype/index.html")
     css = read("apps/desktop/prototype/styles.css")
+    creation_css = read("apps/desktop/prototype/styles/creation-workspace.css")
     settings_css = read("apps/desktop/prototype/styles/settings-center.css")
     js = read("apps/desktop/prototype/prototype.js")
     readme = read("apps/desktop/prototype/README.md")
@@ -112,8 +113,12 @@ def main() -> int:
     assert "/ai/assets" in js
     assert "loadAssetLibrary" in js
     assert "loadAssetLibraryMedia" in js
+    assert "assetLibraryDrawerOpen" in js
+    assert "closeAssetLibraryDrawer" in js
+    assert "assetLibraryDrawerBackdrop" in js
+    assert 'query.set("thumbnail", "1")' in js
     assert "/ai/assets/${encodeURIComponent(asset.assetType)}/${encodeURIComponent(asset.id)}/media" in js
-    assert "?session=${encodeURIComponent(\"dev-local-token\")}" in js
+    assert 'new URLSearchParams({ session: "dev-local-token" })' in js
     assert "URL.createObjectURL" in js
     assert "URL.revokeObjectURL" in js
     asset_preview_helper = js.split("function assetLibraryPreviewHtml", 1)[1].split("function assetLibraryDetailMetadataHtml", 1)[0]
@@ -137,6 +142,8 @@ def main() -> int:
     assert '"openVoiceAssetLibraryButton"' in js
     assert '"openVideoAssetLibraryButton"' in js
     assert ".assetLibraryDetailMedia" in css
+    assert ".assetLibraryDrawerBackdrop" in creation_css
+    assert ".assetLibraryDetailPane.open" in creation_css
     assert ".assetLibraryRegenerateBackdrop" in css
     assert ".assetLibraryRegenerateDialog" in css
     assert "saveAudioPlan" in js

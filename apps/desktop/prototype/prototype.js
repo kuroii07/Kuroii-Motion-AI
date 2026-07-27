@@ -1970,6 +1970,7 @@ const state = {
   selectedAssetLibraryId: null,
   assetLibraryDetail: null,
   assetLibraryMedia: null,
+  assetLibraryDrawerOpen: false,
   assetLibraryPendingSelection: null,
   assetLibraryRegenerationConfirm: null,
   assetLibraryNotice: "",
@@ -4418,6 +4419,9 @@ function assetLibraryPreviewHtml(item) {
   // twice and can stall the desktop renderer.  Real media stays detail-only.
   const typeLabel = assetLibraryKindLabel(item);
   const statusLabel = assetLibraryStatusLabel(item.status);
+  if (item.assetType === "image" && item.saved) {
+    return `<img src="${escapeHtml(assetLibraryMediaUrl(item, true))}" alt="" loading="lazy" decoding="async"><span class="assetLibraryPreviewOverlay"><span class="assetLibraryPreviewType">${escapeHtml(typeLabel)}</span><small>${escapeHtml(statusLabel)}</small><em>${state.locale === "zh-CN" ? "打开详情" : "Open details"}</em></span>`;
+  }
   if (item.assetType === "audio") {
     return `<span class="assetLibraryAudioCover" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span class="assetLibraryPreviewType">${escapeHtml(typeLabel)}</span><small>${escapeHtml(statusLabel)}</small>`;
   }
@@ -4426,6 +4430,13 @@ function assetLibraryPreviewHtml(item) {
 
 function assetLibraryMediaKey(asset) {
   return asset && asset.assetType && asset.id ? `${asset.assetType}:${asset.id}` : "";
+}
+
+function assetLibraryMediaUrl(asset, thumbnail = false) {
+  if (!asset || !asset.assetType || !asset.id) return "";
+  const query = new URLSearchParams({ session: "dev-local-token" });
+  if (thumbnail) query.set("thumbnail", "1");
+  return `http://127.0.0.1:17631/ai/assets/${encodeURIComponent(asset.assetType)}/${encodeURIComponent(asset.id)}/media?${query.toString()}`;
 }
 
 function clearAssetLibraryMedia() {
@@ -4450,7 +4461,7 @@ function loadAssetLibraryMedia(asset) {
   // decoding stays in the native media pipeline instead of renderer JS.
   window.requestAnimationFrame(() => {
     if (state.selectedAssetLibraryId !== asset.id || !state.assetLibraryMedia || state.assetLibraryMedia.key !== key) return;
-    const url = `http://127.0.0.1:17631/ai/assets/${encodeURIComponent(asset.assetType)}/${encodeURIComponent(asset.id)}/media?session=${encodeURIComponent("dev-local-token")}`;
+    const url = assetLibraryMediaUrl(asset);
     state.assetLibraryMedia = { key, status: "ready", url, error: "" };
     state.serviceOnline = true;
     render();
@@ -4496,7 +4507,7 @@ async function loadAssetLibrary(options = {}) {
       state.assetLibraryDetail = null;
       clearAssetLibraryMedia();
     } else if (!state.selectedAssetLibraryId || !state.assetLibrary.some((item) => item.id === state.selectedAssetLibraryId)) {
-      state.selectedAssetLibraryId = state.assetLibrary[0] ? state.assetLibrary[0].id : null;
+      state.selectedAssetLibraryId = null;
       state.assetLibraryDetail = null;
       clearAssetLibraryMedia();
     }
@@ -4516,6 +4527,7 @@ function openAssetLibrary(assetType = "all", assetId = "") {
   state.assetLibraryQuery = "";
   state.assetLibraryPendingSelection = assetId ? { assetType, id: assetId } : null;
   state.assetLibraryDetail = null;
+  state.assetLibraryDrawerOpen = false;
   clearAssetLibraryMedia();
   setActiveView("library");
   el("commandWorkspace").scrollTop = 0;
@@ -4529,6 +4541,15 @@ function mountAssetLibraryShortcut(buttonId, assetType, assetId = "") {
   const label = state.locale === "zh-CN" ? "查看资源库" : "View assets";
   headerTools.insertAdjacentHTML("beforeend", `<button class="featureSecondaryButton assetLibraryShortcut" id="${escapeHtml(buttonId)}" type="button">${label}</button>`);
   el(buttonId)?.addEventListener("click", () => openAssetLibrary(assetType, assetId || ""));
+}
+
+function closeAssetLibraryDrawer() {
+  state.assetLibraryDrawerOpen = false;
+  state.selectedAssetLibraryId = null;
+  state.assetLibraryDetail = null;
+  state.assetLibraryRegenerationConfirm = null;
+  clearAssetLibraryMedia();
+  render();
 }
 
 function restoreAssetLibraryItem(detailPayload = state.assetLibraryDetail) {
@@ -4675,6 +4696,7 @@ async function loadAssetLibraryDetail(asset, options = {}) {
   if (!asset || !asset.assetType || !asset.id) return null;
   state.selectedAssetLibraryId = asset.id;
   state.assetLibraryDetail = null;
+  state.assetLibraryDrawerOpen = true;
   clearAssetLibraryMedia();
   state.assetLibraryRegenerationConfirm = null;
   if (options.renderAfter !== false) render();
@@ -6503,7 +6525,8 @@ function renderLibraryWorkbench(feature, workspace) {
   const zh = state.locale === "zh-CN";
   const allItems = state.assetLibrary || [];
   const items = assetLibraryFilteredItems();
-  const selected = items.find((item) => item.id === state.selectedAssetLibraryId) || items[0] || null;
+  const selected = items.find((item) => item.id === state.selectedAssetLibraryId) || null;
+  const drawerOpen = Boolean(state.assetLibraryDrawerOpen && selected);
   const detailPayload = state.assetLibraryDetail && selected && state.assetLibraryDetail.asset && state.assetLibraryDetail.asset.id === selected.id
     ? state.assetLibraryDetail
     : null;
@@ -6550,7 +6573,7 @@ function renderLibraryWorkbench(feature, workspace) {
   const detailMarkup = !selected
     ? `<div class="assetLibraryEmpty"><span class="statusDot muted"></span>${zh ? "从左侧筛选中选择一条资产。" : "Select an asset from the list."}</div>`
     : `
-      <header><span>${escapeHtml(assetLibraryIcon(selected))}</span><div><strong>${escapeHtml(selected.title || assetLibraryKindLabel(selected))}</strong><small>${escapeHtml(assetLibraryKindLabel(selected))} · ${escapeHtml(assetLibraryStatusLabel(selected.status))}</small></div></header>
+      <header><span>${escapeHtml(assetLibraryIcon(selected))}</span><div><strong>${escapeHtml(selected.title || assetLibraryKindLabel(selected))}</strong><small>${escapeHtml(assetLibraryKindLabel(selected))} · ${escapeHtml(assetLibraryStatusLabel(selected.status))}</small></div><button class="assetLibraryDrawerClose" type="button" data-asset-library-close aria-label="${zh ? "关闭详情" : "Close details"}">×</button></header>
       <div class="assetLibraryDetailMedia ${selectedDetailMedia ? "ready" : "empty"}">${selectedDetailMedia || `<span>${selectedMediaEmptyLabel}</span>`}</div>
       ${assetLibraryDetailMetadataHtml(selected, zh)}
       <div class="assetLibraryDetailFile"><span>${zh ? "本地文件" : "Local file"}</span><strong title="${escapeHtml(selected.fileName || "-")}">${escapeHtml(selected.fileName || "-")}</strong></div>
@@ -6567,7 +6590,7 @@ function renderLibraryWorkbench(feature, workspace) {
       ${workbenchHeaderHtml(feature, `<button class="featureSecondaryButton" id="refreshAssetLibraryButton" type="button">${zh ? "刷新资源" : "Refresh assets"}</button>`)}
       <div class="libraryToolbar assetLibraryToolbar"><input id="assetLibraryQuery" value="${escapeHtml(state.assetLibraryQuery)}" placeholder="${zh ? "搜索图片、音乐、配音或视频资产" : "Search images, music, voice, or video assets"}"><span>${zh ? `${items.length} 条结果` : `${items.length} results`}</span></div>
       ${state.assetLibraryNotice ? `<div class="assetLibraryNotice">${escapeHtml(state.assetLibraryNotice)}</div>` : ""}
-      <div class="libraryWorkbenchBody assetLibraryWorkbenchBody"><aside class="libraryCategoryPane"><header>${zh ? "资产类型" : "Asset type"}</header>${categoryButton("all", zh ? "全部资产" : "All assets")}${categoryButton("image", zh ? "图片" : "Images")}${categoryButton("audio", zh ? "音频" : "Audio")}${categoryButton("video", zh ? "视频" : "Video")}</aside><main class="libraryItemGrid assetLibraryGrid">${listMarkup}</main><aside class="libraryDetailPane assetLibraryDetailPane">${detailMarkup}</aside></div>
+      <div class="libraryWorkbenchBody assetLibraryWorkbenchBody"><aside class="libraryCategoryPane"><header>${zh ? "资产类型" : "Asset type"}</header>${categoryButton("all", zh ? "全部资产" : "All assets")}${categoryButton("image", zh ? "图片" : "Images")}${categoryButton("audio", zh ? "音频" : "Audio")}${categoryButton("video", zh ? "视频" : "Video")}</aside><main class="libraryItemGrid assetLibraryGrid">${listMarkup}</main>${drawerOpen ? `<button class="assetLibraryDrawerBackdrop" type="button" data-asset-library-close aria-label="${zh ? "关闭详情" : "Close details"}"></button>` : ""}<aside class="libraryDetailPane assetLibraryDetailPane ${drawerOpen ? "open" : ""}" aria-hidden="${drawerOpen ? "false" : "true"}">${drawerOpen ? detailMarkup : ""}</aside></div>
     </section>
     ${regenerationConfirmation ? `
       <div class="assetLibraryRegenerateBackdrop" role="presentation">
@@ -6594,7 +6617,9 @@ function renderLibraryWorkbench(feature, workspace) {
   document.querySelectorAll("[data-asset-library-filter]").forEach((button) => {
     button.addEventListener("click", () => {
       state.assetLibraryFilter = button.dataset.assetLibraryFilter || "all";
+      state.selectedAssetLibraryId = null;
       state.assetLibraryDetail = null;
+      state.assetLibraryDrawerOpen = false;
       clearAssetLibraryMedia();
       state.assetLibraryRegenerationConfirm = null;
       renderLibraryWorkbench(feature, workspace);
@@ -6605,6 +6630,9 @@ function renderLibraryWorkbench(feature, workspace) {
       const item = (state.assetLibrary || []).find((candidate) => candidate.id === button.dataset.assetLibraryOpen || candidate.id === button.dataset.assetLibraryPreview);
       if (item) void loadAssetLibraryDetail(item);
     });
+  });
+  document.querySelectorAll("[data-asset-library-close]").forEach((button) => {
+    button.addEventListener("click", closeAssetLibraryDrawer);
   });
   document.querySelectorAll("[data-asset-library-download]").forEach((button) => {
     button.addEventListener("click", () => {

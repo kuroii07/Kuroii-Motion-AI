@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from datetime import datetime
+from functools import lru_cache
+from io import BytesIO
 from typing import Any
 
 from audio_history import delete_audio_history_items, get_audio_history_item, get_audio_history_media_file, list_audio_history
@@ -120,6 +122,41 @@ def get_asset_media(asset_type: str, asset_id: str) -> tuple[Any, str] | None:
     if normalized_type == "video":
         return get_video_task_media_file(asset_id)
     return None
+
+
+@lru_cache(maxsize=48)
+def _image_thumbnail_bytes(path_text: str, modified_ns: int) -> tuple[bytes, str] | None:
+    """Encode a bounded thumbnail so galleries never decode source-size images."""
+    del modified_ns  # Keeps the cache invalid when a managed file changes.
+    try:
+        from PIL import Image, ImageOps
+
+        with Image.open(path_text) as source:
+            image = ImageOps.exif_transpose(source)
+            image.thumbnail((480, 300), Image.Resampling.LANCZOS)
+            output = BytesIO()
+            if "A" in image.getbands():
+                image.convert("RGBA").save(output, format="PNG", optimize=True)
+                return output.getvalue(), "image/png"
+            image.convert("RGB").save(output, format="JPEG", quality=82, optimize=True)
+            return output.getvalue(), "image/jpeg"
+    except (ImportError, OSError, ValueError):
+        return None
+
+
+def get_asset_thumbnail(asset_type: str, asset_id: str) -> tuple[bytes, str] | None:
+    """Return a compact image preview; audio and video retain their type covers."""
+    if str(asset_type or "").lower() != "image":
+        return None
+    media = get_image_history_media_file(asset_id)
+    if not media:
+        return None
+    file_path, _mime_type = media
+    try:
+        modified_ns = file_path.stat().st_mtime_ns
+    except OSError:
+        return None
+    return _image_thumbnail_bytes(str(file_path), modified_ns)
 
 
 def delete_asset(asset_type: str, asset_id: str) -> dict[str, Any] | None:

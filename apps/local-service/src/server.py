@@ -9,7 +9,7 @@ from typing import Any
 from urllib.parse import parse_qs, urlparse
 
 from action_runtime import execute_trusted_read_only_action, host_context_payload, trusted_actions
-from asset_library import ASSET_TYPES, delete_asset, get_asset, get_asset_media, list_assets
+from asset_library import ASSET_TYPES, delete_asset, get_asset, get_asset_media, get_asset_thumbnail, list_assets
 from audio_history import audio_history_storage_summary, get_audio_history_item, list_audio_history, save_audio_plan, save_generated_audio
 from command_history import get_command_record, list_command_history, record_command
 from config import ServiceConfig, load_config
@@ -124,6 +124,15 @@ class KuroiiLocalServiceHandler(BaseHTTPRequestHandler):
                 shutil.copyfileobj(source, self.wfile, length=64 * 1024)
         except (BrokenPipeError, ConnectionResetError, OSError):
             return
+
+    def _send_media_bytes(self, data: bytes, mime_type: str) -> None:
+        self.send_response(200)
+        self.send_header("Content-Type", str(mime_type or "application/octet-stream"))
+        self.send_header("Content-Length", str(len(data)))
+        self.send_header("Cache-Control", "private, max-age=300")
+        self._send_cors_headers()
+        self.end_headers()
+        self.wfile.write(data)
 
     def _send_command_result(self, status: int, command: dict[str, Any] | None, payload: dict[str, Any]) -> None:
         record_command(command, payload, status)
@@ -304,6 +313,13 @@ class KuroiiLocalServiceHandler(BaseHTTPRequestHandler):
                 self._error(404, "ASSET_NOT_FOUND", f"Asset route not found: {path}")
                 return
             if len(parts) == 5:
+                if self._query().get("thumbnail") == "1":
+                    thumbnail = get_asset_thumbnail(parts[2], parts[3])
+                    if not thumbnail:
+                        self._error(404, "ASSET_THUMBNAIL_NOT_FOUND", f"Thumbnail is unavailable for: {parts[3]}")
+                        return
+                    self._send_media_bytes(*thumbnail)
+                    return
                 media = get_asset_media(parts[2], parts[3])
                 if not media:
                     self._error(404, "ASSET_MEDIA_NOT_FOUND", f"Local media is unavailable for: {parts[3]}")

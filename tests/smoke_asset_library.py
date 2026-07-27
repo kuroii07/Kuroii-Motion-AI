@@ -6,8 +6,11 @@ import sys
 import tempfile
 import threading
 import json
+from io import BytesIO
 from pathlib import Path
 from urllib.request import Request, urlopen
+
+from PIL import Image
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -38,8 +41,11 @@ def main() -> None:
             os.environ["KUROII_VIDEO_OUTPUT_DIR"] = str(root / "videos")
             os.environ["KUROII_VIDEO_TASKS_PATH"] = str(root / "video-tasks.json")
 
+            image_output = BytesIO()
+            Image.new("RGB", (960, 640), "#2b87ad").save(image_output, format="PNG")
+            image_bytes = image_output.getvalue()
             image = save_generated_image(
-                f"data:image/png;base64,{base64.b64encode(b'png-data').decode('ascii')}",
+                f"data:image/png;base64,{base64.b64encode(image_bytes).decode('ascii')}",
                 {"prompt": "Image asset", "model": "image-test"},
             )
             audio = save_generated_audio(b"mp3-data", {"kind": "music", "title": "Music asset", "model": "music-test", "format": "mp3"})
@@ -64,7 +70,7 @@ def main() -> None:
             image_media = get_asset_media("image", image["id"])
             audio_media = get_asset_media("audio", audio["id"])
             video_media = get_asset_media("video", task["id"])
-            assert image_media and image_media[0].read_bytes() == b"png-data" and image_media[1] == "image/png"
+            assert image_media and image_media[0].read_bytes() == image_bytes and image_media[1] == "image/png"
             assert audio_media and audio_media[0].read_bytes() == b"mp3-data" and audio_media[1] == "audio/mpeg"
             assert video_media and video_media[0].read_bytes() == b"mp4-data" and video_media[1] == "video/mp4"
 
@@ -86,13 +92,21 @@ def main() -> None:
                 )
                 with urlopen(media_request, timeout=5) as response:
                     assert response.headers.get_content_type() == "image/png"
-                    assert response.read() == b"png-data"
+                    assert response.read() == image_bytes
                 direct_media_request = Request(
                     f"http://127.0.0.1:{port}/ai/assets/image/{image['id']}/media?session=asset-library-test",
                 )
                 with urlopen(direct_media_request, timeout=5) as response:
                     assert response.headers.get_content_type() == "image/png"
-                    assert response.read() == b"png-data"
+                    assert response.read() == image_bytes
+                thumbnail_request = Request(
+                    f"http://127.0.0.1:{port}/ai/assets/image/{image['id']}/media?session=asset-library-test&thumbnail=1",
+                )
+                with urlopen(thumbnail_request, timeout=5) as response:
+                    thumbnail_bytes = response.read()
+                    assert response.headers.get_content_type() == "image/jpeg"
+                with Image.open(BytesIO(thumbnail_bytes)) as thumbnail:
+                    assert thumbnail.width <= 480 and thumbnail.height <= 300
             finally:
                 service.shutdown()
                 service.server_close()
