@@ -282,14 +282,10 @@
 
 .imageGenerationComposer .workbenchActionBar .featurePrimaryButton { width: 100%; }
 
-.videoGenerationWorkbench .imageExportNote:last-of-type {
-  display: grid;
-  grid-template-columns: 10px minmax(0, 1fr) auto;
-  gap: 7px;
-  align-items: start;
+.videoGenerationWorkbench .imageExportNote {
+  display: block;
   margin: 0 14px 10px;
-  padding: 9px 0;
-  border-top: 1px solid var(--line);
+  padding: 0;
   color: var(--text-2);
   font-size: 11px;
   line-height: 1.45;
@@ -360,8 +356,10 @@
 .textGenerationEmpty,
 .musicDirectionEmpty,
 .voiceDirectionEmpty {
+  width: min(440px, 100%);
   min-height: 160px;
   display: grid;
+  justify-items: center;
   place-content: center;
   gap: 7px;
   padding: 20px;
@@ -371,6 +369,10 @@
   box-shadow: none;
   text-align: center;
 }
+
+.textGenerationEmpty .statusDot,
+.musicDirectionEmpty .statusDot,
+.voiceDirectionEmpty .statusDot { justify-self: center; }
 
 .textGenerationEmpty strong,
 .musicDirectionEmpty strong,
@@ -391,6 +393,18 @@
   border: 0;
   background: transparent;
 }
+
+/* Text creation uses the same one-column bottom action stack as the other
+ * creation modes.  The copy editor keeps its existing multi-action layout. */
+.contentDocumentWorkbench .documentBriefRail .workbenchActionBar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.contentDocumentWorkbench .documentBriefRail .workbenchActionBar button { width: 100%; }
 
 /* Music and voice ------------------------------------------------------ */
 .musicDirectionDesk,
@@ -623,10 +637,20 @@
   border-bottom: 1px solid var(--line);
 }
 
+.musicDirectionReadiness,
+.voiceDirectionDelivery {
+  grid-area: auto;
+  display: block;
+  gap: 0;
+  padding: 0;
+}
+
 .musicDirectionReadiness > .creationInspectorStatus > div,
 .voiceDirectionDelivery > .creationInspectorStatus > div {
   min-width: 0;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto;
   gap: 3px;
 }
 
@@ -648,6 +672,9 @@
   padding: 0 14px;
   border-bottom: 1px solid var(--line);
 }
+
+.musicDirectionReadiness .audioPlanningHistory,
+.voiceDirectionDelivery .audioPlanningHistory { margin: 0; }
 
 /* Asset library -------------------------------------------------------- */
 .libraryToolbar,
