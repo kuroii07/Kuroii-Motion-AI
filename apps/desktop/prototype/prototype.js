@@ -4411,13 +4411,10 @@ function assetLibraryStatusLabel(status) {
   return localText(labels[String(status || "").toLowerCase()] || { "zh-CN": "未知", "en-US": "Unknown" });
 }
 
-function assetLibraryPreviewHtml(item, detailPayload, zh) {
-  const detail = detailPayload && detailPayload.detail;
-  const isCurrent = detailPayload && detailPayload.asset && detailPayload.asset.id === item.id;
-  const imageSource = isCurrent && item.assetType === "image" ? safeGeneratedImageSource(detail.imageUrl) : "";
-  const videoSource = isCurrent && item.assetType === "video" ? safeGeneratedVideoSource(detail.videoUrl) : "";
-  if (imageSource) return `<img src="${escapeHtml(imageSource)}" alt="">`;
-  if (videoSource) return `<video muted playsinline preload="metadata" src="${escapeHtml(videoSource)}"></video>`;
+function assetLibraryPreviewHtml(item) {
+  // Asset list responses intentionally omit Base64 media.  Do not mirror a
+  // selected detail's data URL into a card: large local files would be decoded
+  // twice and can stall the desktop renderer.  Real media stays detail-only.
   const typeLabel = assetLibraryKindLabel(item);
   const statusLabel = assetLibraryStatusLabel(item.status);
   if (item.assetType === "audio") {
@@ -6495,7 +6492,7 @@ function renderLibraryWorkbench(feature, workspace) {
         ? `<div class="assetLibraryEmpty"><span class="statusDot muted"></span>${zh ? "没有符合条件的生成资产" : "No generated assets match this view"}</div>`
         : items.map((item) => `
           <button class="libraryItem assetLibraryItem ${selected && selected.id === item.id ? "selected" : ""}" type="button" data-asset-library-open="${escapeHtml(item.id)}">
-            <span class="libraryItemPreview assetLibraryPreview ${item.assetType}">${assetLibraryPreviewHtml(item, detailPayload, zh)}</span>
+            <span class="libraryItemPreview assetLibraryPreview ${item.assetType}">${assetLibraryPreviewHtml(item)}</span>
             <span class="assetLibraryItemBody"><strong>${escapeHtml(item.title || assetLibraryKindLabel(item))}</strong><small>${escapeHtml(imageHistoryDateLabel(item.createdAt))} · ${escapeHtml(item.model || item.providerId || "Local")}</small></span>
           </button>
         `).join("");

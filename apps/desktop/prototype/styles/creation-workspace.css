@@ -726,8 +726,6 @@
 }
 .assetLibraryPreview.image { background: var(--surface-3); }
 .assetLibraryPreview.video { background: var(--surface-3); }
-.assetLibraryPreview img,
-.assetLibraryPreview video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .assetLibraryPreview b,
 .assetLibraryPreviewType,
 .assetLibraryPreview small,
