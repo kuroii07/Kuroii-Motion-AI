@@ -648,9 +648,9 @@
 .musicDirectionReadiness > .creationInspectorStatus > div,
 .voiceDirectionDelivery > .creationInspectorStatus > div {
   min-width: 0;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: auto auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
   gap: 3px;
 }
 
@@ -659,7 +659,6 @@
 
 .musicDirectionReadiness > .creationInspectorStatus strong,
 .voiceDirectionDelivery > .creationInspectorStatus strong {
-  grid-column: auto;
   margin: 0;
   overflow: hidden;
   color: var(--text);
