@@ -659,6 +659,8 @@
 
 .musicDirectionReadiness > .creationInspectorStatus strong,
 .voiceDirectionDelivery > .creationInspectorStatus strong {
+  grid-column: auto;
+  margin: 0;
   overflow: hidden;
   color: var(--text);
   font-size: 12px;
