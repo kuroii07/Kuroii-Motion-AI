@@ -1971,6 +1971,8 @@ const state = {
   assetLibraryDetail: null,
   assetLibraryMedia: null,
   assetLibraryDrawerOpen: false,
+  assetLibraryContextMenu: null,
+  assetLibraryLightbox: null,
   assetLibraryPendingSelection: null,
   assetLibraryRegenerationConfirm: null,
   assetLibraryNotice: "",
@@ -4420,7 +4422,7 @@ function assetLibraryPreviewHtml(item) {
   const typeLabel = assetLibraryKindLabel(item);
   const statusLabel = assetLibraryStatusLabel(item.status);
   if (item.assetType === "image" && item.saved) {
-    return `<img src="${escapeHtml(assetLibraryMediaUrl(item, true))}" alt="" loading="lazy" decoding="async"><span class="assetLibraryPreviewOverlay"><span class="assetLibraryPreviewType">${escapeHtml(typeLabel)}</span><small>${escapeHtml(statusLabel)}</small><em>${state.locale === "zh-CN" ? "打开详情" : "Open details"}</em></span>`;
+    return `<img src="${escapeHtml(assetLibraryMediaUrl(item, true))}" alt="" loading="lazy" decoding="async"><span class="assetLibraryPreviewOverlay"><span class="assetLibraryPreviewType">${escapeHtml(typeLabel)}</span><small>${escapeHtml(statusLabel)}</small><em>${state.locale === "zh-CN" ? "全屏预览" : "Fullscreen preview"}</em></span>`;
   }
   if (item.assetType === "audio") {
     return `<span class="assetLibraryAudioCover" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span class="assetLibraryPreviewType">${escapeHtml(typeLabel)}</span><small>${escapeHtml(statusLabel)}</small>`;
@@ -4479,6 +4481,12 @@ function assetLibraryDetailMetadataHtml(asset, zh) {
   return `<dl class="assetLibraryDetailMetadata">${rows.map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd title="${escapeHtml(value)}">${escapeHtml(value)}</dd></div>`).join("")}</dl>`;
 }
 
+function assetLibraryDetailPromptHtml(detail, zh) {
+  const prompt = detail && (detail.prompt || detail.script || detail.blueprint);
+  if (!prompt) return "";
+  return `<section class="assetLibraryDetailPrompt"><header><strong>Prompt</strong><span>${zh ? "生成说明" : "Generation notes"}</span></header><p>${escapeHtml(prompt)}</p></section>`;
+}
+
 function assetLibraryFilteredItems() {
   const filter = state.assetLibraryFilter || "all";
   const query = String(state.assetLibraryQuery || "").trim().toLowerCase();
@@ -4528,6 +4536,8 @@ function openAssetLibrary(assetType = "all", assetId = "") {
   state.assetLibraryPendingSelection = assetId ? { assetType, id: assetId } : null;
   state.assetLibraryDetail = null;
   state.assetLibraryDrawerOpen = false;
+  state.assetLibraryContextMenu = null;
+  state.assetLibraryLightbox = null;
   clearAssetLibraryMedia();
   setActiveView("library");
   el("commandWorkspace").scrollTop = 0;
@@ -4548,7 +4558,20 @@ function closeAssetLibraryDrawer() {
   state.selectedAssetLibraryId = null;
   state.assetLibraryDetail = null;
   state.assetLibraryRegenerationConfirm = null;
+  state.assetLibraryContextMenu = null;
   clearAssetLibraryMedia();
+  render();
+}
+
+function openAssetLibraryLightbox(asset) {
+  if (!asset || asset.assetType !== "image" || !asset.saved) return;
+  state.assetLibraryLightbox = { assetType: asset.assetType, id: asset.id };
+  state.assetLibraryContextMenu = null;
+  render();
+}
+
+function closeAssetLibraryLightbox() {
+  state.assetLibraryLightbox = null;
   render();
 }
 
@@ -4759,6 +4782,9 @@ async function deleteAssetLibraryItem(asset) {
     if (!payload.ok) throw new Error("Asset was not deleted.");
     state.assetLibraryNotice = state.locale === "zh-CN" ? `已删除 ${payload.deletedCount || 0} 条资源记录。` : `Deleted ${payload.deletedCount || 0} asset record(s).`;
     state.assetLibraryDetail = null;
+    state.assetLibraryDrawerOpen = false;
+    state.assetLibraryContextMenu = null;
+    state.assetLibraryLightbox = null;
     clearAssetLibraryMedia();
     state.selectedAssetLibraryId = null;
     await loadAssetLibrary({ renderAfter: false });
@@ -6557,6 +6583,10 @@ function renderLibraryWorkbench(feature, workspace) {
     : mediaState && mediaState.status === "error"
       ? (zh ? "本地媒体文件无法打开" : "The local media file could not be opened")
       : (zh ? (selected && selected.saved ? "点击打开以载入预览" : "该资源没有本地可预览文件") : (selected && selected.saved ? "Open to load preview" : "No local preview file for this asset"));
+  const contextMenu = state.assetLibraryContextMenu;
+  const contextItem = contextMenu && allItems.find((item) => item.assetType === contextMenu.assetType && item.id === contextMenu.id);
+  const lightboxState = state.assetLibraryLightbox;
+  const lightboxItem = lightboxState && allItems.find((item) => item.assetType === lightboxState.assetType && item.id === lightboxState.id);
   const categoryButton = (id, label) => `<button class="${state.assetLibraryFilter === id ? "selected" : ""}" type="button" data-asset-library-filter="${id}">${label}<span>${counts[id]}</span></button>`;
   const listMarkup = state.assetLibraryStatus === "loading"
     ? `<div class="assetLibraryEmpty"><span class="statusDot warning"></span>${zh ? "正在读取本地资源…" : "Loading local assets…"}</div>`
@@ -6564,17 +6594,27 @@ function renderLibraryWorkbench(feature, workspace) {
       ? `<div class="assetLibraryEmpty"><span class="statusDot error"></span>${zh ? "资源库暂不可用" : "Asset library unavailable"}</div>`
       : !items.length
         ? `<div class="assetLibraryEmpty"><span class="statusDot muted"></span>${zh ? "没有符合条件的生成资产" : "No generated assets match this view"}</div>`
-        : items.map((item) => `
-          <button class="libraryItem assetLibraryItem ${selected && selected.id === item.id ? "selected" : ""}" type="button" data-asset-library-open="${escapeHtml(item.id)}">
-            <span class="libraryItemPreview assetLibraryPreview ${item.assetType}">${assetLibraryPreviewHtml(item)}</span>
-            <span class="assetLibraryItemBody"><strong>${escapeHtml(item.title || assetLibraryKindLabel(item))}</strong><small>${escapeHtml(imageHistoryDateLabel(item.createdAt))} · ${escapeHtml(item.model || item.providerId || "Local")}</small></span>
-          </button>
-        `).join("");
+        : items.map((item) => {
+          const itemMenuOpen = Boolean(contextItem && contextItem.id === item.id && contextItem.assetType === item.assetType);
+          const canPreviewFullscreen = item.assetType === "image" && item.saved;
+          const previewMarkup = canPreviewFullscreen
+            ? `<button class="libraryItemPreview assetLibraryPreview ${item.assetType}" type="button" data-asset-library-fullscreen="${escapeHtml(item.id)}" aria-label="${zh ? "全屏预览图片" : "Preview image fullscreen"}">${assetLibraryPreviewHtml(item)}</button>`
+            : `<span class="libraryItemPreview assetLibraryPreview ${item.assetType}">${assetLibraryPreviewHtml(item)}</span>`;
+          return `
+            <article class="libraryItem assetLibraryItem ${selected && selected.id === item.id ? "selected" : ""} ${itemMenuOpen ? "menuOpen" : ""}">
+              ${previewMarkup}
+              <button class="assetLibraryMoreButton" type="button" data-asset-library-menu="${escapeHtml(item.id)}" aria-expanded="${itemMenuOpen ? "true" : "false"}" aria-label="${zh ? "打开资源操作菜单" : "Open asset actions"}">…</button>
+              ${itemMenuOpen ? `<div class="assetLibraryContextMenu" role="menu"><button type="button" role="menuitem" data-asset-library-menu-detail="${escapeHtml(item.id)}">${zh ? "打开完整详情" : "Open full details"}</button></div>` : ""}
+              <div class="assetLibraryItemBody"><strong>${escapeHtml(item.title || assetLibraryKindLabel(item))}</strong><small>${escapeHtml(imageHistoryDateLabel(item.createdAt))} · ${escapeHtml(item.model || item.providerId || "Local")}</small></div>
+            </article>
+          `;
+        }).join("");
   const detailMarkup = !selected
     ? `<div class="assetLibraryEmpty"><span class="statusDot muted"></span>${zh ? "从左侧筛选中选择一条资产。" : "Select an asset from the list."}</div>`
     : `
       <header><span>${escapeHtml(assetLibraryIcon(selected))}</span><div><strong>${escapeHtml(selected.title || assetLibraryKindLabel(selected))}</strong><small>${escapeHtml(assetLibraryKindLabel(selected))} · ${escapeHtml(assetLibraryStatusLabel(selected.status))}</small></div><button class="assetLibraryDrawerClose" type="button" data-asset-library-close aria-label="${zh ? "关闭详情" : "Close details"}">×</button></header>
       <div class="assetLibraryDetailMedia ${selectedDetailMedia ? "ready" : "empty"}">${selectedDetailMedia || `<span>${selectedMediaEmptyLabel}</span>`}</div>
+      ${assetLibraryDetailPromptHtml(detail, zh)}
       ${assetLibraryDetailMetadataHtml(selected, zh)}
       <div class="assetLibraryDetailFile"><span>${zh ? "本地文件" : "Local file"}</span><strong title="${escapeHtml(selected.fileName || "-")}">${escapeHtml(selected.fileName || "-")}</strong></div>
       <div class="assetLibraryActions">
@@ -6590,8 +6630,9 @@ function renderLibraryWorkbench(feature, workspace) {
       ${workbenchHeaderHtml(feature, `<button class="featureSecondaryButton" id="refreshAssetLibraryButton" type="button">${zh ? "刷新资源" : "Refresh assets"}</button>`)}
       <div class="libraryToolbar assetLibraryToolbar"><input id="assetLibraryQuery" value="${escapeHtml(state.assetLibraryQuery)}" placeholder="${zh ? "搜索图片、音乐、配音或视频资产" : "Search images, music, voice, or video assets"}"><span>${zh ? `${items.length} 条结果` : `${items.length} results`}</span></div>
       ${state.assetLibraryNotice ? `<div class="assetLibraryNotice">${escapeHtml(state.assetLibraryNotice)}</div>` : ""}
-      <div class="libraryWorkbenchBody assetLibraryWorkbenchBody"><aside class="libraryCategoryPane"><header>${zh ? "资产类型" : "Asset type"}</header>${categoryButton("all", zh ? "全部资产" : "All assets")}${categoryButton("image", zh ? "图片" : "Images")}${categoryButton("audio", zh ? "音频" : "Audio")}${categoryButton("video", zh ? "视频" : "Video")}</aside><main class="libraryItemGrid assetLibraryGrid">${listMarkup}</main>${drawerOpen ? `<button class="assetLibraryDrawerBackdrop" type="button" data-asset-library-close aria-label="${zh ? "关闭详情" : "Close details"}"></button>` : ""}<aside class="libraryDetailPane assetLibraryDetailPane ${drawerOpen ? "open" : ""}" aria-hidden="${drawerOpen ? "false" : "true"}">${drawerOpen ? detailMarkup : ""}</aside></div>
+      <div class="libraryWorkbenchBody assetLibraryWorkbenchBody"><aside class="libraryCategoryPane"><header>${zh ? "资产类型" : "Asset type"}</header>${categoryButton("all", zh ? "全部资产" : "All assets")}${categoryButton("image", zh ? "图片" : "Images")}${categoryButton("audio", zh ? "音频" : "Audio")}${categoryButton("video", zh ? "视频" : "Video")}</aside><main class="libraryItemGrid assetLibraryGrid">${listMarkup}</main>${contextItem ? `<button class="assetLibraryMenuBackdrop" type="button" data-asset-library-menu-close aria-label="${zh ? "关闭资源操作菜单" : "Close asset actions"}"></button>` : ""}${drawerOpen ? `<button class="assetLibraryDrawerBackdrop" type="button" data-asset-library-close aria-label="${zh ? "关闭详情" : "Close details"}"></button>` : ""}<aside class="libraryDetailPane assetLibraryDetailPane ${drawerOpen ? "open" : ""}" aria-hidden="${drawerOpen ? "false" : "true"}">${drawerOpen ? detailMarkup : ""}</aside></div>
     </section>
+    ${lightboxItem ? `<div class="assetLibraryLightbox" role="dialog" aria-modal="true" aria-label="${zh ? "图片全屏预览" : "Image fullscreen preview"}"><button class="assetLibraryLightboxBackdrop" type="button" data-asset-library-lightbox-close aria-label="${zh ? "关闭全屏预览" : "Close fullscreen preview"}"></button><section class="assetLibraryLightboxFrame"><header><div><span>${zh ? "图片预览" : "Image preview"}</span><strong>${escapeHtml(lightboxItem.title || assetLibraryKindLabel(lightboxItem))}</strong></div><button class="assetLibraryDrawerClose" type="button" data-asset-library-lightbox-close aria-label="${zh ? "关闭全屏预览" : "Close fullscreen preview"}">×</button></header><div class="assetLibraryLightboxCanvas"><img src="${escapeHtml(assetLibraryMediaUrl(lightboxItem))}" alt="${escapeHtml(lightboxItem.title || "")}"></div></section></div>` : ""}
     ${regenerationConfirmation ? `
       <div class="assetLibraryRegenerateBackdrop" role="presentation">
         <section class="assetLibraryRegenerateDialog" id="assetLibraryRegenerateDialog" role="dialog" aria-modal="true" aria-labelledby="assetLibraryRegenerateTitle" tabindex="-1">
@@ -6620,16 +6661,48 @@ function renderLibraryWorkbench(feature, workspace) {
       state.selectedAssetLibraryId = null;
       state.assetLibraryDetail = null;
       state.assetLibraryDrawerOpen = false;
+      state.assetLibraryContextMenu = null;
       clearAssetLibraryMedia();
       state.assetLibraryRegenerationConfirm = null;
       renderLibraryWorkbench(feature, workspace);
     });
   });
-  document.querySelectorAll("[data-asset-library-open], [data-asset-library-preview]").forEach((button) => {
+  document.querySelectorAll("[data-asset-library-fullscreen]").forEach((button) => {
     button.addEventListener("click", () => {
-      const item = (state.assetLibrary || []).find((candidate) => candidate.id === button.dataset.assetLibraryOpen || candidate.id === button.dataset.assetLibraryPreview);
+      const item = (state.assetLibrary || []).find((candidate) => candidate.id === button.dataset.assetLibraryFullscreen);
+      if (item) openAssetLibraryLightbox(item);
+    });
+  });
+  document.querySelectorAll("[data-asset-library-menu]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const item = (state.assetLibrary || []).find((candidate) => candidate.id === button.dataset.assetLibraryMenu);
+      if (!item) return;
+      const isOpen = state.assetLibraryContextMenu && state.assetLibraryContextMenu.id === item.id && state.assetLibraryContextMenu.assetType === item.assetType;
+      state.assetLibraryContextMenu = isOpen ? null : { assetType: item.assetType, id: item.id };
+      renderLibraryWorkbench(feature, workspace);
+    });
+  });
+  document.querySelectorAll("[data-asset-library-menu-detail]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const item = (state.assetLibrary || []).find((candidate) => candidate.id === button.dataset.assetLibraryMenuDetail);
+      state.assetLibraryContextMenu = null;
       if (item) void loadAssetLibraryDetail(item);
     });
+  });
+  document.querySelectorAll("[data-asset-library-menu-close]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.assetLibraryContextMenu = null;
+      renderLibraryWorkbench(feature, workspace);
+    });
+  });
+  document.querySelectorAll("[data-asset-library-preview]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const item = (state.assetLibrary || []).find((candidate) => candidate.id === button.dataset.assetLibraryPreview);
+      if (item) void loadAssetLibraryDetail(item);
+    });
+  });
+  document.querySelectorAll("[data-asset-library-lightbox-close]").forEach((button) => {
+    button.addEventListener("click", closeAssetLibraryLightbox);
   });
   document.querySelectorAll("[data-asset-library-close]").forEach((button) => {
     button.addEventListener("click", closeAssetLibraryDrawer);

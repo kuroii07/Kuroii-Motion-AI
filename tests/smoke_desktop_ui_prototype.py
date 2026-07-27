@@ -59,6 +59,7 @@ def main() -> int:
     assert "min-height: 44px" in css
     assert "data-tooltip" in css
     assert balanced_css_braces(css)
+    assert balanced_css_braces(creation_css)
     assert "zh-CN" in js and "en-US" in js
     assert "refreshFromService" in js
     assert "providerConfig" in js
@@ -116,6 +117,14 @@ def main() -> int:
     assert "assetLibraryDrawerOpen" in js
     assert "closeAssetLibraryDrawer" in js
     assert "assetLibraryDrawerBackdrop" in js
+    assert "assetLibraryContextMenu" in js
+    assert "assetLibraryLightbox" in js
+    assert "openAssetLibraryLightbox" in js
+    assert "data-asset-library-fullscreen" in js
+    assert "data-asset-library-menu" in js
+    assert "data-asset-library-menu-detail" in js
+    assert "data-asset-library-lightbox-close" in js
+    assert "assetLibraryDetailPromptHtml" in js
     assert 'query.set("thumbnail", "1")' in js
     assert "/ai/assets/${encodeURIComponent(asset.assetType)}/${encodeURIComponent(asset.id)}/media" in js
     assert 'new URLSearchParams({ session: "dev-local-token" })' in js
@@ -144,6 +153,10 @@ def main() -> int:
     assert ".assetLibraryDetailMedia" in css
     assert ".assetLibraryDrawerBackdrop" in creation_css
     assert ".assetLibraryDetailPane.open" in creation_css
+    assert ".assetLibraryContextMenu" in creation_css
+    assert ".assetLibraryLightbox" in creation_css
+    assert ".assetLibraryLightboxCanvas" in creation_css
+    assert ".assetLibraryDetailPrompt" in creation_css
     assert ".assetLibraryRegenerateBackdrop" in css
     assert ".assetLibraryRegenerateDialog" in css
     assert "saveAudioPlan" in js
