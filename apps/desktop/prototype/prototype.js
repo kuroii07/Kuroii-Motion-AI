@@ -4411,6 +4411,31 @@ function assetLibraryStatusLabel(status) {
   return localText(labels[String(status || "").toLowerCase()] || { "zh-CN": "未知", "en-US": "Unknown" });
 }
 
+function assetLibraryPreviewHtml(item, detailPayload, zh) {
+  const detail = detailPayload && detailPayload.detail;
+  const isCurrent = detailPayload && detailPayload.asset && detailPayload.asset.id === item.id;
+  const imageSource = isCurrent && item.assetType === "image" ? safeGeneratedImageSource(detail.imageUrl) : "";
+  const videoSource = isCurrent && item.assetType === "video" ? safeGeneratedVideoSource(detail.videoUrl) : "";
+  if (imageSource) return `<img src="${escapeHtml(imageSource)}" alt="">`;
+  if (videoSource) return `<video muted playsinline preload="metadata" src="${escapeHtml(videoSource)}"></video>`;
+  const typeLabel = assetLibraryKindLabel(item);
+  const statusLabel = assetLibraryStatusLabel(item.status);
+  if (item.assetType === "audio") {
+    return `<span class="assetLibraryAudioCover" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span class="assetLibraryPreviewType">${escapeHtml(typeLabel)}</span><small>${escapeHtml(statusLabel)}</small>`;
+  }
+  return `<b>${escapeHtml(assetLibraryIcon(item))}</b><span class="assetLibraryPreviewType">${escapeHtml(typeLabel)}</span><small>${escapeHtml(statusLabel)}</small>`;
+}
+
+function assetLibraryDetailMetadataHtml(asset, zh) {
+  const rows = [
+    [zh ? "模型" : "Model", asset.model || "-"],
+    [zh ? "来源" : "Provider", asset.providerId || "Local"],
+    [zh ? "创建时间" : "Created", imageHistoryDateLabel(asset.createdAt)],
+    [zh ? "文件大小" : "File size", imageHistoryStorageLabel(asset.bytes)]
+  ];
+  return `<dl class="assetLibraryDetailMetadata">${rows.map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd title="${escapeHtml(value)}">${escapeHtml(value)}</dd></div>`).join("")}</dl>`;
+}
+
 function assetLibraryFilteredItems() {
   const filter = state.assetLibraryFilter || "all";
   const query = String(state.assetLibraryQuery || "").trim().toLowerCase();
@@ -6470,10 +6495,8 @@ function renderLibraryWorkbench(feature, workspace) {
         ? `<div class="assetLibraryEmpty"><span class="statusDot muted"></span>${zh ? "没有符合条件的生成资产" : "No generated assets match this view"}</div>`
         : items.map((item) => `
           <button class="libraryItem assetLibraryItem ${selected && selected.id === item.id ? "selected" : ""}" type="button" data-asset-library-open="${escapeHtml(item.id)}">
-            <span class="libraryItemPreview assetLibraryPreview"><b>${escapeHtml(assetLibraryIcon(item))}</b><small>${escapeHtml(assetLibraryStatusLabel(item.status))}</small></span>
-            <strong>${escapeHtml(item.title || assetLibraryKindLabel(item))}</strong>
-            <small>${escapeHtml(assetLibraryKindLabel(item))} · ${escapeHtml(imageHistoryDateLabel(item.createdAt))}</small>
-            <i>${escapeHtml(item.model || item.providerId || "Local")}</i>
+            <span class="libraryItemPreview assetLibraryPreview ${item.assetType}">${assetLibraryPreviewHtml(item, detailPayload, zh)}</span>
+            <span class="assetLibraryItemBody"><strong>${escapeHtml(item.title || assetLibraryKindLabel(item))}</strong><small>${escapeHtml(imageHistoryDateLabel(item.createdAt))} · ${escapeHtml(item.model || item.providerId || "Local")}</small></span>
           </button>
         `).join("");
   const detailMarkup = !selected
@@ -6481,12 +6504,8 @@ function renderLibraryWorkbench(feature, workspace) {
     : `
       <header><span>${escapeHtml(assetLibraryIcon(selected))}</span><div><strong>${escapeHtml(selected.title || assetLibraryKindLabel(selected))}</strong><small>${escapeHtml(assetLibraryKindLabel(selected))} · ${escapeHtml(assetLibraryStatusLabel(selected.status))}</small></div></header>
       <div class="assetLibraryDetailMedia ${selectedDetailMedia ? "ready" : "empty"}">${selectedDetailMedia || `<span>${zh ? (selected.saved ? "点击打开以载入预览" : "该资源没有本地可预览文件") : (selected.saved ? "Open to load preview" : "No local preview file for this asset")}</span>`}</div>
-      <dl>
-        <div><dt>${zh ? "模型" : "Model"}</dt><dd>${escapeHtml(selected.model || "-")}</dd></div>
-        <div><dt>${zh ? "来源" : "Provider"}</dt><dd>${escapeHtml(selected.providerId || "Local")}</dd></div>
-        <div><dt>${zh ? "文件" : "File"}</dt><dd>${escapeHtml(selected.fileName || "-")}</dd></div>
-        <div><dt>${zh ? "大小" : "Size"}</dt><dd>${escapeHtml(imageHistoryStorageLabel(selected.bytes))}</dd></div>
-      </dl>
+      ${assetLibraryDetailMetadataHtml(selected, zh)}
+      <div class="assetLibraryDetailFile"><span>${zh ? "本地文件" : "Local file"}</span><strong title="${escapeHtml(selected.fileName || "-")}">${escapeHtml(selected.fileName || "-")}</strong></div>
       <div class="assetLibraryActions">
         <button class="featureSecondaryButton" type="button" data-asset-library-preview="${escapeHtml(selected.id)}">${detailPayload ? (zh ? "刷新预览" : "Refresh preview") : (zh ? "打开预览" : "Open preview")}</button>
         <button class="featureSecondaryButton" type="button" data-asset-library-download="${escapeHtml(selected.id)}" ${selected.saved && detailPayload ? "" : "disabled"}>${zh ? "下载" : "Download"}</button>
