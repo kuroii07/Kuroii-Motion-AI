@@ -114,6 +114,8 @@ def main() -> int:
     assert "/ai/assets" in js
     assert "loadAssetLibrary" in js
     assert "loadAssetLibraryMedia" in js
+    assert "clearAssetLibraryMedia" in js
+    assert "state.assetLibraryMedia = null" in js
     assert "assetLibraryDrawerOpen" in js
     assert "closeAssetLibraryDrawer" in js
     assert "assetLibraryDrawerBackdrop" in js
@@ -138,6 +140,8 @@ def main() -> int:
     asset_preview_helper = js.split("function assetLibraryPreviewHtml", 1)[1].split("function assetLibraryDetailMetadataHtml", 1)[0]
     assert "detailPayload" not in asset_preview_helper
     assert "safeGeneratedImageSource" not in asset_preview_helper
+    assert '["image", "audio", "video"].includes(item.assetType)' in asset_preview_helper
+    assert 'assetLibraryMediaUrl(item, true)' in asset_preview_helper
     assert "assetLibraryWorkbenchBody" in js
     assert "assetLibraryRegenerationPlan" in js
     assert "requestAssetLibraryRegeneration" in js

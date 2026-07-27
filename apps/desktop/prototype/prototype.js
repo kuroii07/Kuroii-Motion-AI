@@ -4424,8 +4424,13 @@ function assetLibraryPreviewHtml(item) {
   // twice and can stall the desktop renderer.  Real media stays detail-only.
   const typeLabel = assetLibraryKindLabel(item);
   const statusLabel = assetLibraryStatusLabel(item.status);
-  if (item.assetType === "image" && item.saved) {
-    return `<img src="${escapeHtml(assetLibraryMediaUrl(item, true))}" alt="" loading="lazy" decoding="async"><span class="assetLibraryPreviewOverlay"><span class="assetLibraryPreviewType">${escapeHtml(typeLabel)}</span><small>${escapeHtml(statusLabel)}</small><em>${state.locale === "zh-CN" ? "全屏预览" : "Fullscreen preview"}</em></span>`;
+  if (["image", "audio", "video"].includes(item.assetType) && item.saved) {
+    const previewHint = item.assetType === "image"
+      ? (state.locale === "zh-CN" ? "全屏预览" : "Fullscreen preview")
+      : item.assetType === "audio"
+        ? (state.locale === "zh-CN" ? "波形封面" : "Waveform cover")
+        : (state.locale === "zh-CN" ? "首帧 / 海报" : "Frame / poster");
+    return `<img src="${escapeHtml(assetLibraryMediaUrl(item, true))}" alt="" loading="lazy" decoding="async"><span class="assetLibraryPreviewOverlay"><span class="assetLibraryPreviewType">${escapeHtml(typeLabel)}</span><small>${escapeHtml(statusLabel)}</small><em>${previewHint}</em></span>`;
   }
   if (item.assetType === "audio") {
     return `<span class="assetLibraryAudioCover" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span class="assetLibraryPreviewType">${escapeHtml(typeLabel)}</span><small>${escapeHtml(statusLabel)}</small>`;

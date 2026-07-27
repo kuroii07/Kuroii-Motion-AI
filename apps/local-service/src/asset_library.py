@@ -3,6 +3,10 @@ from __future__ import annotations
 from datetime import datetime
 from functools import lru_cache
 from io import BytesIO
+import os
+from pathlib import Path
+import shutil
+import subprocess
 from typing import Any
 
 from audio_history import delete_audio_history_items, get_audio_history_item, get_audio_history_media_file, list_audio_history
@@ -124,6 +128,21 @@ def get_asset_media(asset_type: str, asset_id: str) -> tuple[Any, str] | None:
     return None
 
 
+THUMBNAIL_SIZE = (480, 300)
+
+
+def _thumbnail_image_bytes(image: Any) -> tuple[bytes, str]:
+    from PIL import Image
+
+    image.thumbnail(THUMBNAIL_SIZE, Image.Resampling.LANCZOS)
+    output = BytesIO()
+    if "A" in image.getbands():
+        image.convert("RGBA").save(output, format="PNG", optimize=True)
+        return output.getvalue(), "image/png"
+    image.convert("RGB").save(output, format="JPEG", quality=82, optimize=True)
+    return output.getvalue(), "image/jpeg"
+
+
 @lru_cache(maxsize=48)
 def _image_thumbnail_bytes(path_text: str, modified_ns: int) -> tuple[bytes, str] | None:
     """Encode a bounded thumbnail so galleries never decode source-size images."""
@@ -133,22 +152,110 @@ def _image_thumbnail_bytes(path_text: str, modified_ns: int) -> tuple[bytes, str
 
         with Image.open(path_text) as source:
             image = ImageOps.exif_transpose(source)
-            image.thumbnail((480, 300), Image.Resampling.LANCZOS)
-            output = BytesIO()
-            if "A" in image.getbands():
-                image.convert("RGBA").save(output, format="PNG", optimize=True)
-                return output.getvalue(), "image/png"
-            image.convert("RGB").save(output, format="JPEG", quality=82, optimize=True)
-            return output.getvalue(), "image/jpeg"
+            return _thumbnail_image_bytes(image)
+    except (ImportError, OSError, ValueError):
+        return None
+
+
+def _cover_background() -> Any:
+    from PIL import Image
+
+    return Image.new("RGB", THUMBNAIL_SIZE, "#19212a")
+
+
+@lru_cache(maxsize=48)
+def _audio_waveform_thumbnail_bytes(path_text: str, modified_ns: int) -> tuple[bytes, str] | None:
+    """Create a bounded waveform cover from the managed audio file bytes."""
+    del modified_ns
+    try:
+        from PIL import ImageDraw
+
+        raw = Path(path_text).read_bytes()[:1_500_000]
+        if not raw:
+            return None
+        image = _cover_background()
+        draw = ImageDraw.Draw(image)
+        width, height = image.size
+        center = height // 2
+        draw.line((0, center, width, center), fill="#30404d", width=1)
+        bars = 96
+        bucket_size = max(1, len(raw) // bars)
+        for index in range(bars):
+            bucket = raw[index * bucket_size:(index + 1) * bucket_size]
+            if not bucket:
+                break
+            amplitude = sum(abs(sample - 128) for sample in bucket) / (len(bucket) * 128)
+            bar_height = max(8, int((height - 64) * min(1, amplitude * 1.45)))
+            x = int((index + 0.5) * width / bars)
+            color = "#28bfe0" if index % 8 else "#6cd8ed"
+            draw.line((x, center - bar_height // 2, x, center + bar_height // 2), fill=color, width=3)
+        draw.text((18, 16), "AUDIO", fill="#b7c7d4")
+        output = BytesIO()
+        image.save(output, format="PNG", optimize=True)
+        return output.getvalue(), "image/png"
+    except (ImportError, OSError, ValueError):
+        return None
+
+
+def _ffmpeg_path() -> str | None:
+    configured = os.environ.get("KUROII_FFMPEG_PATH", "").strip()
+    if configured and Path(configured).is_file():
+        return configured
+    return shutil.which("ffmpeg")
+
+
+@lru_cache(maxsize=48)
+def _video_first_frame_thumbnail_bytes(path_text: str, modified_ns: int) -> tuple[bytes, str] | None:
+    """Extract one frame with ffmpeg when it is locally available."""
+    del modified_ns
+    ffmpeg = _ffmpeg_path()
+    if not ffmpeg:
+        return None
+    try:
+        result = subprocess.run(
+            [ffmpeg, "-v", "error", "-i", path_text, "-frames:v", "1", "-f", "image2pipe", "-vcodec", "mjpeg", "pipe:1"],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            timeout=10,
+            check=False,
+        )
+        if result.returncode != 0 or not result.stdout:
+            return None
+        from PIL import Image, ImageOps
+
+        with Image.open(BytesIO(result.stdout)) as source:
+            return _thumbnail_image_bytes(ImageOps.exif_transpose(source))
+    except (ImportError, OSError, subprocess.SubprocessError, ValueError):
+        return None
+
+
+@lru_cache(maxsize=48)
+def _video_poster_thumbnail_bytes(path_text: str, modified_ns: int) -> tuple[bytes, str] | None:
+    """Use a clear local video cover when a first frame is unavailable."""
+    del path_text, modified_ns
+    try:
+        from PIL import ImageDraw
+
+        image = _cover_background()
+        draw = ImageDraw.Draw(image)
+        width, height = image.size
+        draw.rounded_rectangle((24, 24, width - 24, height - 24), radius=14, outline="#38505e", width=2)
+        triangle = [(width // 2 - 20, height // 2 - 30), (width // 2 - 20, height // 2 + 30), (width // 2 + 34, height // 2)]
+        draw.polygon(triangle, fill="#2abfe0")
+        draw.text((18, 16), "VIDEO", fill="#b7c7d4")
+        draw.text((18, height - 36), "NO FRAME", fill="#8395a5")
+        output = BytesIO()
+        image.save(output, format="PNG", optimize=True)
+        return output.getvalue(), "image/png"
     except (ImportError, OSError, ValueError):
         return None
 
 
 def get_asset_thumbnail(asset_type: str, asset_id: str) -> tuple[bytes, str] | None:
-    """Return a compact image preview; audio and video retain their type covers."""
-    if str(asset_type or "").lower() != "image":
-        return None
-    media = get_image_history_media_file(asset_id)
+    """Return a compact real-media preview without embedding it in list JSON."""
+    normalized_type = str(asset_type or "").lower()
+    media = get_asset_media(normalized_type, asset_id)
     if not media:
         return None
     file_path, _mime_type = media
@@ -156,7 +263,14 @@ def get_asset_thumbnail(asset_type: str, asset_id: str) -> tuple[bytes, str] | N
         modified_ns = file_path.stat().st_mtime_ns
     except OSError:
         return None
-    return _image_thumbnail_bytes(str(file_path), modified_ns)
+    path_text = str(file_path)
+    if normalized_type == "image":
+        return _image_thumbnail_bytes(path_text, modified_ns)
+    if normalized_type == "audio":
+        return _audio_waveform_thumbnail_bytes(path_text, modified_ns)
+    if normalized_type == "video":
+        return _video_first_frame_thumbnail_bytes(path_text, modified_ns) or _video_poster_thumbnail_bytes(path_text, modified_ns)
+    return None
 
 
 def delete_asset(asset_type: str, asset_id: str) -> dict[str, Any] | None:
